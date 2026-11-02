@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 04</title>
+<title>Ghost Duel — Alpha 05</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -17,6 +17,11 @@ button{font:inherit}
 #clock{color:#fff5cb;min-width:84px;text-align:center}
 #carried{position:absolute;left:12px;top:max(68px,calc(env(safe-area-inset-top) + 58px));padding:9px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(16,14,36,.76);font-size:13px;backdrop-filter:blur(8px);z-index:5;pointer-events:none}
 #carried b{color:#fff4c4}
+#abilities{font-size:11px;margin-top:6px;max-width:290px;line-height:1.45;color:#ddd2ed}
+#abilities b{font-weight:900}
+#last15{display:none;position:absolute;left:50%;top:25%;transform:translateX(-50%);padding:14px 22px;z-index:8;border-radius:18px;background:#33172cdd;border:2px solid #ffb1a8;box-shadow:0 0 28px #fa849a55;color:#ffe5e2;font-size:clamp(18px,4vw,30px);font-weight:1000;text-align:center;pointer-events:none;animation:warnPulse .9s ease-in-out infinite alternate}
+#last15.visible{display:block}
+@keyframes warnPulse{from{filter:brightness(1);transform:translateX(-50%) scale(1)}to{filter:brightness(1.3);transform:translateX(-50%) scale(1.035)}}
 #upgrade{display:block;color:#8dc8ff;font-size:12px;margin-top:3px}
 #controls{position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;align-items:end;padding:0 max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right));z-index:6;pointer-events:none}
 #joystick{width:122px;height:122px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.12),rgba(255,255,255,.03) 60%,rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 0 35px rgba(255,255,255,.03),0 10px 22px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none}
@@ -53,7 +58,8 @@ button{font:inherit}
   <div id="clock" class="pill">2:00</div>
   <div id="purpleScore" class="pill">0</div>
 </div>
-<div id="carried" hidden>✨ Spirit flames carried: <b id="carryValue">0</b><span id="upgrade">No upgrade yet</span></div>
+<div id="carried" hidden>✨ Spirit flames carried: <b id="carryValue">0</b><span id="upgrade">No upgrade yet</span><div id="abilities">Team powers: ⚡ 8 · ✨ 23 · 🧲 53 · 👻 113</div></div>
+<div id="last15" role="alert" aria-live="off">⏰ FINAL 15 SECONDS!</div>
 <div id="controls">
   <div id="joystick"><div id="knob"></div></div>
   <div class="controlStack">
@@ -64,7 +70,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 04</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 05</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -74,7 +80,7 @@ button{font:inherit}
 <div class="bullets">
       <div><b>New this build</b><br>Fog layers, lanterns, pumpkins, graveyard scenery, expressive ghosts, and polished particles.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
-      <div><b>Upgrades</b><br>Speed at 8, Glow at 23, Magnet at 53, Phase at 113 total score (50% lower, rounded up).</div>
+      <div><b>Upgrades</b><br>Team score unlocks visible powers: Speed at 8 (48% faster), Glow at 23, Magnet at 53 (attracts flames), Phase at 113 (walk through walls).</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
     <button id="startBtn">START GAME</button>
@@ -96,6 +102,8 @@ button{font:inherit}
   const carried = document.getElementById('carried');
   const carryValue = document.getElementById('carryValue');
   const upgradeEl = document.getElementById('upgrade');
+  const abilitiesEl = document.getElementById('abilities');
+  const warningEl = document.getElementById('last15');
   const hint = document.getElementById('hint');
   const soundToggle = document.getElementById('soundToggle');
   const testSoundBtn = document.getElementById('testSound');
@@ -310,7 +318,9 @@ button{font:inherit}
       ghosts.push(newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) }));
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+'!', toastLeft: 5, phase: 'playing' };
+    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], lastWarningSecond:16, toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+'!', toastLeft: 5, phase: 'playing' };
+    warningEl.classList.remove('visible');
+    clockEl.style.color='#fff5cb';
     hud.hidden = false;
     carried.hidden = false;
     menu.classList.add('hidden');
@@ -318,10 +328,23 @@ button{font:inherit}
     GhostAudio.init();
   }
 
+  // Team score is the number actually displayed above the arena. Power-ups
+  // unlock for every teammate at these milestones, avoiding a hidden personal score.
+  const POWER_STEPS=[8,23,53,113];
+  function levelFor(team){return game ? game.scores[team] : 0}
+  function powerProgress(team){
+    const points=levelFor(team);
+    return [
+      {name:'⚡ Speed',at:8,on:points>=8},
+      {name:'✨ Glow',at:23,on:points>=23},
+      {name:'🧲 Magnet',at:53,on:points>=53},
+      {name:'👻 Phase',at:113,on:points>=113}
+    ];
+  }
   function upgradeLabel(score) {
-    if (score >= 113) return '👻 Phase upgrade active';
-    if (score >= 53) return '🧲 Magnet upgrade active';
-    if (score >= 23) return '✨ Glow upgrade active';
+    if (score >= 113) return '👻 Phase + Magnet + Glow + Speed ACTIVE';
+    if (score >= 53) return '🧲 Magnet + Glow + Speed ACTIVE';
+    if (score >= 23) return '✨ Glow + Speed ACTIVE';
     if (score >= 8) return '⚡ Speed upgrade active';
     return 'No upgrade yet';
   }
@@ -373,9 +396,9 @@ button{font:inherit}
   }
 
   function moveGhost(g, dir, dt) {
-    const score = g.score;
-    const speed = 172 * (score >= 8 ? 1.16 : 1);
-    const phaseMove = score >= 113;
+    const score=levelFor(g.team);
+    const speed=172*(score>=8?1.48:1);
+    const phaseMove=score>=113;
     let nx = g.x + dir.x * speed * dt;
     let ny = g.y + dir.y * speed * dt;
     if (phaseMove) {
@@ -413,7 +436,17 @@ button{font:inherit}
     for (let i = game.flames.length - 1; i >= 0; i--) {
       const flame = game.flames[i];
       for (const g of game.ghosts) {
-        const pickup = g.score >= 53 ? 50 : 28;
+        // Magnet actively draws distant flames toward upgraded ghosts.
+        const upgraded=levelFor(g.team)>=53;
+        if(upgraded){
+          const pullDistance=145,d=distance(flame,g);
+          if(d<pullDistance&&d>1){
+            const amount=Math.min(d,220/60*(1+(pullDistance-d)/pullDistance));
+            flame.x+=(g.x-flame.x)/d*amount;
+            flame.y+=(g.y-flame.y)/d*amount;
+          }
+        }
+        const pickup=upgraded?66:28;
         if (distance(flame, g) < pickup) {
           g.trail.push(1);
           g.trailPos.push({ x: flame.x, y: flame.y });
@@ -432,7 +465,7 @@ button{font:inherit}
       const base = BASES[g.team];
       if (distance(g, base) < base.r - 12 && g.trail.length) {
         const total = g.trail.length;
-        const previousScore=g.score;
+        const previousScore=game.scores[g.team];
         g.trail = [];
         g.trailPos = [];
         game.scores[g.team] += total;
@@ -442,7 +475,11 @@ button{font:inherit}
         if (g.id === 0) {
           GhostAudio.effect('deposit');
           toast('Scored ' + total + ' spirit flames!');
-          if ([8,23,53,113].some(n=>previousScore<n&&g.score>=n)){GhostAudio.effect('upgrade');toast(upgradeLabel(g.score));}
+          if(POWER_STEPS.some(n=>previousScore<n&&game.scores[g.team]>=n)){
+            GhostAudio.effect('upgrade');
+            toast('TEAM UPGRADE! '+upgradeLabel(game.scores[0]));
+            emitBurst(g.x,g.y,color(g.team),35);
+          }
         }
       }
     }
@@ -490,6 +527,17 @@ button{font:inherit}
   function update(dt) {
     if (!game || game.phase !== 'playing') return;
     game.remaining = Math.max(0, game.remaining - dt);
+    const wholeSeconds=Math.ceil(game.remaining);
+    if(wholeSeconds<=15&&game.lastWarningSecond>15){
+      warningEl.classList.add('visible');
+      toast('15 SECONDS LEFT — BANK YOUR SPIRITS!');
+      GhostAudio.effect('finish');
+    }
+    if(wholeSeconds<=15&&wholeSeconds!==game.lastWarningSecond){
+      if(wholeSeconds<=5&&wholeSeconds>=1)GhostAudio.effect('collect');
+      game.lastWarningSecond=wholeSeconds;
+    }
+    if(wholeSeconds<=0)warningEl.classList.remove('visible');
     game.toastLeft = Math.max(0, game.toastLeft - dt);
     if (game.remaining <= 0) return finish();
 
@@ -524,11 +572,16 @@ button{font:inherit}
     const sec = Math.ceil(game.remaining);
     clockEl.textContent = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2);
     carryValue.textContent = game.ghosts[0].trail.length;
-    upgradeEl.textContent = upgradeLabel(game.ghosts[0].score);
+    upgradeEl.textContent=upgradeLabel(game.scores[0]);
+    abilitiesEl.innerHTML=powerProgress(0).map(p=>p.on?
+      '<b style="color:#b7ffd7">'+p.name+' ✓</b>':
+      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-game.scores[0])+' to go</span>').join(' · ');
+    clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
   }
 
   function finish() {
     game.phase = 'finished';
+    warningEl.classList.remove('visible');
     GhostAudio.effect('finish');
     const g = game.scores[0], p = game.scores[1];
     menuText.innerHTML = (g > p ? teamColors[0].name.toUpperCase()+' TEAM WINS!' : g < p ? teamColors[1].name.toUpperCase()+' TEAM WINS!' : 'IT’S A TIE!') + '<br><br><span style="color:'+color(0)+'">' + g + '</span> — <span style="color:'+color(1)+'">' + p + '</span><br><br>Choose a color and play again.';
@@ -547,7 +600,21 @@ button{font:inherit}
   function drawGhost(g) {
     const bob = Math.sin(t * 4 + g.bounce) * 3;
     const x = g.x, y = g.y + bob;
-    drawGlow(x, y - 3, g.score >= 23 ? 90 : 48, alpha(color(g.team), g.score >= 23 ? .53 : .35));
+    const teamPoints=levelFor(g.team);
+    if(teamPoints>=23){
+      const halo=88+Math.sin(t*5+g.bounce)*7;
+      drawGlow(x,y-3,halo,alpha(color(g.team),.63));
+      ctx.beginPath();ctx.arc(x,y-4,halo*.63,0,Math.PI*2);
+      ctx.strokeStyle=alpha(color(g.team),.30);ctx.lineWidth=3;ctx.stroke();
+    }else drawGlow(x,y-3,48,alpha(color(g.team),.35));
+    if(teamPoints>=113){
+      ctx.beginPath();ctx.arc(x,y,37,0,Math.PI*2);
+      ctx.strokeStyle='#ffffffbb';ctx.setLineDash([5,7]);ctx.lineWidth=3;ctx.stroke();ctx.setLineDash([]);
+    }
+    if(teamPoints>=53){
+      ctx.beginPath();ctx.arc(x,y,60+Math.sin(t*4)*3,0,Math.PI*2);
+      ctx.strokeStyle=alpha(color(g.team),.5);ctx.lineWidth=2;ctx.stroke();
+    }
     ctx.fillStyle = 'rgba(7,6,18,.34)';
     ctx.beginPath(); ctx.ellipse(x, y + 22, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
 
@@ -584,8 +651,8 @@ button{font:inherit}
   }
 
   function drawFlame(x, y, team, phase = 0) {
-    const c = team >= 0 ? color(team) : '#ffe3a3';
-    const g = team >= 0 ? alpha(color(team),.36) : '#ffd98666';
+    const c = team >= 0 ? color(team) : '#F2F0EF';
+    const g = team >= 0 ? alpha(color(team),.36) : '#F2F0EF66';
     const bob = Math.sin(t * 5 + phase) * 3;
     drawGlow(x, y + bob, 26, g);
     ctx.save();
