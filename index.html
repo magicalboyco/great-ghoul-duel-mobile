@@ -7,22 +7,82 @@
 <div id="hud" hidden><div id="greenScore" class="score green">0</div><div id="clock">2:00</div><div id="purpleScore" class="score purple">0</div></div>
 <div id="carried" hidden>✨ Spirits: <b id="carryValue">0</b> <span id="upgrade"></span></div>
 <div id="joystick" aria-label="Movement joystick"><div id="knob"></div></div><div id="hint">Move with WASD / arrow keys, or drag on the screen</div>
-<button id="soundToggle" aria-label="Mute or unmute game audio" style="position:absolute;z-index:4;top:max(11px,env(safe-area-inset-top));right:12px;padding:7px 10px;font-size:18px;background:#262143d9;color:white;box-shadow:none;border:1px solid #ffffff55;border-radius:12px">🔊</button><div id="notice">Unofficial gameplay study · original placeholder artwork</div>
+<button id="soundToggle" aria-label="Mute or unmute game audio" style="position:absolute;z-index:4;top:max(11px,env(safe-area-inset-top));right:12px;padding:7px 10px;font-size:18px;background:#262143d9;color:white;box-shadow:none;border:1px solid #ffffff55;border-radius:12px">🔊</button><div id="audioDebug" style="position:absolute;top:max(55px,calc(env(safe-area-inset-top) + 45px));right:10px;z-index:4;text-align:right;display:flex;align-items:flex-end;flex-direction:column;gap:4px"><button id="testSound" style="padding:7px 12px;font-size:12px;border-radius:10px;background:#483b69;color:#fff;box-shadow:none;border:1px solid #bfa5e2">TEST SOUND ♪</button><small id="audioStatus" style="max-width:185px;font-size:10px;color:#fff1c7;background:#17112bba;padding:4px 6px;border-radius:5px">Audio: tap TEST SOUND</small></div><div id="notice">Unofficial gameplay study · original placeholder artwork</div>
 <div id="menu"><div class="panel"><div class="eyebrow">HALLOWEEN GAMEPLAY STUDY · ALPHA 01</div><div style="font-size:48px;margin:10px">👻 ✨ 👻</div><div class="title">GHOST<br>DUEL</div><p class="sub" id="menuText">Collect wandering spirit flames. They follow behind you! Bring them to your <b style="color:#91ffb4">green base</b> to score. Touch rivals' purple flame trails to steal them. Four ghosts per team. You have two minutes.</p><button id="startBtn">START GAME</button><p class="sub" style="margin-bottom:0">Use the glowing joystick, or drag your finger anywhere outside the buttons. Landscape works best.</p></div></div>
 <script>
 /* Original procedural Halloween soundscape: no external files or copyrighted samples. */
 window.GhostAudio=(()=>{
- let ctx=null,muted=false,timer=null,step=0;
- let master=null;
+ let ctx=null,master=null,musicAudio=null,muted=false,playStarted=false,notesTimer=null,noteStep=0;
+ const statusEl=document.getElementById('audioStatus');
  const melody=[392,0,466.16,392,311.13,0,349.23,293.66,261.63,0,311.13,349.23,392,0,293.66,0];
- function init(){if(muted)return;try{if(!ctx){let C=window.AudioContext||window.webkitAudioContext;if(!C)return;ctx=new C();master=ctx.createGain();master.gain.value=.25;master.connect(ctx.destination)}if(ctx.state!=='running')ctx.resume().catch(()=>{});if(!timer)timer=setInterval(music,250)}catch(e){console.warn('Sound unavailable',e)}}
- function tone(freq,duration=.12,type='sine',volume=.12,delay=0,slide=1){if(!ctx||muted||ctx.state!=='running')return;try{const now=ctx.currentTime+delay,o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(Math.max(1,freq),now);o.frequency.exponentialRampToValueAtTime(Math.max(1,freq*slide),now+duration);g.gain.setValueAtTime(.001,now);g.gain.exponentialRampToValueAtTime(Math.max(.001,volume),now+.012);g.gain.exponentialRampToValueAtTime(.001,now+duration);o.connect(g);g.connect(master);o.start(now);o.stop(now+duration+.025)}catch(e){console.warn('Audio note failed',e)}}
- function music(){if(!ctx||ctx.state!=='running'||muted)return;const note=melody[step%melody.length];if(note)tone(note/2,.27,'triangle',.055);if(step%4===0)tone([130.81,116.54,103.83,116.54][Math.floor(step/4)%4],.40,'sine',.065);if(step%8===4)tone(1046.5,.16,'sine',.018);step++}
- function effect(name){if(!ctx||muted)return;switch(name){case'collect':tone(650,.11,'sine',.17,0,1.45);break;case'deposit':tone(392,.16,'triangle',.20);tone(523.25,.18,'triangle',.18,.11);tone(783.99,.28,'sine',.17,.23);break;case'steal':tone(260,.18,'sawtooth',.09,0,.67);tone(460,.19,'triangle',.1,.07,1.5);break;case'loss':tone(410,.2,'triangle',.10,0,.65);break;case'finish':tone(392,.25,'triangle',.16);tone(523,.25,'triangle',.16,.2);tone(659,.50,'sine',.17,.4);break;case'upgrade':tone(520,.14,'sine',.14);tone(780,.18,'sine',.15,.12);break;}}
- function toggle(){muted=!muted;if(muted){if(master)master.gain.setTargetAtTime(0,ctx.currentTime,.015)}else{init();if(master)master.gain.setTargetAtTime(.25,ctx.currentTime,.015)}return !muted}
- function pause(){if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{})}
- function resume(){if(ctx&&!muted)ctx.resume().catch(()=>{})}
- return {init,effect,toggle,pause,resume,get enabled(){return !muted}};
+ function status(message){if(statusEl)statusEl.textContent='Audio: '+message}
+ // Generate an original short WAV loop for <audio>, independent of Web Audio.
+ function wav(notes){
+   const sampleRate=22050,duration=4,frames=sampleRate*duration,b=new ArrayBuffer(44+frames*2),v=new DataView(b);
+   function chars(offset,str){for(let i=0;i<str.length;i++)v.setUint8(offset+i,str.charCodeAt(i))}
+   chars(0,'RIFF');v.setUint32(4,36+frames*2,true);chars(8,'WAVE');chars(12,'fmt ');v.setUint32(16,16,true);
+   v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sampleRate,true);v.setUint32(28,sampleRate*2,true);
+   v.setUint16(32,2,true);v.setUint16(34,16,true);chars(36,'data');v.setUint32(40,frames*2,true);
+   const bass=[130.81,116.54,103.83,116.54];
+   for(let i=0;i<frames;i++){
+      let t=i/sampleRate,beat=Math.floor(t*4),f=notes[beat%notes.length],phase=(t*4)%1;
+      let envelope=Math.pow(1-phase,1.5),wave=0;
+      if(f)wave+=(Math.sin(2*Math.PI*f*.5*t)+.25*Math.sin(2*Math.PI*f*t))*.23*envelope;
+      wave+=Math.sin(2*Math.PI*bass[Math.floor(t)%bass.length]*t)*.11;
+      wave+=Math.sin(2*Math.PI*261.63*t)*.025*(.5+.5*Math.sin(2*Math.PI*.7*t));
+      v.setInt16(44+i*2,Math.round(Math.max(-1,Math.min(1,wave))*32767),true);
+   }
+   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
+ }
+ function media(){if(!musicAudio){musicAudio=new Audio();musicAudio.src=wav(melody);musicAudio.loop=true;musicAudio.preload='auto';musicAudio.volume=.55;musicAudio.addEventListener('error',()=>status('music file error'));}}
+ function web(){if(ctx)return;const C=window.AudioContext||window.webkitAudioContext;if(!C){status('Web Audio not supported; music fallback available');return}ctx=new C();master=ctx.createGain();master.gain.value=.30;master.connect(ctx.destination);ctx.onstatechange=()=>{if(ctx.state==='interrupted')status('interrupted — tap TEST SOUND')};}
+ function unlock(){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}}
+ function resume(){if(muted)return Promise.resolve();unlock();try{web()}catch(e){status('Web Audio unavailable: '+e.message)}if(ctx&&ctx.state!=='running'){return ctx.resume().then(()=>{status('Web Audio '+ctx.state+' · music '+(musicAudio&&!musicAudio.paused?'playing':'paused'))}).catch(e=>{status('Web Audio blocked: '+e.message)})}return Promise.resolve()}
+ function init(){
+    if(muted){status('muted');return}
+    playStarted=true;unlock();media();
+    // Calling .play directly in the user's Start/tap handler matters on iOS.
+    const result=musicAudio.play();status('starting music…');
+    if(result&&result.then)result.then(()=>status('music playing · tap TEST SOUND if silent')).catch(e=>status('music blocked: '+e.name));
+    resume();
+ }
+ function tone(freq,duration=.14,type='sine',volume=.35,delay=0,slide=1){
+   if(!ctx||muted)return;
+   try{
+     if(ctx.state!=='running'){resume();return}
+     const now=ctx.currentTime+delay,o=ctx.createOscillator(),g=ctx.createGain();
+     o.type=type;o.frequency.setValueAtTime(Math.max(1,freq),now);
+     o.frequency.exponentialRampToValueAtTime(Math.max(1,freq*slide),now+duration);
+     g.gain.setValueAtTime(.001,now);g.gain.exponentialRampToValueAtTime(Math.max(.001,volume),now+.015);
+     g.gain.exponentialRampToValueAtTime(.001,now+duration);o.connect(g);g.connect(master);
+     o.start(now);o.stop(now+duration+.03);
+   }catch(e){status('note error: '+e.message)}
+ }
+ function effect(name){if(muted)return;switch(name){
+ case'collect':tone(620,.15,'sine',.42,0,1.48);break;
+ case'deposit':tone(392,.20,'triangle',.40);tone(523.25,.20,'triangle',.38,.12);tone(783.99,.32,'sine',.38,.23);break;
+ case'steal':tone(260,.22,'sawtooth',.27,0,.67);tone(460,.20,'triangle',.29,.08,1.5);break;
+ case'loss':tone(410,.25,'triangle',.30,0,.65);break;
+ case'finish':tone(392,.25,'triangle',.4);tone(523,.28,'triangle',.4,.2);tone(659,.52,'sine',.42,.4);break;
+ case'upgrade':tone(520,.15,'sine',.4);tone(780,.19,'sine',.4,.12);break;
+ }}
+ function toggle(){
+   muted=!muted;
+   if(musicAudio){if(muted)musicAudio.pause();else{unlock();const p=musicAudio.play();if(p&&p.catch)p.catch(e=>status('music blocked: '+e.name))}}
+   if(ctx&&master)master.gain.setTargetAtTime(muted?0:.30,ctx.currentTime,.02);
+   if(!muted)resume();status(muted?'muted':'unmuted');return !muted;
+ }
+ function test(){
+   // Explicit user gesture: run both HTML audio and Web Audio pathways.
+   muted=false;unlock();media();
+   let p=musicAudio.play();
+   if(p&&p.then)p.then(()=>status('test: music started · '+(ctx?ctx.state:'no Web Audio'))).catch(e=>status('test: media blocked: '+e.name));
+   resume().then(()=>{tone(523.25,.35,'sine',.9);setTimeout(()=>tone(783.99,.35,'triangle',.8),140)});
+   return true;
+ }
+ function pause(){if(musicAudio)musicAudio.pause();if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{})}
+ function onVisible(){if(!muted&&playStarted){unlock();if(musicAudio){const p=musicAudio.play();if(p&&p.catch)p.catch(()=>{})}resume()}}
+ return {init,effect,toggle,pause,resume:onVisible,test,get enabled(){return !muted}};
 })();
 </script>
 <script>
@@ -32,7 +92,7 @@ const canvas=document.getElementById('game'),cx=canvas.getContext('2d',{alpha:fa
 const menu=document.getElementById('menu'),startBtn=document.getElementById('startBtn'),hud=document.getElementById('hud'),carried=document.getElementById('carried');
 const greenEl=document.getElementById('greenScore'),purpleEl=document.getElementById('purpleScore'),clockEl=document.getElementById('clock'),carryEl=document.getElementById('carryValue'),upgradeEl=document.getElementById('upgrade');
 const joy=document.getElementById('joystick'),knob=document.getElementById('knob'),hint=document.getElementById('hint'),notice=document.getElementById('notice');
-const soundToggle=document.getElementById('soundToggle');soundToggle.addEventListener('click',()=>{soundToggle.textContent=GhostAudio.toggle()?'🔊':'🔇'});
+const soundToggle=document.getElementById('soundToggle');soundToggle.addEventListener('click',()=>{soundToggle.textContent=GhostAudio.toggle()?'🔊':'🔇'});document.getElementById('testSound').addEventListener('click',()=>{GhostAudio.test();soundToggle.textContent='🔊'});
 const WORLD={w:1860,h:1100},bases=[{x:160,y:550,r:110},{x:1700,y:550,r:110}];
 const walls=[{x:450,y:200,w:115,h:135},{x:450,y:765,w:115,h:135},{x:1295,y:200,w:115,h:135},{x:1295,y:765,w:115,h:135},{x:820,y:135,w:220,h:80},{x:820,y:885,w:220,h:80},{x:810,y:430,w:60,h:95},{x:990,y:575,w:60,h:95}];
 let W=1,H=1,DPR=1,scale=1,camX=0,camY=0,game=null,last=0,acc=0,t=0,raf=0;
