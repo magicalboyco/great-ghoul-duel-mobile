@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 02</title>
+<title>Ghost Duel — Alpha 03</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -27,12 +27,18 @@ button{font:inherit}
 #audioStatus{max-width:220px;font-size:11px;color:#fff2c3;background:rgba(20,17,44,.9);padding:5px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.08)}
 #menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 50% 30%,rgba(88,68,144,.35),rgba(10,8,22,.82));z-index:10}
 #menu.hidden,#hud.hidden,#carried.hidden,#hint.hidden{display:none}
-.panel{width:min(92vw,640px);padding:22px 22px 18px;border-radius:24px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(35,27,67,.96),rgba(17,14,37,.94));box-shadow:0 30px 65px rgba(0,0,0,.42);text-align:center}
+.panel{max-height:94dvh;overflow-y:auto;touch-action:pan-y;width:min(92vw,640px);padding:22px 22px 18px;border-radius:24px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(35,27,67,.96),rgba(17,14,37,.94));box-shadow:0 30px 65px rgba(0,0,0,.42);text-align:center}
 .eyebrow{display:inline-block;padding:6px 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;background:rgba(255,255,255,.08);color:#e4d1ff}
 .title{font-size:clamp(38px,10vw,74px);line-height:.92;font-weight:1000;letter-spacing:.01em;margin:12px 0 10px;text-shadow:0 5px 18px rgba(0,0,0,.45)}
 .sub{font-size:15px;line-height:1.5;color:#e6e1ff;margin:0 auto 14px;max-width:50ch}
 .bullets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0 18px;text-align:left}
 .bullets div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);font-size:13px;color:#f0ebff}
+.palette-label{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:#f0ddff;margin:8px 0}
+.swatches{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:460px;margin:0 auto 6px}
+.swatch{aspect-ratio:1;border-radius:50%;padding:0;min-width:0;border:2px solid #ffffff85;box-shadow:0 3px 8px #0005;cursor:pointer;position:relative}
+.swatch[aria-pressed="true"]{border:3px solid #fff;outline:3px solid #f0e0ff;outline-offset:2px;transform:scale(1.05)}
+.swatch[aria-pressed="true"]::after{content:"✓";font-weight:bold;font-size:17px;color:#2b2342;position:absolute;inset:0;display:grid;place-items:center}
+#teamPreview{font-size:12px;color:#e9dfff;margin:6px auto 10px}
 #startBtn{padding:14px 22px;border-radius:16px;border:none;font-weight:900;letter-spacing:.03em;background:linear-gradient(180deg,#c4ffda,#68d49f);color:#13241c;box-shadow:0 12px 24px rgba(89,221,156,.28)}
 #startBtn:active{transform:translateY(1px)}
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
@@ -58,11 +64,14 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 02</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 03</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
-    <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Collect wandering spirit flames, drag them home to the green base, and steal purple chains when you brush through them.</p>
-    <div class="bullets">
+    <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
+    <div class="palette-label">Choose your pastel-goth ghost</div>
+<div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
+<div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
+<div class="bullets">
       <div><b>New this build</b><br>Fog layers, lanterns, pumpkins, graveyard scenery, expressive ghosts, and polished particles.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Speed at 15, Glow at 45, Magnet at 105, Phase at 225 total score.</div>
@@ -91,6 +100,26 @@ button{font:inherit}
   const soundToggle = document.getElementById('soundToggle');
   const testSoundBtn = document.getElementById('testSound');
   const audioStatus = document.getElementById('audioStatus');
+  const palettePicker = document.getElementById('palettePicker');
+  const selectedNameEl = document.getElementById('selectedName');
+  const PASTELS = [
+    {name:'Blush',hex:'#ffc1cc'}, {name:'Peach',hex:'#ffe0b2'},
+    {name:'Moonlight',hex:'#fff8b0'}, {name:'Mint',hex:'#d5fcd6'},
+    {name:'Frost',hex:'#c2f0ff'}, {name:'Periwinkle',hex:'#c5d9ff'},
+    {name:'Lavender',hex:'#d9c2f0'}, {name:'Rose',hex:'#ffddf4'}
+  ];
+  let selectedIndex=3,teamColors=[PASTELS[3],PASTELS[6]];
+  const color=team=>teamColors[team].hex;
+  const alpha=(hex,opacity)=>hex+Math.round(opacity*255).toString(16).padStart(2,'0');
+  const darken=(hex,factor=.64)=>'#'+[1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*factor).toString(16).padStart(2,'0')).join('');
+  PASTELS.forEach((entry,index)=>{
+    const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=entry.hex;
+    b.setAttribute('aria-label',entry.name+' '+entry.hex);
+    b.setAttribute('aria-pressed',String(index===selectedIndex));
+    b.addEventListener('click',()=>{selectedIndex=index;selectedNameEl.textContent=entry.name;
+      [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)))});
+    palettePicker.appendChild(b);
+  });
   const joy = document.getElementById('joystick');
   const knob = document.getElementById('knob');
 
@@ -262,6 +291,10 @@ button{font:inherit}
 
   function reset() {
     seed = 7321;
+    const choices=PASTELS.filter((_,i)=>i!==selectedIndex);
+    teamColors=[PASTELS[selectedIndex],choices[Math.floor(Math.random()*choices.length)]];
+    greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
+    greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
     const ghosts = [];
     for (let i = 0; i < 8; i++) {
       const team = i < 4 ? 0 : 1;
@@ -269,7 +302,7 @@ button{font:inherit}
       ghosts.push(newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) }));
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], toast: 'Collect spirit flames and race them back to base!', toastLeft: 5, phase: 'playing' };
+    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+'!', toastLeft: 5, phase: 'playing' };
     hud.hidden = false;
     carried.hidden = false;
     menu.classList.add('hidden');
@@ -378,7 +411,7 @@ button{font:inherit}
           g.trailPos.push({ x: flame.x, y: flame.y });
           game.flames.splice(i, 1);
           game.flames.push({ ...randomPoint(), phase: randRange(0, Math.PI * 2) });
-          emitBurst(flame.x, flame.y, g.team === 0 ? '#8fffd0' : '#dfa9ff', 9);
+          emitBurst(flame.x, flame.y, color(g.team), 9);
           if (g.id === 0) { GhostAudio.effect('collect'); popup('+1', flame.x, flame.y, '#ffefad'); }
           break;
         }
@@ -395,7 +428,7 @@ button{font:inherit}
         g.trailPos = [];
         game.scores[g.team] += total;
         g.score += total;
-        emitBurst(base.x, base.y, g.team === 0 ? '#92ffd1' : '#dda5ff', 18);
+        emitBurst(base.x, base.y, color(g.team), 18);
         popup('+' + total, base.x, base.y - 20, '#ffffff');
         if (g.id === 0) {
           GhostAudio.effect('deposit');
@@ -415,7 +448,7 @@ button{font:inherit}
         if (distance(a, b) < 42 && distance(a, BASES[a.team]) > 190) {
           a.trail.push(1, 1); a.trailPos.push({ x: a.x, y: a.y }, { x: a.x, y: a.y });
           a.cooldown = b.cooldown = 5;
-          emitBurst((a.x + b.x) / 2, (a.y + b.y) / 2, a.team === 0 ? '#90ffd4' : '#dda7ff', 10);
+          emitBurst((a.x + b.x) / 2, (a.y + b.y) / 2, color(a.team), 10);
           if (a.id === 0 || b.id === 0) toast('Buddy bonus! +2 spirit flames');
         }
       }
@@ -429,7 +462,7 @@ button{font:inherit}
     attacker.trail.push(...moved);
     attacker.trailPos.push(...pos);
     attacker.invuln = victim.invuln = .7;
-    emitBurst(pos[0].x, pos[0].y, attacker.team === 0 ? '#8ffff0' : '#e0b1ff', 12);
+    emitBurst(pos[0].x, pos[0].y, color(attacker.team), 12);
     if (attacker.id === 0) { GhostAudio.effect('steal'); toast('You stole ' + moved.length + ' spirit flames!'); }
     else if (victim.id === 0) { GhostAudio.effect('loss'); toast('A rival stole ' + moved.length + ' of your spirit flames!'); }
   }
@@ -489,7 +522,7 @@ button{font:inherit}
     game.phase = 'finished';
     GhostAudio.effect('finish');
     const g = game.scores[0], p = game.scores[1];
-    menuText.innerHTML = (g > p ? 'GREEN TEAM WINS!' : g < p ? 'PURPLE TEAM WINS!' : 'IT’S A TIE!') + '<br><br><span style="color:#9cffc6">' + g + '</span> — <span style="color:#e2a9ff">' + p + '</span><br><br>Tap Start Game to play another match.';
+    menuText.innerHTML = (g > p ? teamColors[0].name.toUpperCase()+' TEAM WINS!' : g < p ? teamColors[1].name.toUpperCase()+' TEAM WINS!' : 'IT’S A TIE!') + '<br><br><span style="color:'+color(0)+'">' + g + '</span> — <span style="color:'+color(1)+'">' + p + '</span><br><br>Choose a color and play again.';
     startBtn.textContent = 'PLAY AGAIN';
     menu.classList.remove('hidden');
     carried.hidden = true;
@@ -505,13 +538,13 @@ button{font:inherit}
   function drawGhost(g) {
     const bob = Math.sin(t * 4 + g.bounce) * 3;
     const x = g.x, y = g.y + bob;
-    drawGlow(x, y - 3, 48, g.team ? '#d693ff55' : '#94ffd45a');
+    drawGlow(x, y - 3, 48, alpha(color(g.team), .35));
     ctx.fillStyle = 'rgba(7,6,18,.34)';
     ctx.beginPath(); ctx.ellipse(x, y + 22, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
 
     ctx.save();
     ctx.translate(x, y);
-    const hue = g.team ? ['#d8b6ff', '#b889f0', '#815ac3'] : ['#bfffe5', '#74e2b3', '#3aa786'];
+    const hue = [color(g.team),color(g.team),darken(color(g.team),.58)];
     ctx.fillStyle = hue[0];
     ctx.strokeStyle = hue[2];
     ctx.lineWidth = 2.5;
@@ -542,8 +575,8 @@ button{font:inherit}
   }
 
   function drawFlame(x, y, team, phase = 0) {
-    const c = team === 0 ? '#8fffd2' : team === 1 ? '#e1a9ff' : '#ffe3a3';
-    const g = team === 0 ? '#8fffd255' : team === 1 ? '#d597ff55' : '#ffd98666';
+    const c = team >= 0 ? color(team) : '#ffe3a3';
+    const g = team >= 0 ? alpha(color(team),.36) : '#ffd98666';
     const bob = Math.sin(t * 5 + phase) * 3;
     drawGlow(x, y + bob, 26, g);
     ctx.save();
@@ -619,10 +652,10 @@ button{font:inherit}
 
     for (const b of BASES) {
       const team = b === BASES[0] ? 0 : 1;
-      drawGlow(b.x, b.y, b.r + 74, team ? 'rgba(185,119,255,.16)' : 'rgba(124,255,200,.18)');
-      ctx.lineWidth = 9; ctx.strokeStyle = team ? '#d3a0ff' : '#7dffc4'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = team ? 'rgba(211,160,255,.45)' : 'rgba(125,255,196,.45)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 18, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = team ? '#e5b8ff' : '#b8ffd8'; ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui'; ctx.fillText(b.name, b.x, b.y + 62);
+      drawGlow(b.x, b.y, b.r + 74, alpha(color(team),.16));
+      ctx.lineWidth = 9; ctx.strokeStyle = color(team); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = alpha(color(team),.45); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 18, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = color(team); ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui'; ctx.fillText(teamColors[team].name.toUpperCase()+' BASE', b.x, b.y + 62);
     }
 
     // drifting fog
@@ -681,7 +714,7 @@ button{font:inherit}
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         ctx.beginPath(); ctx.moveTo(g.x, g.y);
         for (const p of g.trailPos) ctx.lineTo(p.x, p.y);
-        ctx.strokeStyle = g.team ? 'rgba(197,142,255,.55)' : 'rgba(104,255,199,.55)';
+        ctx.strokeStyle = alpha(color(g.team),.55);
         ctx.lineWidth = 9; ctx.stroke();
       }
       for (const p of g.trailPos) drawFlame(p.x, p.y, g.team, g.id + p.x * .001);
