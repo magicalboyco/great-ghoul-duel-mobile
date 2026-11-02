@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 03</title>
+<title>Ghost Duel — Alpha 04</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -64,7 +64,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 03</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 04</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -74,7 +74,7 @@ button{font:inherit}
 <div class="bullets">
       <div><b>New this build</b><br>Fog layers, lanterns, pumpkins, graveyard scenery, expressive ghosts, and polished particles.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
-      <div><b>Upgrades</b><br>Speed at 15, Glow at 45, Magnet at 105, Phase at 225 total score.</div>
+      <div><b>Upgrades</b><br>Speed at 8, Glow at 23, Magnet at 53, Phase at 113 total score (50% lower, rounded up).</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
     <button id="startBtn">START GAME</button>
@@ -149,110 +149,102 @@ button{font:inherit}
   function status(msg) { audioStatus.textContent = 'Audio: ' + msg; }
 
   const GhostAudio = (() => {
-    let audioCtx = null, master = null, music = null, muted = false, shouldPlay = false, previousMusicTime = -1, sameTimeChecks = 0;
-    const melody = [392,0,466.16,392,311.13,0,349.23,293.66,261.63,0,311.13,349.23,392,0,293.66,0];
-    function makeWav() {
-      // Compact 8-second 8-bit WAV; the prior larger blob can stall in mobile Safari.
-      const sr = 8000, dur = 8, frames = sr * dur, buf = new ArrayBuffer(44 + frames), v = new DataView(buf);
-      const write = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-      write(0, 'RIFF'); v.setUint32(4, 36 + frames, true); write(8, 'WAVE'); write(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); write(36, 'data'); v.setUint32(40, frames, true);
-      const bass = [130.81, 116.54, 103.83, 116.54];
-      for (let i = 0; i < frames; i++) {
-        const time = i / sr, beat = Math.floor(time * 4), note = melody[beat % melody.length], phase = (time * 4) % 1;
-        let sample = 0;
-        if (note) sample += (Math.sin(Math.PI * 2 * note * .5 * time) + .2 * Math.sin(Math.PI * 2 * note * time)) * .23 * Math.pow(1 - phase, 1.5);
-        sample += Math.sin(Math.PI * 2 * bass[Math.floor(time) % bass.length] * time) * .1;
-        sample += Math.sin(Math.PI * 2 * 261.63 * time) * .02 * (.5 + .5 * Math.sin(Math.PI * 2 * .7 * time));
-        v.setUint8(44 + i, Math.round(128 + Math.max(-1, Math.min(1, sample)) * 126));
-      }
-      return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+    // All music uses a sample-accurate loop in Web Audio rather than restarting a short <audio> file.
+    // This eliminates the silence/gap at each clip boundary on Safari.
+    let audioCtx=null, master=null, musicGain=null, musicSource=null, musicBuffer=null;
+    let muted=false, wantsMusic=false;
+    const melody=[392,0,466.16,392,311.13,0,349.23,293.66,261.63,0,311.13,349.23,392,0,293.66,0];
+    function setup(){
+      if(audioCtx)return true;
+      const C=window.AudioContext||window.webkitAudioContext;
+      if(!C){status('Web Audio unavailable');return false}
+      try{
+        audioCtx=new C();
+        master=audioCtx.createGain();master.gain.value=.34;master.connect(audioCtx.destination);
+        musicGain=audioCtx.createGain();musicGain.gain.value=.6;musicGain.connect(master);
+        audioCtx.addEventListener('statechange',()=>{
+          if(audioCtx.state==='interrupted')status('audio interrupted; tap Test sound');
+          else if(audioCtx.state==='running'&&wantsMusic&&!muted)status('continuous loop active');
+        });
+        return true;
+      }catch(e){status('Audio initialization failed: '+e.message);return false}
     }
-    function ensureMusic() {
-      if (!music) {
-        music = new Audio(makeWav());
-        music.loop = true;
-        music.volume = .55;
-        music.addEventListener('ended',()=>{if(shouldPlay&&!muted){music.currentTime=0;music.play().catch(e=>status('loop blocked: '+e.name))}});
-        music.addEventListener('error',()=>status('music playback error'));
+    function makeLoop(){
+      if(musicBuffer)return musicBuffer;
+      const sr=22050, duration=8, frames=sr*duration;
+      const b=audioCtx.createBuffer(1,frames,sr), samples=b.getChannelData(0);
+      const bass=[130.81,116.54,103.83,116.54];
+      for(let i=0;i<frames;i++){
+        const tt=i/sr,beat=Math.floor(tt*4),f=melody[beat%melody.length];
+        const phase=(tt*4)%1;
+        let v=.11*Math.sin(2*Math.PI*bass[Math.floor(tt)%bass.length]*tt);
+        if(f)v+=(Math.sin(2*Math.PI*f*.5*tt)+.21*Math.sin(2*Math.PI*f*tt))*.24*Math.pow(1-phase,1.5);
+        v+=.024*Math.sin(2*Math.PI*261.63*tt)*(.5+.5*Math.sin(2*Math.PI*.7*tt));
+        // Soft fades only at actual waveform edges; audioBufferSourceNode loops seamlessly.
+        samples[i]=Math.max(-1,Math.min(1,v));
       }
+      musicBuffer=b;return b;
     }
-    function ensureCtx() {
-      if (!audioCtx) {
-        const C = window.AudioContext || window.webkitAudioContext;
-        if (!C) return;
-        audioCtx = new C();
-        master = audioCtx.createGain();
-        master.gain.value = .28;
-        master.connect(audioCtx.destination);
-      }
+    function ensureLoop(){
+      if(musicSource)return;
+      musicSource=audioCtx.createBufferSource();
+      musicSource.buffer=makeLoop();musicSource.loop=true;
+      musicSource.connect(musicGain);musicSource.start(0);
     }
-    function resume() {
-      ensureCtx();
-      if (audioCtx && audioCtx.state !== 'running') return audioCtx.resume().catch(() => {});
+    function resume(){
+      if(!setup())return Promise.resolve();
+      try{
+        if(audioCtx.state!=='running')return audioCtx.resume().then(()=>{if(wantsMusic&&!muted)status('continuous loop active')}).catch(e=>status('audio blocked: '+e.name));
+      }catch(e){status('audio blocked: '+e.message)}
       return Promise.resolve();
     }
-    function init() {
-      shouldPlay=true;
-      if (muted) return;
-      ensureMusic();ensureCtx();resume();
-      music.play().then(()=>status('music playing · 8s loop')).catch(e=>status('music blocked: '+e.name));
+    function init(){
+      wantsMusic=true;
+      if(muted){status('muted');return}
+      if(!setup())return;
+      ensureLoop();
+      if(master)master.gain.setTargetAtTime(.34,audioCtx.currentTime,.02);
+      resume();
+      status('continuous loop starting…');
     }
-    // Watch for iOS Safari stopping a blob-backed looping music element.
-    setInterval(()=>{
-      if(!shouldPlay||muted||document.hidden||!music)return;
-      if(music.paused||music.ended){
-        music.currentTime=0;music.play().catch(e=>status('restart blocked: '+e.name));sameTimeChecks=0;return;
-      }
-      const at=music.currentTime;
-      if(at===previousMusicTime)sameTimeChecks++;else sameTimeChecks=0;
-      previousMusicTime=at;
-      if(sameTimeChecks>=3){
-        sameTimeChecks=0;music.currentTime=0;music.play().catch(e=>status('audio stalled: '+e.name));
-      }
-    },2500);
-    function tone(freq, duration = .16, type = 'sine', volume = .36, delay = 0, slide = 1) {
-      if (muted) return;
-      ensureCtx();
-      if (!audioCtx || audioCtx.state !== 'running') return;
-      const now = audioCtx.currentTime + delay;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(Math.max(1, freq), now);
-      osc.frequency.exponentialRampToValueAtTime(Math.max(1, freq * slide), now + duration);
-      gain.gain.setValueAtTime(.001, now);
-      gain.gain.exponentialRampToValueAtTime(volume, now + .015);
-      gain.gain.exponentialRampToValueAtTime(.001, now + duration);
-      osc.connect(gain);
-      gain.connect(master);
-      osc.start(now);
-      osc.stop(now + duration + .03);
+    function tone(freq,duration=.16,type='sine',volume=.36,delay=0,slide=1){
+      if(muted||!setup())return;
+      if(audioCtx.state!=='running'){resume();return}
+      try{
+        const now=audioCtx.currentTime+delay,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+        osc.type=type;osc.frequency.setValueAtTime(Math.max(1,freq),now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1,freq*slide),now+duration);
+        gain.gain.setValueAtTime(.001,now);
+        gain.gain.exponentialRampToValueAtTime(Math.max(.001,volume),now+.015);
+        gain.gain.exponentialRampToValueAtTime(.001,now+duration);
+        osc.connect(gain);gain.connect(master);osc.start(now);osc.stop(now+duration+.03);
+      }catch(e){status('effect failed: '+e.message)}
     }
-    function effect(name) {
-      switch (name) {
-        case 'collect': tone(680, .12, 'sine', .46, 0, 1.55); break;
-        case 'deposit': tone(392, .18, 'triangle', .36); tone(523, .22, 'triangle', .36, .10); tone(784, .30, 'sine', .34, .22); break;
-        case 'steal': tone(300, .20, 'sawtooth', .28, 0, .66); tone(500, .18, 'triangle', .28, .08, 1.45); break;
-        case 'loss': tone(420, .22, 'triangle', .28, 0, .65); break;
-        case 'finish': tone(392, .25, 'triangle', .40); tone(523, .28, 'triangle', .40, .2); tone(659, .45, 'sine', .42, .38); break;
-        case 'upgrade': tone(520, .14, 'sine', .38); tone(780, .18, 'sine', .40, .12); break;
+    function effect(name){
+      switch(name){
+        case 'collect':tone(680,.12,'sine',.46,0,1.55);break;
+        case 'deposit':tone(392,.18,'triangle',.36);tone(523,.22,'triangle',.36,.1);tone(784,.30,'sine',.34,.22);break;
+        case 'steal':tone(300,.20,'sawtooth',.28,0,.66);tone(500,.18,'triangle',.28,.08,1.45);break;
+        case 'loss':tone(420,.22,'triangle',.28,0,.65);break;
+        case 'finish':tone(392,.25,'triangle',.4);tone(523,.28,'triangle',.4,.2);tone(659,.45,'sine',.42,.38);break;
+        case 'upgrade':tone(520,.14,'sine',.38);tone(780,.18,'sine',.40,.12);break;
       }
     }
-    function toggle() {
-      muted = !muted;
-      shouldPlay=!muted;
-      if (music) {
-        if (muted) music.pause();
-        else music.play().catch(() => {});
-      }
-      if (master && audioCtx) master.gain.setTargetAtTime(muted ? 0 : .28, audioCtx.currentTime, .02);
-      status(muted ? 'muted' : 'sound on');
-      return !muted;
+    function toggle(){
+      muted=!muted;
+      if(!muted){if(!wantsMusic)wantsMusic=true;if(setup())ensureLoop();resume()}
+      if(master&&audioCtx)master.gain.setTargetAtTime(muted?0:.34,audioCtx.currentTime,.02);
+      status(muted?'muted':'continuous music on');return !muted;
     }
-    function test() { muted=false;init(); tone(523.25, .35, 'sine', .7); setTimeout(() => tone(783.99, .4, 'triangle', .65), 140); status('test sound played'); }
-    function pause() { if (music) music.pause(); if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {}); }
-    function onVisible() { if (!muted&&shouldPlay) { if (music) music.play().catch(() => {}); resume(); } }
-    return { init, effect, toggle, test, pause, onVisible };
+    function test(){
+      muted=false;wantsMusic=true;
+      if(setup())ensureLoop();
+      if(master&&audioCtx)master.gain.setTargetAtTime(.34,audioCtx.currentTime,.02);
+      resume().then(()=>{tone(523.25,.35,'sine',.7);tone(783.99,.4,'triangle',.65,.15)});
+    }
+    function pause(){if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(()=>{})}
+    function onVisible(){if(!muted&&wantsMusic)resume()}
+    return {init,effect,toggle,test,pause,onVisible};
   })();
 
   function rand() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
@@ -327,10 +319,10 @@ button{font:inherit}
   }
 
   function upgradeLabel(score) {
-    if (score >= 225) return '👻 Phase upgrade ready';
-    if (score >= 105) return '🧲 Magnet upgrade active';
-    if (score >= 45) return '✨ Glow upgrade active';
-    if (score >= 15) return '⚡ Speed upgrade active';
+    if (score >= 113) return '👻 Phase upgrade active';
+    if (score >= 53) return '🧲 Magnet upgrade active';
+    if (score >= 23) return '✨ Glow upgrade active';
+    if (score >= 8) return '⚡ Speed upgrade active';
     return 'No upgrade yet';
   }
 
@@ -382,8 +374,8 @@ button{font:inherit}
 
   function moveGhost(g, dir, dt) {
     const score = g.score;
-    const speed = 172 * (score >= 15 ? 1.16 : 1);
-    const phaseMove = score >= 225;
+    const speed = 172 * (score >= 8 ? 1.16 : 1);
+    const phaseMove = score >= 113;
     let nx = g.x + dir.x * speed * dt;
     let ny = g.y + dir.y * speed * dt;
     if (phaseMove) {
@@ -421,7 +413,7 @@ button{font:inherit}
     for (let i = game.flames.length - 1; i >= 0; i--) {
       const flame = game.flames[i];
       for (const g of game.ghosts) {
-        const pickup = g.score >= 105 ? 50 : 28;
+        const pickup = g.score >= 53 ? 50 : 28;
         if (distance(flame, g) < pickup) {
           g.trail.push(1);
           g.trailPos.push({ x: flame.x, y: flame.y });
@@ -440,6 +432,7 @@ button{font:inherit}
       const base = BASES[g.team];
       if (distance(g, base) < base.r - 12 && g.trail.length) {
         const total = g.trail.length;
+        const previousScore=g.score;
         g.trail = [];
         g.trailPos = [];
         game.scores[g.team] += total;
@@ -449,7 +442,7 @@ button{font:inherit}
         if (g.id === 0) {
           GhostAudio.effect('deposit');
           toast('Scored ' + total + ' spirit flames!');
-          if ([15, 45, 105, 225].includes(g.score)) { GhostAudio.effect('upgrade'); toast(upgradeLabel(g.score)); }
+          if ([8,23,53,113].some(n=>previousScore<n&&g.score>=n)){GhostAudio.effect('upgrade');toast(upgradeLabel(g.score));}
         }
       }
     }
@@ -554,7 +547,7 @@ button{font:inherit}
   function drawGhost(g) {
     const bob = Math.sin(t * 4 + g.bounce) * 3;
     const x = g.x, y = g.y + bob;
-    drawGlow(x, y - 3, 48, alpha(color(g.team), .35));
+    drawGlow(x, y - 3, g.score >= 23 ? 90 : 48, alpha(color(g.team), g.score >= 23 ? .53 : .35));
     ctx.fillStyle = 'rgba(7,6,18,.34)';
     ctx.beginPath(); ctx.ellipse(x, y + 22, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
 
