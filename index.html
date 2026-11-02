@@ -149,12 +149,13 @@ button{font:inherit}
   function status(msg) { audioStatus.textContent = 'Audio: ' + msg; }
 
   const GhostAudio = (() => {
-    let audioCtx = null, master = null, music = null, muted = false;
+    let audioCtx = null, master = null, music = null, muted = false, shouldPlay = false, previousMusicTime = -1, sameTimeChecks = 0;
     const melody = [392,0,466.16,392,311.13,0,349.23,293.66,261.63,0,311.13,349.23,392,0,293.66,0];
     function makeWav() {
-      const sr = 22050, dur = 4, frames = sr * dur, buf = new ArrayBuffer(44 + frames * 2), v = new DataView(buf);
+      // Compact 8-second 8-bit WAV; the prior larger blob can stall in mobile Safari.
+      const sr = 8000, dur = 8, frames = sr * dur, buf = new ArrayBuffer(44 + frames), v = new DataView(buf);
       const write = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-      write(0, 'RIFF'); v.setUint32(4, 36 + frames * 2, true); write(8, 'WAVE'); write(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); write(36, 'data'); v.setUint32(40, frames * 2, true);
+      write(0, 'RIFF'); v.setUint32(4, 36 + frames, true); write(8, 'WAVE'); write(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); write(36, 'data'); v.setUint32(40, frames, true);
       const bass = [130.81, 116.54, 103.83, 116.54];
       for (let i = 0; i < frames; i++) {
         const time = i / sr, beat = Math.floor(time * 4), note = melody[beat % melody.length], phase = (time * 4) % 1;
@@ -162,7 +163,7 @@ button{font:inherit}
         if (note) sample += (Math.sin(Math.PI * 2 * note * .5 * time) + .2 * Math.sin(Math.PI * 2 * note * time)) * .23 * Math.pow(1 - phase, 1.5);
         sample += Math.sin(Math.PI * 2 * bass[Math.floor(time) % bass.length] * time) * .1;
         sample += Math.sin(Math.PI * 2 * 261.63 * time) * .02 * (.5 + .5 * Math.sin(Math.PI * 2 * .7 * time));
-        v.setInt16(44 + i * 2, Math.round(Math.max(-1, Math.min(1, sample)) * 32767), true);
+        v.setUint8(44 + i, Math.round(128 + Math.max(-1, Math.min(1, sample)) * 126));
       }
       return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
     }
@@ -171,6 +172,8 @@ button{font:inherit}
         music = new Audio(makeWav());
         music.loop = true;
         music.volume = .55;
+        music.addEventListener('ended',()=>{if(shouldPlay&&!muted){music.currentTime=0;music.play().catch(e=>status('loop blocked: '+e.name))}});
+        music.addEventListener('error',()=>status('music playback error'));
       }
     }
     function ensureCtx() {
@@ -189,12 +192,24 @@ button{font:inherit}
       return Promise.resolve();
     }
     function init() {
+      shouldPlay=true;
       if (muted) return;
-      ensureMusic();
-      ensureCtx();
-      resume();
-      music.play().then(() => status('music playing')).catch((e) => status('music blocked: ' + e.name));
+      ensureMusic();ensureCtx();resume();
+      music.play().then(()=>status('music playing · 8s loop')).catch(e=>status('music blocked: '+e.name));
     }
+    // Watch for iOS Safari stopping a blob-backed looping music element.
+    setInterval(()=>{
+      if(!shouldPlay||muted||document.hidden||!music)return;
+      if(music.paused||music.ended){
+        music.currentTime=0;music.play().catch(e=>status('restart blocked: '+e.name));sameTimeChecks=0;return;
+      }
+      const at=music.currentTime;
+      if(at===previousMusicTime)sameTimeChecks++;else sameTimeChecks=0;
+      previousMusicTime=at;
+      if(sameTimeChecks>=3){
+        sameTimeChecks=0;music.currentTime=0;music.play().catch(e=>status('audio stalled: '+e.name));
+      }
+    },2500);
     function tone(freq, duration = .16, type = 'sine', volume = .36, delay = 0, slide = 1) {
       if (muted) return;
       ensureCtx();
@@ -225,6 +240,7 @@ button{font:inherit}
     }
     function toggle() {
       muted = !muted;
+      shouldPlay=!muted;
       if (music) {
         if (muted) music.pause();
         else music.play().catch(() => {});
@@ -233,9 +249,9 @@ button{font:inherit}
       status(muted ? 'muted' : 'sound on');
       return !muted;
     }
-    function test() { init(); tone(523.25, .35, 'sine', .7); setTimeout(() => tone(783.99, .4, 'triangle', .65), 140); status('test sound played'); }
+    function test() { muted=false;init(); tone(523.25, .35, 'sine', .7); setTimeout(() => tone(783.99, .4, 'triangle', .65), 140); status('test sound played'); }
     function pause() { if (music) music.pause(); if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {}); }
-    function onVisible() { if (!muted) { if (music) music.play().catch(() => {}); resume(); } }
+    function onVisible() { if (!muted&&shouldPlay) { if (music) music.play().catch(() => {}); resume(); } }
     return { init, effect, toggle, test, pause, onVisible };
   })();
 
