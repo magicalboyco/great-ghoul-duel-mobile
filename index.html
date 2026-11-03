@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 13</title>
+<title>Ghost Duel — Alpha 14</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -77,6 +77,29 @@ button{font:inherit}
 .resultsActions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding-top:10px}
 .resultsActions button{border-radius:13px;border:0;padding:12px 15px;font-weight:900;touch-action:manipulation}
 #againBtn{background:#aaf4c4;color:#173826}#colorBtn{background:#6c547e;color:white;border:1px solid #ffffff4a}
+#resultDifficultyBtn{background:#8ddbea;color:#152f43}
+#resultsCreditsBtn{background:#f4c8e9;color:#452342}
+#menuCreditsBtn{margin-top:12px;padding:9px 15px;border-radius:13px;border:1px solid #e8c6f485;background:#ffffff12;color:#fce8ff;cursor:pointer;font-weight:800}
+#credits{position:absolute;inset:0;z-index:30;padding:12px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 12%,#805e9ee8,#110d22f4 78%);touch-action:pan-y}
+#credits[hidden]{display:none}
+.creditsPanel{width:min(95vw,720px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;border:1px solid #ffd9f099;border-radius:24px;background:linear-gradient(165deg,#35264b,#1b1735 76%);box-shadow:0 30px 80px #060311df;color:#fff4ff}
+.creditsHero{padding:24px 22px 18px;text-align:center;background:radial-gradient(ellipse at 50% -5%,#d6a8ed55,transparent 68%);border-bottom:1px solid #fff2}
+.creditsHero h2{font-size:clamp(28px,7vw,42px);margin:8px 0}
+.creditsHero .creditsSprites{font-size:32px;letter-spacing:.15em;animation:creditsFloat 3s ease-in-out infinite alternate}
+.creditsHero p{line-height:1.55;font-size:14px;max-width:55ch;margin:9px auto 0;color:#f2e4f8}
+.creditsBody{padding:4px 22px 12px}
+.creditSection{margin:17px 0;padding:15px 16px;border-radius:18px;background:#ffffff0b;border:1px solid #ffffff22}
+.creditSection h3{font-size:17px;margin:0 0 7px;color:#ffe3fc}
+.creditSection p{font-size:13px;line-height:1.6;color:#ecdef7;margin:7px 0}
+.creditSection strong{color:#fff}
+.creditSection a{color:#bfeeff;text-underline-offset:3px;overflow-wrap:anywhere}
+.creditSection .creditSmall{color:#d4c8e2;font-size:12px}
+.creditsFinePrint{font-size:11px;line-height:1.55;color:#d9cce9;text-align:center;padding:0 8px 12px}
+.creditsActions{position:sticky;bottom:0;padding:12px 18px calc(12px + env(safe-area-inset-bottom));text-align:center;background:linear-gradient(0deg,#1c1735 72%,#1c1735d9);border-top:1px solid #ffffff26}
+#creditsBackBtn{border:0;border-radius:13px;padding:12px 24px;background:#cbf6de;color:#173529;font-weight:900;cursor:pointer;min-width:205px}
+@keyframes creditsFloat{to{transform:translateY(-6px)}}
+@media(max-width:480px){.creditsHero{padding:15px 13px}.creditsBody{padding:3px 10px 9px}.creditSection{padding:12px}.creditsHero h2{font-size:30px}.creditSection p{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.creditsHero .creditsSprites{animation:none}}
 @keyframes trophyBob{to{transform:translateY(-5px) rotate(5deg)}}@keyframes tileAppear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:480px){.resultsPanel{padding:12px}.awardGrid{grid-template-columns:1fr;gap:8px}.awardTile{padding:10px;gap:12px}.awardTile .portrait{width:71px;height:80px;flex-basis:71px}.awardTile .who{font-size:14px}.awardTile .what{font-size:13px}.awardTile .why{font-size:11px}}
 @media (max-width:680px){.bullets{grid-template-columns:1fr}.title{font-size:50px}.panel{padding:18px}.sub{font-size:14px}}
@@ -101,7 +124,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 13</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 14</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -118,12 +141,12 @@ button{font:inherit}
   <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>Choose Easy, Normal or Hard opponent ghosts before the match. Different AI, same rules and powers.</div>
+      <div><b>New this build</b><br>A four-way post-match menu and a heartfelt, scrollable With Gratitude credits page. Easy, Normal and Hard bots remain available.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
-    <button id="startBtn">START GAME</button>
+    <button id="startBtn">START GAME</button><div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
   </div>
 </div>
 <div id="difficultyHud" hidden>👻 NORMAL OPPONENTS</div>
@@ -137,8 +160,55 @@ button{font:inherit}
 <div id="myStats"></div>
 <div class="eyebrow" style="margin-top:15px">ALL EIGHT GHOSTS</div>
 <div id="awardGrid" class="awardGrid"></div>
-<div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button></div>
+<div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button><button id="resultDifficultyBtn">🎚️ DIFFICULTY</button><button id="resultsCreditsBtn">💗 CREDITS</button></div>
 </div></div>
+<section id="credits" role="dialog" aria-modal="true" aria-labelledby="creditsHeading" hidden>
+  <div class="creditsPanel" tabindex="-1">
+    <div class="creditsHero">
+      <div class="eyebrow">TO EVERY CREATIVE SPARK</div>
+      <div class="creditsSprites" aria-hidden="true">👻 ✨ 💗 ✨ 👻</div>
+      <h2 id="creditsHeading">With Gratitude</h2>
+      <p>Every little ghost has a story. This one exists because people imagined, composed, programmed, shared, taught, experimented, and helped one another. To all of you: thank you for making a tiny haunted world possible.</p>
+    </div>
+    <div class="creditsBody">
+      <div class="creditSection">
+        <h3>🎃 To the original ghost makers</h3>
+        <p><strong>Google's 2018 Halloween Doodle, The Great Ghoul Duel,</strong> is the inspiration for the two-team spirit-flame game, power-ups, friendly competition, and end-of-match superlatives. Thank you to the <strong>Google Doodle</strong> and <strong>Google Cloud</strong> teams who brought that original experience to life.</p>
+        <p><strong>Original art:</strong> Nate Swinehart · <strong>UX:</strong> Diana Tran · <strong>Production:</strong> Colin Duffy · <strong>Engineering:</strong> Tom Tabanao, Jonathan Shneier, Mark Ivey, Brian Murray, Ben McMahan, Jacob Howcroft.</p>
+        <p><strong>Doodle leads:</strong> Jessica Yu, Brian Kaas, Ryan Germick · <strong>Marketing:</strong> Perla Campos, Carlos Diaz · <strong>Music and sound:</strong> aivi &amp; surasshu, Stemage · <strong>Production support:</strong> My-Linh Le · <strong>Volunteer engineering:</strong> Brandon DeRosier, Monica Rodriguez, Katlyn Edwards.</p>
+        <p><strong>Google Cloud:</strong> Micah Baker, Joseph Holley, Laith Massarweh, Shana Matthews, Nita Meng.</p>
+        <p><a href="https://doodles.google/doodle/halloween-2018/" target="_blank" rel="noopener noreferrer">Meet the original team and play Google's Doodle</a></p>
+      </div>
+      <div class="creditSection">
+        <h3>🧑‍💻 To the programmers and open-web community</h3>
+        <p>Thank you to the creators of JavaScript, HTML, CSS, browser canvas, Web Audio, and the open tools and shared knowledge that make small independent games possible.</p>
+        <p>We also appreciate the independent <a href="https://github.com/JasonTheKitten/custom-ggd-server" target="_blank" rel="noopener noreferrer">Great Ghoul Duel multiplayer-server community reference</a> and the experiments that help people study and preserve games. Its server code is <strong>not bundled</strong> in this build.</p>
+        <p class="creditSmall">This game's playable single-page implementation and character drawings live in the <a href="https://github.com/magicalboyco/great-ghoul-duel-mobile" target="_blank" rel="noopener noreferrer">Ghost Duel source repository</a>.</p>
+      </div>
+      <div class="creditSection">
+        <h3>🎶 To the musicians and sound explorers</h3>
+        <p>To composers, performers, sound designers, and the keepers of musical history: your creativity makes games feel alive. Thank you especially to artists who make music available in the public domain or through Creative Commons.</p>
+        <p><strong>What's actually in this version:</strong> <em>Moonlit Mischief</em>, an original synthesized soundtrack and sound effects programmed with the browser's Web Audio API. No third-party music recording or public-domain / Creative Commons track is bundled in this build.</p>
+        <p class="creditSmall">Specific licensed tracks, creators, source links, and licenses will be listed here if any are added. See the repository's ATTRIBUTIONS.md for the current provenance record.</p>
+      </div>
+      <div class="creditSection">
+        <h3>🌈 To the pastel dreamers</h3>
+        <p>Thank you to artists who made gentle, colorful fantasy worlds feel magical. Pastel cartoon aesthetics, including the cheerful color sensibility associated with <em>My Little Pony</em>, are a visual inspiration here — not a claim to its characters, artwork, or endorsement.</p>
+      </div>
+      <div class="creditSection">
+        <h3>🤖 To the AI assistants — and the people behind them</h3>
+        <p>Thank you to ChatGPT, creative coding assistants, the earlier Lovable prototype, and the many researchers, engineers, testers, and human creators whose work contributes to modern creative tools. Their assistance helped turn a game idea into something playable.</p>
+        <p class="creditSmall">AI model training sources cannot be reliably inferred from this game's code. We won't invent a list of songs, artworks, or people allegedly included in any model's training data.</p>
+      </div>
+      <div class="creditSection">
+        <h3>💞 And especially to you, the players</h3>
+        <p>For every brave dash across the map, every daring spirit rescue, every silly ghost face, and every second chance: <strong>thank you for playing.</strong></p>
+      </div>
+      <p class="creditsFinePrint">Ghost Duel is an independent, unofficial fan recreation, not sponsored or endorsed by Google, Hasbro, or any referenced artist or platform. Referenced names and trademarks belong to their owners. Inspiration and appreciation are not claims of permission to reuse original assets.</p>
+    </div>
+    <div class="creditsActions"><button type="button" id="creditsBackBtn">← BACK</button></div>
+  </div>
+</section>
 <div id="hint">Tip: Stay near teammates for a little bonus. Bring your chain home to score.</div>
 <div id="notice">Unofficial study · original placeholder art & generated audio</div>
 <script>
@@ -172,6 +242,45 @@ button{font:inherit}
   }
 
   const results=document.getElementById('results');
+  const credits=document.getElementById('credits');
+  const creditsBackBtn=document.getElementById('creditsBackBtn');
+  let creditsReturnFocus=null;
+  function openCredits(){
+    creditsReturnFocus=document.activeElement;
+    credits.hidden=false;
+    credits.querySelector('.creditsPanel').scrollTop=0;
+    creditsBackBtn.textContent=results.classList.contains('open')?'← BACK TO AWARDS':'← BACK TO MENU';
+    menu.inert=true;
+    results.inert=true;
+    creditsBackBtn.focus();
+  }
+  function closeCredits(){
+    credits.hidden=true;
+    menu.inert=false;
+    results.inert=false;
+    if(creditsReturnFocus&&typeof creditsReturnFocus.focus==='function')creditsReturnFocus.focus();
+  }
+  function returnToMenu(purpose){
+    results.classList.remove('open');
+    menu.classList.remove('hidden');
+    menuText.textContent=purpose==='difficulty'
+      ?'Choose your opponent difficulty for the next match. Your selected ghost color is saved.'
+      :'Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
+    startBtn.textContent='START GAME';
+    if(purpose==='difficulty')difficultyButtons.querySelector('[aria-pressed="true"]').focus();
+    else palettePicker.children[selectedIndex].focus();
+  }
+  document.getElementById('menuCreditsBtn').addEventListener('click',openCredits);
+  document.getElementById('resultsCreditsBtn').addEventListener('click',openCredits);
+  creditsBackBtn.addEventListener('click',closeCredits);
+  credits.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){e.preventDefault();closeCredits();return}
+    if(e.key!=='Tab')return;
+    const focusable=[...credits.querySelectorAll('a[href],button:not([disabled])')];
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  });
   const resultHeading=document.getElementById('resultHeading');
   const resultScore=document.getElementById('resultScore');
   const myAwardEmoji=document.getElementById('myAwardEmoji');
@@ -1492,12 +1601,8 @@ button{font:inherit}
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
   startBtn.addEventListener('click', () => reset());
   document.getElementById('againBtn').addEventListener('click',()=>reset());
-  document.getElementById('colorBtn').addEventListener('click',()=>{
-    results.classList.remove('open');
-    menu.classList.remove('hidden');
-    menuText.textContent='Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
-    startBtn.textContent='START GAME';
-  });
+  document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
+  document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));
 })();
 </script>
 </body>
