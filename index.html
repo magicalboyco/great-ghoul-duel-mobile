@@ -55,7 +55,7 @@ button{font:inherit}
 .resultsPanel h2{font-size:clamp(26px,7vw,43px);margin:10px 0 4px}
 .resultsScore{font-size:28px;font-weight:900;margin:3px 0 10px}
 .myAward{background:#ffffff10;border:1px solid #ffffff2b;border-radius:18px;padding:14px;margin:8px 0 11px}
-.myAward .trophy{font-size:42px;display:block;animation:trophyBob 1.5s ease-in-out infinite alternate}
+.myAward .trophy{font-size:42px;display:grid;place-items:center;width:105px;height:116px;margin:0 auto 6px;animation:trophyBob 1.5s ease-in-out infinite alternate}.myAward .trophy svg{width:100%;height:100%;filter:drop-shadow(0 7px 5px #08051e88)}
 .myAward .awardName{font-size:clamp(21px,5vw,30px);font-weight:900;color:#ffefc3}
 .myAward .awardReason{font-size:13px;color:#eadcff}
 #myStats{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
@@ -808,6 +808,28 @@ button{font:inherit}
     }
     ctx.restore();
   }
+  function drawGhostEmote(g,x,y){
+    if(g.reactionTime<=0||g.reaction==='collect')return;
+    const words=g.reaction==='celebrate'?['YAY!','SCORED!','WOO!','BOO-YAH!']:
+      g.reaction==='steal'?['GOTCHA!','MINE!','HEHE!','SNEAKY!']:
+      g.reaction==='robbed'?['HEY!','NOOO!','RUDE!','EEK!']:[];
+    if(!words.length)return;
+    const word=words[g.id%words.length];
+    const duration=g.reactionDuration||1,age=1-g.reactionTime/duration;
+    const rise=age*13;
+    ctx.save();ctx.globalAlpha=Math.min(1,g.reactionTime*3,age*7);
+    ctx.textAlign='center';ctx.font='900 14px system-ui';
+    const width=Math.max(58,ctx.measureText(word).width+17),px=x-width/2,py=y-68-rise;
+    ctx.fillStyle='rgba(29,20,50,.93)';
+    ctx.strokeStyle=INDIVIDUAL_ACCENTS[g.id];ctx.lineWidth=2;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(px,py,width,25,9);
+    else ctx.rect(px,py,width,25);
+    ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x-5,py+25);ctx.lineTo(x,py+31);ctx.lineTo(x+5,py+25);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#F2F0EF';ctx.fillText(word,x,py+17);
+    ctx.restore();
+  }
   const AWARD_TYPES=[
     {emoji:'⏰',name:'Last-Second Hero',value:g=>g.stats.lastSecond,min:1,desc:n=>n+' points banked in final 15s'},
     {emoji:'🦇',name:'Spirit Snatcher',value:g=>g.stats.stolen,min:1,desc:n=>n+' spirits stolen'},
@@ -838,7 +860,7 @@ button{font:inherit}
     resultHeading.textContent=a>b?'YOUR TEAM WINS!':a<b?'THE RIVALS WIN!':'A SPOOKY DRAW!';
     resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
     const awardMap=assignAwards(game.ghosts),you=game.ghosts[0],mine=awardMap.get(0);
-    myAwardEmoji.textContent=mine.emoji;
+    myAwardEmoji.innerHTML=ghostPortrait(you);
     myAwardName.textContent=mine.title;
     myAwardReason.textContent=mine.reason;
     myStats.replaceChildren();
@@ -1100,6 +1122,7 @@ button{font:inherit}
     ctx.restore();
 
     drawReactionSymbols(g,x,y);
+    drawGhostEmote(g,x,y);
     if(celebrating||stealing||g.reaction==='collect'){
       const n=celebrating?7:3;
       ctx.save();
