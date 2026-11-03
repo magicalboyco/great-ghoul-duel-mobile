@@ -464,3 +464,34 @@ The existing Classic Duel, Boo Crew Co-op, Solo modes, difficulty levels,
 team colors, eight distinct ghosts and power thresholds are preserved.
 Automated tests cover mobile text sizing, optional names, their
 cross-client synchronization and sanitization.
+
+
+## Alpha 34 — Four-Way Haunt (pre-release)
+
+This optional mode is implemented on the `feature/four-way-haunt-alpha34`
+branch. It preserves Classic Duel and Boo Crew Co-op. Its lobby has four
+two-ghost teams (eight total seats); humans join in the sequence
+`0,2,4,6,1,3,5,7` so the first four can each represent a different team.
+The larger 2400×1500 cemetery has four home bases, four score counters and
+shared two-minute round timing. Bots fill remaining seats, and all four
+teams use the same difficulty profile.
+
+**Deployment ordering:** First deploy the updated Worker source using the
+existing Cloudflare Workers Builds connection. Verify that the public
+`/health` response lists `classic`, `coop`, and `fourway`. Then merge
+the client PR to `main` so the new selectable mode becomes public.
+The browser intentionally refuses to create a four-way room if the Worker
+has not advertised support for it. A GitHub branch commit alone does not
+update the deployed Cloudflare Worker.
+
+**Safe browser preview:** `/preview/fourway/` on GitHub Pages is an
+isolated bot-only demonstration of the four-team arena. The public main
+game at the root remains Alpha 33 until the feature is tested and merged.
+
+**Acceptance checks before public launch:** Run the multiplayer regression
+workflow; start four-way matches with one, two, four and eight browsers;
+verify 4 distinct team-colored bases, correct seat/team assignments, 4 live
+scores synchronized across host and guests, winner selection, iPhone and
+desktop HUD layout, and that Classic/Co-op/solo still work. Human end-to-end
+testing is still required; passing source-only regression checks is not
+equivalent to a live room test.
