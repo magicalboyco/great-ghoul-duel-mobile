@@ -2765,6 +2765,46 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     ctx.fillStyle='#aaa0b2';ctx.fillRect(x+3,y+h-12,w-6,2);
     ctx.restore();
   }
+  function drawGothicPillar(ctx,wall){
+    // One continuous carved standing stone: curved shoulders, beveled
+    // masonry, ivy and a recessed sigil, entirely within the old hitbox.
+    const {x,y,w,h}=wall;
+    ctx.save();
+    ctx.fillStyle='#0f0b1c88';ctx.beginPath();
+    ctx.ellipse(x+w/2,y+h-2,w*.52,10,0,0,Math.PI*2);ctx.fill();
+    const body=ctx.createLinearGradient(x,y,x+w,y+h);
+    body.addColorStop(0,'#b4a3bf');body.addColorStop(.38,'#847191');
+    body.addColorStop(.7,'#5f4d75');body.addColorStop(1,'#3b304d');
+    ctx.fillStyle=body;ctx.lineWidth=2.5;ctx.strokeStyle='#332740';
+    ctx.beginPath();
+    ctx.moveTo(x+8,y+h-8);ctx.lineTo(x+8,y+27);
+    ctx.quadraticCurveTo(x+w*.1,y+18,x+w*.26,y+19);
+    ctx.quadraticCurveTo(x+w*.33,y+9,x+w/2,y+5);
+    ctx.quadraticCurveTo(x+w*.68,y+10,x+w*.74,y+19);
+    ctx.quadraticCurveTo(x+w*.9,y+18,x+w-8,y+27);
+    ctx.lineTo(x+w-8,y+h-8);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#d6c6dc88';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x+13,y+h-13);ctx.lineTo(x+13,y+28);
+    ctx.quadraticCurveTo(x+w/2,y+3,x+w-13,y+28);
+    ctx.lineTo(x+w-13,y+h-13);ctx.stroke();
+    // Recessed decorative arch instead of the old empty gray rectangle.
+    ctx.fillStyle='#453554';ctx.beginPath();ctx.moveTo(x+22,y+h-24);
+    ctx.lineTo(x+22,y+45);ctx.quadraticCurveTo(x+w/2,y+22,x+w-22,y+45);
+    ctx.lineTo(x+w-22,y+h-24);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#c7b1c977';ctx.lineWidth=1.4;ctx.stroke();
+    ctx.strokeStyle='#b59cc0';ctx.lineWidth=3;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x+w/2,y+51);ctx.lineTo(x+w/2,y+77);
+    ctx.moveTo(x+w/2-10,y+62);ctx.lineTo(x+w/2+10,y+62);ctx.stroke();
+    ctx.strokeStyle='#3224438a';ctx.lineWidth=1.2;ctx.beginPath();
+    ctx.moveTo(x+45,y+90);ctx.lineTo(x+38,y+100);
+    ctx.lineTo(x+44,y+109);ctx.lineTo(x+36,y+121);ctx.stroke();
+    ctx.fillStyle='#433650';ctx.fillRect(x+3,y+h-13,w-6,11);
+    ctx.fillStyle='#b1a1b8';ctx.fillRect(x+6,y+h-13,w-12,2);
+    ctx.fillStyle='#668a78';ctx.beginPath();
+    ctx.ellipse(x+13,y+h-16,10,4,-.15,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+
   function drawCrypt(ctx,wall,variant=0){
     const {x,y,w,h}=wall;ctx.save();
     ctx.fillStyle='#0d091b88';ctx.beginPath();ctx.ellipse(x+w/2,y+h-2,w*.48,12,0,0,7);ctx.fill();
@@ -2832,12 +2872,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     for(const wall of walls){
       if(wall.type==='mausoleum')drawMausoleum(ctx,wall,Math.floor(wall.x/100)%3);
       else if(wall.type==='crypt')drawCrypt(ctx,wall,Math.floor(wall.y/100)%3);
+      else if(wall.type==='pillar')drawGothicPillar(ctx,wall);
       else{
-        const grad=ctx.createLinearGradient(wall.x,wall.y,wall.x,wall.y+wall.h);
-        grad.addColorStop(0,'#77708c');grad.addColorStop(1,'#3d3454');
-        ctx.fillStyle=grad;ctx.fillRect(wall.x,wall.y,wall.w,wall.h);
-        ctx.strokeStyle='#a89ab4';ctx.lineWidth=3;
-        ctx.strokeRect(wall.x+4,wall.y+4,wall.w-8,wall.h-8);
+        ctx.fillStyle='#695b79';ctx.fillRect(wall.x,wall.y,wall.w,wall.h);
       }
     }
 
