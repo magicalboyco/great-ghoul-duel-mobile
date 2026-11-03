@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 06</title>
+<title>Ghost Duel — Alpha 07</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -70,7 +70,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 06</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 07</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -157,129 +157,227 @@ button{font:inherit}
   function status(msg) { audioStatus.textContent = 'Audio: ' + msg; }
 
   const GhostAudio = (() => {
-    // All music uses a sample-accurate loop in Web Audio rather than restarting a short <audio> file.
-    // This eliminates the silence/gap at each clip boundary on Safari.
-    let audioCtx=null, master=null, musicGain=null, musicSource=null, musicBuffer=null;
-    let muted=false, wantsMusic=false;
-    // Original melodic Halloween arcade composition (not an existing copyrighted tune).
-    // 64 sixteenth-style melodic steps at 4 steps/sec, making a 16-second loop.
-    const melody=[
-      523.25,0,622.25,783.99,698.46,622.25,523.25,466.16,
-      392,466.16,523.25,0,587.33,698.46,622.25,0,
-      622.25,0,783.99,932.33,783.99,698.46,622.25,523.25,
-      466.16,523.25,622.25,0,698.46,622.25,523.25,0,
-      587.33,0,698.46,880,783.99,698.46,587.33,523.25,
-      466.16,523.25,587.33,0,698.46,783.99,698.46,0,
-      493.88,0,587.33,783.99,739.99,659.25,587.33,493.88,
-      392,493.88,587.33,0,523.25,466.16,392,0
+    // "Moonlit Mischief": an ORIGINAL melodic game soundtrack, generated in the browser.
+    // Three independent musical cues: main gameplay, hurry-up, and results.
+    // All music stays in Web Audio buffers; no third-party recordings or downloads.
+    let ctx=null,master=null,musicBus=null,fxBus=null;
+    let mainBuffer=null,hurryBuffer=null,finishBuffers=null;
+    let active=null,muted=false,wantsMusic=false,currentCue='main';
+    let rendered=false;
+    const PI=Math.PI,TAU=2*PI;
+    const hz=midi=>440*Math.pow(2,(midi-69)/12);
+    const bell=(phase)=>Math.sin(phase)+.28*Math.sin(phase*2.01)+.10*Math.sin(phase*3.98);
+    const chip=(phase)=>Math.sin(phase)+.23*Math.sin(phase*3)+.10*Math.sin(phase*5);
+    const bassWave=(phase)=>Math.sin(phase)+.22*Math.sin(phase*2);
+    const SECTIONS=[
+      {root:48,chord:[60,63,67,72]}, // C minor
+      {root:44,chord:[56,60,63,68]}, // Ab major
+      {root:46,chord:[58,62,65,70]}, // Bb major
+      {root:43,chord:[55,59,62,67]}  // G major / harmonic minor resolution
     ];
-    const bass=[130.81,103.83,116.54,98.0];
-    const arps=[
-      [261.63,311.13,392,466.16],
-      [207.65,261.63,311.13,415.30],
-      [233.08,293.66,349.23,466.16],
-      [196,246.94,293.66,392]
+    // A newly written 8-bar tune with rests, leaps, and a call-and-response shape.
+    // Two 16-step bars per chord = 128 steps / 32 s at 120 BPM eighth-note pulses.
+    const MAIN=[
+      72,0,75,79,77,75,72,0,70,72,75,0,79,77,75,0,
+      72,0,68,72,75,0,72,68,67,68,72,0,75,72,68,0,
+      74,0,77,82,79,77,74,0,72,74,77,0,82,79,77,0,
+      71,0,74,79,77,74,71,0,67,71,74,0,79,74,71,0,
+      75,0,79,84,82,79,75,0,72,75,79,0,82,79,75,0,
+      72,0,75,80,79,75,72,0,68,72,75,0,80,75,72,0,
+      77,0,82,86,82,77,74,0,70,74,77,0,82,79,77,0,
+      79,0,83,86,83,79,74,0,71,74,79,0,83,79,72,0
+    ];
+    const HURRY=[
+      84,83,79,77,75,79,84,79,86,84,83,79,77,75,74,79,
+      80,79,75,72,68,72,75,79,80,84,80,79,75,72,68,72,
+      82,79,77,74,70,74,77,82,86,82,79,77,74,70,74,77,
+      83,79,74,71,67,71,74,79,83,86,83,79,74,71,67,71
     ];
     function setup(){
-      if(audioCtx)return true;
+      if(ctx)return true;
       const C=window.AudioContext||window.webkitAudioContext;
-      if(!C){status('Web Audio unavailable');return false}
+      if(!C){status('Web Audio unsupported');return false}
       try{
-        audioCtx=new C();
-        master=audioCtx.createGain();master.gain.value=.34;master.connect(audioCtx.destination);
-        musicGain=audioCtx.createGain();musicGain.gain.value=.6;musicGain.connect(master);
-        audioCtx.addEventListener('statechange',()=>{
-          if(audioCtx.state==='interrupted')status('audio interrupted; tap Test sound');
-          else if(audioCtx.state==='running'&&wantsMusic&&!muted)status('melodic Halloween loop playing');
+        ctx=new C();
+        master=ctx.createGain();master.gain.value=.7;master.connect(ctx.destination);
+        musicBus=ctx.createGain();musicBus.gain.value=.58;musicBus.connect(master);
+        fxBus=ctx.createGain();fxBus.gain.value=.80;fxBus.connect(master);
+        ctx.addEventListener('statechange',()=>{
+          if(ctx.state==='interrupted')status('iPhone audio interrupted · tap Test sound');
+          else if(ctx.state==='running'&&wantsMusic&&!muted)status('Moonlit Mischief · '+currentCue);
         });
         return true;
-      }catch(e){status('Audio initialization failed: '+e.message);return false}
+      }catch(e){status('Audio setup error: '+e.message);return false}
     }
-    function makeLoop(){
-      if(musicBuffer)return musicBuffer;
-      const sr=22050,duration=16,frames=sr*duration;
-      const b=audioCtx.createBuffer(1,frames,sr),samples=b.getChannelData(0);
-      // Synthesize melody, bouncy harmony, pulsing bass, and tinkling bells.
-      for(let i=0;i<frames;i++){
-        const tt=i/sr,step=Math.floor(tt*4),phase=(tt*4)%1;
-        const section=Math.floor(tt/4),beat=Math.floor(tt*2),beatPhase=(tt*2)%1;
-        const note=melody[step%melody.length];
-        let v=0;
-        if(note){
-          const envelope=Math.pow(1-phase,1.65),trem=.92+.08*Math.sin(2*Math.PI*5.2*tt);
-          v+=(Math.sin(2*Math.PI*note*.5*tt)+.28*Math.sin(2*Math.PI*note*tt)+.10*Math.sin(2*Math.PI*note*1.5*tt))*.18*envelope*trem;
+    // Render a musical arrangement directly into a sample buffer: stable, gapless looping.
+    // Notes are placed by event rather than evaluating all instruments per audio sample.
+    function renderCue(kind){
+      const fast=kind==='hurry',bpm=fast?164:120;
+      const stepSeconds=60/bpm/2;
+      const notes=fast?HURRY:MAIN;
+      const duration=notes.length*stepSeconds;
+      const sr=22050,frames=Math.round(duration*sr);
+      const buffer=ctx.createBuffer(1,frames,sr),out=buffer.getChannelData(0);
+      function addNote(midi,at,length,volume,voice='bell',attack=.008){
+        if(!midi)return;
+        const frequency=hz(midi),start=Math.max(0,Math.round(at*sr));
+        const end=Math.min(frames,start+Math.round(length*sr));
+        const decay=voice==='bass'?1.3:voice==='chip'?1.7:voice==='pad'?.55:2.0;
+        let phase=0;
+        for(let i=start;i<end;i++){
+          const local=(i-start)/sr,fadein=Math.min(1,local/attack);
+          const fadeout=Math.min(1,(end-i)/(sr*.018));
+          const env=Math.pow(Math.max(0,1-local/length),decay)*fadein*fadeout;
+          let value;
+          if(voice==='bass')value=bassWave(phase);
+          else if(voice==='chip')value=chip(phase);
+          else if(voice==='pad')value=Math.sin(phase)+.14*Math.sin(phase*.5);
+          else value=bell(phase);
+          out[i]+=value*volume*env;
+          phase+=TAU*frequency/sr;
         }
-        const a=arps[section%4][step%4];
-        v+=.075*(Math.sin(2*Math.PI*a*tt)+.18*Math.sin(2*Math.PI*a*2*tt))*Math.pow(1-phase,2);
-        v+=.11*Math.sin(2*Math.PI*bass[section%4]*tt)*(.66+.34*Math.pow(1-beatPhase,2));
-        if(step%4===2)v+=.038*Math.sin(2*Math.PI*arps[section%4][(step+1)%4]*2*tt)*Math.pow(1-phase,5);
-        if(beat%2===0)v+=.025*Math.sin(2*Math.PI*62*tt)*Math.pow(1-beatPhase,7);
-        // A 12 ms crossfade at loop boundaries prevents clicks.
-        const fade=Math.min(1,tt/.012,(duration-tt)/.012);
-        samples[i]=Math.max(-1,Math.min(1,v*fade));
       }
-      musicBuffer=b;return b;
+      function addPercussion(at,kind){
+        const start=Math.round(at*sr),length=kind==='kick'?.17:.075;
+        const end=Math.min(frames,start+Math.round(length*sr));
+        let seed=9482753;
+        for(let i=start;i<end;i++){
+          const local=(i-start)/sr,u=local/length;
+          let val=0;
+          if(kind==='kick')val=Math.sin(TAU*(62*local+42*local*Math.exp(-local*23)))*Math.pow(1-u,4);
+          else{
+            seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+            val=(((seed>>>16)/32768)-1)*Math.pow(1-u,4);
+          }
+          out[i]+=val*(kind==='kick'?.13:.035);
+        }
+      }
+      notes.forEach((midi,i)=>{
+        const at=i*stepSeconds,section=Math.floor(i/32)%4,chord=SECTIONS[section];
+        if(midi){
+          addNote(midi,at,stepSeconds*(fast?.90:1.13),fast?.16:.19,fast?'chip':'bell');
+          if(!fast&&i%8===4)addNote(midi-12,at,stepSeconds*1.35,.045,'chip');
+        }
+        // Escaping the repetitive one-note loop: woodwind-like countermelody, chimes, bass and percussion.
+        if(i%2===0){
+          const arp=chord.chord[Math.floor(i/2)%4]+(fast?12:0);
+          addNote(arp,at,stepSeconds*(fast?1.45:1.65),fast?.075:.093,'chip');
+        }
+        if(i%4===0){
+          addNote(chord.root-12,at,stepSeconds*(fast?3.4:3.6),fast?.145:.155,'bass');
+          addPercussion(at,'kick');
+        }
+        if(i%4===2)addPercussion(at,'hat');
+        if(i%16===12&&!fast)addNote(chord.chord[2]+12,at,stepSeconds*2,.045,'bell');
+        if(i%16===8)addNote(chord.chord[0]-12,at,stepSeconds*4,.035,'pad');
+      });
+      let peak=.001;
+      for(const value of out)peak=Math.max(peak,Math.abs(value));
+      const gain=Math.min(1,.8/peak);
+      // Short seamless crossfade blends the last few ms with the beginning.
+      const fadeSamples=Math.min(320,Math.floor(frames*.005));
+      for(let i=0;i<fadeSamples;i++){
+        const a=i/fadeSamples,endIndex=frames-fadeSamples+i;
+        const blend=out[endIndex]*(1-a)+out[i]*a;
+        out[i]=blend*gain;
+        out[endIndex]=blend*gain;
+      }
+      for(let i=fadeSamples;i<frames-fadeSamples;i++)out[i]*=gain;
+      return buffer;
     }
-    function ensureLoop(){
-      if(musicSource)return;
-      musicSource=audioCtx.createBufferSource();
-      musicSource.buffer=makeLoop();musicSource.loop=true;
-      musicSource.connect(musicGain);musicSource.start(0);
+    function getBuffer(cue){
+      if(cue==='hurry')return hurryBuffer||(hurryBuffer=renderCue('hurry'));
+      return mainBuffer||(mainBuffer=renderCue('main'));
     }
     function resume(){
       if(!setup())return Promise.resolve();
-      try{
-        if(audioCtx.state!=='running')return audioCtx.resume().then(()=>{if(wantsMusic&&!muted)status('continuous loop active')}).catch(e=>status('audio blocked: '+e.name));
-      }catch(e){status('audio blocked: '+e.message)}
-      return Promise.resolve();
+      return ctx.state==='running'?Promise.resolve():ctx.resume().catch(e=>status('Tap Test sound: '+e.name));
+    }
+    function playCue(cue){
+      if(!setup())return;
+      if(active&&currentCue===cue)return;
+      currentCue=cue;
+      const now=ctx.currentTime;
+      if(active){
+        active.gain.gain.cancelScheduledValues(now);
+        active.gain.gain.setValueAtTime(active.gain.gain.value,now);
+        active.gain.gain.linearRampToValueAtTime(0,now+.45);
+        const prior=active;
+        setTimeout(()=>{try{prior.source.stop()}catch(e){}},650);
+      }
+      const source=ctx.createBufferSource(),gain=ctx.createGain();
+      source.buffer=getBuffer(cue);source.loop=true;
+      gain.gain.setValueAtTime(0,now);
+      gain.gain.linearRampToValueAtTime(1,now+.55);
+      source.connect(gain);gain.connect(musicBus);source.start(now);
+      active={source,gain};
+      if(wantsMusic&&!muted)status('Moonlit Mischief · '+(cue==='hurry'?'Hurry Up!':'Graveyard Hop'));
     }
     function init(){
       wantsMusic=true;
-      if(muted){status('muted');return}
+      if(muted)return;
       if(!setup())return;
-      ensureLoop();
-      if(master)master.gain.setTargetAtTime(.34,audioCtx.currentTime,.02);
-      resume();
-      status('new melodic Halloween loop starting…');
+      playCue('main');resume();
+    }
+    function hurry(){if(!wantsMusic||muted)return;playCue('hurry')}
+    function endRound(win){
+      if(!setup())return;
+      wantsMusic=false;
+      if(active){
+        const now=ctx.currentTime;
+        active.gain.gain.cancelScheduledValues(now);
+        active.gain.gain.setValueAtTime(active.gain.gain.value,now);
+        active.gain.gain.linearRampToValueAtTime(0,now+.4);
+      }
+      // Short celebratory/calm cadence, based on the player's result.
+      const ns=win?[523.25,659.25,783.99,1046.5]:[392,349.23,311.13,261.63];
+      ns.forEach((f,i)=>tone(f,.3,'triangle',.33,i*.18));
+      if(!muted)status('Moonlit Mischief · round ended');
     }
     function tone(freq,duration=.16,type='sine',volume=.36,delay=0,slide=1){
       if(muted||!setup())return;
-      if(audioCtx.state!=='running'){resume();return}
+      if(ctx.state!=='running'){resume();return}
       try{
-        const now=audioCtx.currentTime+delay,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-        osc.type=type;osc.frequency.setValueAtTime(Math.max(1,freq),now);
+        const now=ctx.currentTime+delay,osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.type=type;
+        osc.frequency.setValueAtTime(Math.max(1,freq),now);
         osc.frequency.exponentialRampToValueAtTime(Math.max(1,freq*slide),now+duration);
         gain.gain.setValueAtTime(.001,now);
         gain.gain.exponentialRampToValueAtTime(Math.max(.001,volume),now+.015);
         gain.gain.exponentialRampToValueAtTime(.001,now+duration);
-        osc.connect(gain);gain.connect(master);osc.start(now);osc.stop(now+duration+.03);
+        osc.connect(gain);gain.connect(fxBus);osc.start(now);osc.stop(now+duration+.03);
       }catch(e){status('effect failed: '+e.message)}
     }
     function effect(name){
       switch(name){
-        case 'collect':tone(680,.12,'sine',.46,0,1.55);break;
-        case 'deposit':tone(392,.18,'triangle',.36);tone(523,.22,'triangle',.36,.1);tone(784,.30,'sine',.34,.22);break;
-        case 'steal':tone(300,.20,'sawtooth',.28,0,.66);tone(500,.18,'triangle',.28,.08,1.45);break;
-        case 'loss':tone(420,.22,'triangle',.28,0,.65);break;
-        case 'finish':tone(392,.25,'triangle',.4);tone(523,.28,'triangle',.4,.2);tone(659,.45,'sine',.42,.38);break;
-        case 'upgrade':tone(520,.14,'sine',.38);tone(780,.18,'sine',.40,.12);break;
+        case'collect':tone(680,.12,'sine',.46,0,1.5);break;
+        case'deposit':tone(392,.18,'triangle',.36);tone(523,.22,'triangle',.36,.1);tone(784,.30,'sine',.34,.22);break;
+        case'steal':tone(300,.20,'sawtooth',.28,0,.66);tone(500,.18,'triangle',.28,.08,1.45);break;
+        case'loss':tone(420,.22,'triangle',.28,0,.65);break;
+        case'finish':tone(392,.18,'triangle',.28);tone(523,.24,'triangle',.28,.14);break;
+        case'upgrade':tone(520,.14,'sine',.38);tone(780,.18,'sine',.40,.12);break;
       }
     }
     function toggle(){
       muted=!muted;
-      if(!muted){if(!wantsMusic)wantsMusic=true;if(setup())ensureLoop();resume()}
-      if(master&&audioCtx)master.gain.setTargetAtTime(muted?0:.34,audioCtx.currentTime,.02);
-      status(muted?'muted':'continuous music on');return !muted;
+      if(!muted){
+        if(!wantsMusic)wantsMusic=true;
+        if(setup())playCue(currentCue);
+        resume();
+      }
+      if(master&&ctx)master.gain.setTargetAtTime(muted?0:.7,ctx.currentTime,.02);
+      status(muted?'muted':'music on');return !muted;
     }
     function test(){
-      muted=false;wantsMusic=true;
-      if(setup())ensureLoop();
-      if(master&&audioCtx)master.gain.setTargetAtTime(.34,audioCtx.currentTime,.02);
-      resume().then(()=>{tone(523.25,.35,'sine',.7);tone(783.99,.4,'triangle',.65,.15)});
+      muted=false;
+      if(!wantsMusic)wantsMusic=true;
+      if(setup())playCue(currentCue);
+      if(master&&ctx)master.gain.setTargetAtTime(.7,ctx.currentTime,.02);
+      resume().then(()=>{tone(523.25,.3,'sine',.6);tone(783.99,.3,'triangle',.5,.15)});
     }
-    function pause(){if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(()=>{})}
+    function pause(){if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{})}
     function onVisible(){if(!muted&&wantsMusic)resume()}
-    return {init,effect,toggle,test,pause,onVisible};
+    return {init,hurry,endRound,effect,toggle,test,pause,onVisible};
   })();
 
   function rand() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
@@ -552,7 +650,7 @@ button{font:inherit}
     if(wholeSeconds<=15&&game.lastWarningSecond>15){
       warningEl.classList.add('visible');
       toast('15 SECONDS LEFT — BANK YOUR SPIRITS!');
-      GhostAudio.effect('finish');
+      GhostAudio.hurry();
     }
     if(wholeSeconds<=15&&wholeSeconds!==game.lastWarningSecond){
       if(wholeSeconds<=5&&wholeSeconds>=1)GhostAudio.effect('collect');
@@ -611,7 +709,7 @@ button{font:inherit}
   function finish() {
     game.phase = 'finished';
     warningEl.classList.remove('visible');
-    GhostAudio.effect('finish');
+    GhostAudio.endRound(game.scores[0]>=game.scores[1]);
     const g = game.scores[0], p = game.scores[1];
     menuText.innerHTML = (g > p ? teamColors[0].name.toUpperCase()+' TEAM WINS!' : g < p ? teamColors[1].name.toUpperCase()+' TEAM WINS!' : 'IT’S A TIE!') + '<br><br><span style="color:'+color(0)+'">' + g + '</span> — <span style="color:'+color(1)+'">' + p + '</span><br><br>Choose a color and play again.';
     startBtn.textContent = 'PLAY AGAIN';
