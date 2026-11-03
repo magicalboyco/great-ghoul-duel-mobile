@@ -634,6 +634,30 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   function lobbyPlayerProfile(){
     return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex};
   }
+  // First connected human on each team chooses the team body color.
+  // The guest's chosen color takes effect for the second team.
+  function resolveOnlineTeamColors(profiles,seats,defaultHex){
+    const pick=(team)=>{
+      const pref=seats.filter(seat=>(seat<4?0:1)===team).sort((a,b)=>a-b)
+        .map(seat=>profiles.get(seat)?.color).find(hex=>PASTELS.some(p=>p.hex===hex));
+      return PASTELS.find(p=>p.hex===(pref||defaultHex))||PASTELS[3];
+    };
+    const a=pick(0),b=pick(1);
+    return [a,a.hex!==b.hex?b:
+      PASTELS.find(p=>p.hex==='#D98A91'&&p.hex!==a.hex)||
+      PASTELS.find(p=>p.hex!==a.hex)];
+  }
+  function syncOnlineTeamColors(){
+    if(!online||!game)return;
+    if(!online.host&&online.teamColors?.length===2){
+      teamColors=online.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
+    }else if(online.host){
+      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,PASTELS[selectedIndex].hex);
+      online.teamColors=teamColors.map(p=>p.hex);
+    }
+    greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
+    greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
+  }
   function applyHumanProfiles(){
     if(!game||!online)return;
     const styles=resolveDistinctMatchStyles(online.profiles,online.seats);
@@ -767,7 +791,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     onlinePending=false;
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
       seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
-      inputSeq:0,receivedSeq:-1};
+      lastFullSnapshot:0,inputSeq:0,receivedSeq:-1,teamColors:null};
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -796,7 +820,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.profiles=new Map((Array.isArray(msg.profiles)?msg.profiles:[])
           .filter(p=>Number.isInteger(p.seat)&&session.seats.includes(p.seat))
           .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
-        if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
+        if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
           '/8 real people connected. '+(session.host?
@@ -833,6 +857,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.preparing=false;
         session.started=true;
         reset();game.online=true;
+        syncOnlineTeamColors();
         applyHumanProfiles();
         refreshOnlineBadge();
         showOnlineLobby(session);
@@ -869,7 +894,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.inputs.delete(msg.seat);
         session.profiles.delete(msg.seat);
         session.seats=session.seats.filter(seat=>seat!==msg.seat);
-        if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
+        if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
       }else if(msg.type==='finish'){
         if(!session.host&&game?.phase==='playing')finish();
         session.started=false;
@@ -914,10 +939,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     game.flames=s.flames;
     game.difficulty=DIFFICULTIES[s.difficulty]?s.difficulty:'normal';
     if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
-      teamColors=s.teamColors.map((hex,i)=>({
-        name:i===0?'Friendly Boo Crew':'Rivals',
-        hex:typeof hex==='string'&&/^#[0-9a-fA-F]{6}$/.test(hex)?hex:PASTELS[i].hex
-      }));
+      teamColors=s.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
+      online.teamColors=teamColors.map(p=>p.hex);
       greenScoreEl.style.color=color(0);
       purpleScoreEl.style.color=color(1);
     }
@@ -2894,7 +2917,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       drawGlow(b.x, b.y, b.r + 74, alpha(color(team),.16));
       ctx.lineWidth = 9; ctx.strokeStyle = color(team); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
       ctx.strokeStyle = alpha(color(team),.45); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 18, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = color(team); ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui'; ctx.fillText(teamColors[team].name.toUpperCase()+' BASE', b.x, b.y + 62);
+      const myTeam=game.online?game.ghosts[localGhostId()].team:0;
+      ctx.fillStyle = color(team); ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui';
+      ctx.fillText(game.online?(team===myTeam?'YOUR BASE':'OTHER TEAM BASE'):
+        teamColors[team].name.toUpperCase()+' BASE',b.x,b.y+62);
     }
 
     // drifting fog
