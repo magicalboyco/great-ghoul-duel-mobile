@@ -351,29 +351,6 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     palettePicker.appendChild(b);
   });
 
-  // Pick a character independently of its ghost color.
-  const booCrewGrid=document.getElementById('booCrewGrid');
-  const chosenCharacter=document.getElementById('chosenCharacter');
-  function refreshCrewCards(){
-    [...booCrewGrid.children].forEach((button,id)=>{
-      button.setAttribute('aria-pressed',String(id===selectedCharacter));
-      button.querySelector('.crewPortrait').innerHTML=ghostPortrait({id,styleId:id,team:0});
-    });
-  }
-  GHOST_CHARACTER_NAMES.forEach((name,id)=>{
-    const button=document.createElement('button');
-    button.type='button';button.className='crewCard';
-    button.setAttribute('aria-label','Choose '+name);
-    button.setAttribute('aria-pressed',String(id===selectedCharacter));
-    const portrait=document.createElement('div');portrait.className='crewPortrait';
-    const label=document.createElement('span');label.textContent=name;
-    button.append(portrait,label);
-    button.addEventListener('click',()=>{selectedCharacter=id;chosenCharacter.textContent=name;refreshCrewCards()});
-    booCrewGrid.appendChild(button);
-  });
-  refreshCrewCards();
-  palettePicker.addEventListener('click',refreshCrewCards);
-
   const joy = document.getElementById('joystick');
   const knob = document.getElementById('knob');
 
@@ -1222,6 +1199,29 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       +'<circle cx="27" cy="42" r="1.6" fill="#fff"/><circle cx="51" cy="42" r="1.6" fill="#fff"/>'
       +faces[styleId]+cheeks+eyebrows+above+'</svg>';
   }
+
+  // Pick a character independently of its ghost color.
+  const booCrewGrid=document.getElementById('booCrewGrid');
+  const chosenCharacter=document.getElementById('chosenCharacter');
+  function refreshCrewCards(){
+    [...booCrewGrid.children].forEach((button,id)=>{
+      button.setAttribute('aria-pressed',String(id===selectedCharacter));
+      button.querySelector('.crewPortrait').innerHTML=ghostPortrait({id,styleId:id,team:0});
+    });
+  }
+  GHOST_CHARACTER_NAMES.forEach((name,id)=>{
+    const button=document.createElement('button');
+    button.type='button';button.className='crewCard';
+    button.setAttribute('aria-label','Choose '+name);
+    button.setAttribute('aria-pressed',String(id===selectedCharacter));
+    const portrait=document.createElement('div');portrait.className='crewPortrait';
+    const label=document.createElement('span');label.textContent=name;
+    button.append(portrait,label);
+    button.addEventListener('click',()=>{selectedCharacter=id;chosenCharacter.textContent=name;refreshCrewCards()});
+    booCrewGrid.appendChild(button);
+  });
+  refreshCrewCards();
+  palettePicker.addEventListener('click',refreshCrewCards);
 
   function drawGhost(g) {
     const carried=levelFor(g);
