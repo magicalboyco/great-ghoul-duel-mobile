@@ -1527,7 +1527,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     highScoreCountry.value=localStorage.getItem('boo-crew-score-country')||'';
   }catch{}
   const nicknameIsValid=value=>value.length>=1&&value.length<=13&&
-    value.trim()===value&&/^[\\p{L}\\p{M}\\p{N} ._'-]+$/u.test(value)&&/[\\p{L}\\p{N}]/u.test(value);
+    value.trim()===value&&/^[\p{L}\p{M}\p{N} ._'-]+$/u.test(value)&&/[\p{L}\p{N}]/u.test(value);
   const scoreColorSet=new Set(PASTELS.map(p=>p.hex));
   const validHallEntry=e=>e&&typeof e.name==='string'&&nicknameIsValid(e.name)&&
     COUNTRY_SET.has(e.country)&&Number.isInteger(e.styleId)&&e.styleId>=0&&e.styleId<8&&
