@@ -97,6 +97,15 @@ button{font:inherit}
 #highScoreEntry input{text-transform:none}
 #highScoreEntry .scoreTip,#hallStatus,#highScoreStatus{font-size:12px;line-height:1.5;color:#eddcfb;margin:9px 0}
 #hallMenuBtn{display:inline-block;margin-top:10px}
+#boardConnect{margin:12px 0;padding:12px;border:1px solid #f3d9f45c;border-radius:14px;background:#ffffff0b;text-align:left}
+#boardConnect label,#resultBoardConnect label{font-size:12px;display:block;font-weight:800;margin:7px 0 4px}
+#boardConnect input,#resultBoardConnect input,#localScoreSelect{width:100%;max-width:100%;border:1px solid #eadbfc77;background:#211834;color:#fff;padding:11px;border-radius:11px;font-size:14px}
+#boardConnect button,#resultBoardConnect button{background:#d1f4e1;color:#233b2f;padding:10px 13px;border-radius:11px;border:0;font-weight:850;cursor:pointer;margin-top:8px}
+#boardConnect button:disabled,#resultBoardConnect button:disabled{opacity:.5}
+#boardConnect .hallSubtitle{margin:5px 0 8px}
+#resultBoardConnect{margin:11px 0;padding:12px;border:1px solid #d6e4ff55;border-radius:13px;background:#a4d8ff10;text-align:left}
+#resultBoardConnect[hidden]{display:none}
+#boardConnectStatus,#resultConnectStatus{font-size:12px;line-height:1.5;color:#f0deff;margin:7px 0}
 #results{display:none;position:absolute;inset:0;z-index:15;padding:12px;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 12%,#553c77c9,#0c091bea 78%)}
 #results.open{display:flex}
 .resultsPanel{width:min(100%,650px);max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y;overscroll-behavior:contain;border:1px solid #e6cfff70;border-radius:24px;padding:18px;background:linear-gradient(160deg,#332747,#1a162f);box-shadow:0 25px 80px #04030bbb;text-align:center}
@@ -278,6 +287,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       <button type="submit" id="submitHighScore">🏆 ENTER THE TOP 13</button>
       <p id="highScoreStatus" role="status" aria-live="polite"></p>
     </form>
+    <div id="resultBoardConnect" hidden>
+      <label for="resultServerAddress">🌐 Connect shared Top 13 server</label>
+      <input id="resultServerAddress" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://your-worker.workers.dev">
+      <button id="resultConnectBtn" type="button">Connect leaderboard</button>
+      <div id="resultConnectStatus" role="status" aria-live="polite">No password or account login required.</div>
+    </div>
 <div class="eyebrow" style="margin-top:15px">ALL EIGHT GHOSTS</div>
 <div id="awardGrid" class="awardGrid"></div>
 <div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button><button id="resultDifficultyBtn">🎚️ DIFFICULTY</button><button id="hallResultsBtn">🏆 TOP 13</button><button id="resultsCreditsBtn">💗 CREDITS</button></div>
@@ -287,6 +302,16 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     <div class="eyebrow">THE SPOOKTACULAR HALL OF FAME</div>
     <h2 id="hallHeading">🏆 TOP 13 🏆</h2>
     <p class="hallSubtitle">Thirteen legendary Boo Crew ghosts. Each score is that player's own banked spirit flames in a winning match.</p>
+    <div id="boardConnect">
+      <label for="hallServerAddress">🌐 Shared leaderboard server</label>
+      <p class="hallSubtitle">Paste the same Cloudflare Worker address used for online rooms. It stays saved only on this browser; do not enter credentials.</p>
+      <input id="hallServerAddress" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://your-worker.workers.dev">
+      <button id="hallConnectBtn" type="button">Connect shared Top 13</button>
+      <div id="boardConnectStatus" role="status" aria-live="polite"></div>
+      <label for="localScoreSelect">Previously saved scores on this device</label>
+      <select id="localScoreSelect"><option value="">No scores saved yet</option></select>
+      <button id="uploadLocalScoreBtn" type="button">⬆ Send selected score to shared Top 13</button>
+    </div>
     <p id="hallStatus" role="status" aria-live="polite">Opening the crypt…</p>
     <div id="hallRows" class="hallRows"></div>
     <div class="hallActions"><button id="hallRefresh" type="button">↻ REFRESH SCORES</button><button id="hallBack" type="button">← BACK</button></div>
@@ -428,6 +453,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const highScoreCountry=document.getElementById('highScoreCountry');
   const highScoreStatus=document.getElementById('highScoreStatus');
   const highScorePreview=document.getElementById('highScorePreview');
+  const hallServerAddress=document.getElementById('hallServerAddress');
+  const resultServerAddress=document.getElementById('resultServerAddress');
+  const boardConnectStatus=document.getElementById('boardConnectStatus');
+  const resultConnectStatus=document.getElementById('resultConnectStatus');
+  const localScoreSelect=document.getElementById('localScoreSelect');
+  const uploadLocalScoreBtn=document.getElementById('uploadLocalScoreBtn');
+  const resultBoardConnect=document.getElementById('resultBoardConnect');
   const resultHeading=document.getElementById('resultHeading');
   const resultScore=document.getElementById('resultScore');
   const myAwardEmoji=document.getElementById('myAwardEmoji');
@@ -1552,6 +1584,84 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       return address.origin;
     }catch{return null}
   }
+  // One browser-local setting for multiplayer and the shared scoreboard.
+  function syncBoardAddressFields(){
+    hallServerAddress.value=onlineServerEl.value;
+    resultServerAddress.value=onlineServerEl.value;
+  }
+  function fillLocalScoreChoices(){
+    const items=readDeviceHall();
+    const before=localScoreSelect.value;
+    localScoreSelect.replaceChildren();
+    if(!items.length){
+      const option=document.createElement('option');
+      option.value='';option.textContent='No saved scores on this device';
+      localScoreSelect.appendChild(option);
+    }else{
+      items.forEach((item,i)=>{
+        const option=document.createElement('option');option.value=String(i);
+        option.textContent=(i+1)+'. '+item.name+' · '+item.score+' pts · '+GHOST_CHARACTER_NAMES[item.styleId];
+        localScoreSelect.appendChild(option);
+      });
+      if(before&&Number(before)<items.length)localScoreSelect.value=before;
+    }
+    uploadLocalScoreBtn.disabled=!items.length||!leaderboardBaseUrl();
+  }
+  async function connectBoardServer(input,statusNode){
+    const value=input.value.trim();
+    try{
+      const address=new URL(value);
+      if(address.protocol!=='https:'||address.username||address.password||address.search||
+         address.hash||(address.pathname!==''&&address.pathname!=='/'))throw Error('Invalid address');
+      const response=await fetch(address.origin+'/leaderboard',{cache:'no-store'});
+      if(!response.ok)throw Error('Leaderboard returned '+response.status);
+      const data=await response.json();
+      if(!Array.isArray(data.scores))throw Error('This server does not support the Top 13 API');
+      onlineServerEl.value=address.origin;
+      try{localStorage.setItem('ghost-duel-server-url',address.origin)}catch{}
+      syncBoardAddressFields();
+      statusNode.textContent='✅ Shared Top 13 connected! You can upload a saved local score below.';
+      boardConnectStatus.textContent='✅ Shared Top 13 connected';
+      resultConnectStatus.textContent='✅ Shared Top 13 connected. Submit or retry your score.';
+      resultBoardConnect.hidden=true;
+      fillLocalScoreChoices();
+      await refreshHallIfOpen();
+    }catch(error){
+      statusNode.textContent='Connection failed: '+(error?.message||'Check the address and try again')+
+        '. Local scores remain saved.';
+      if(statusNode===resultConnectStatus)resultBoardConnect.hidden=false;
+    }
+  }
+  async function refreshHallIfOpen(){
+    if(!hallOfFame.hidden)await refreshHall();
+  }
+  document.getElementById('hallConnectBtn').addEventListener('click',()=>connectBoardServer(hallServerAddress,boardConnectStatus));
+  document.getElementById('resultConnectBtn').addEventListener('click',()=>connectBoardServer(resultServerAddress,resultConnectStatus));
+  onlineServerEl.addEventListener('change',()=>{
+    syncBoardAddressFields();
+    fillLocalScoreChoices();
+  });
+  async function uploadSelectedLocalScore(){
+    const index=Number(localScoreSelect.value);
+    const items=readDeviceHall();
+    const entry=items[index];
+    if(!entry||!leaderboardBaseUrl()){boardConnectStatus.textContent='Connect the shared leaderboard first.';return}
+    uploadLocalScoreBtn.disabled=true;
+    boardConnectStatus.textContent='Sending your saved '+entry.score+'-point score…';
+    try{
+      const response=await postHall(entry);
+      boardConnectStatus.textContent=response.accepted?
+        '🎉 '+entry.name+' is now #'+response.rank+' on the shared Top 13!':
+        'This score was sent, but it did not reach the shared Top 13.';
+      // Keep local records as a personal archive rather than deleting them.
+      await refreshHallIfOpen();
+    }catch(error){
+      boardConnectStatus.textContent='Could not send score: '+(error?.message||'Server unavailable')+
+        '. Your local score remains on this device.';
+    }finally{fillLocalScoreChoices()}
+  }
+  uploadLocalScoreBtn.addEventListener('click',uploadSelectedLocalScore);
+  syncBoardAddressFields();
   async function fetchHall(){
     const endpoint=leaderboardBaseUrl();
     if(!endpoint)throw Error('no-server');
@@ -1606,6 +1716,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(hallPreviousFocus?.focus)hallPreviousFocus.focus();
   }
   async function refreshHall(){
+    fillLocalScoreChoices();
     hallStatus.textContent='Looking for the most legendary ghosts…';
     try{
       const entries=await fetchHall();
@@ -1614,8 +1725,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }catch{
       renderHallScores(readDeviceHall(),'device');
       hallStatus.textContent=leaderboardBaseUrl()?
-        '📱 Device-only Top 13 · shared server is unavailable. Scores here are saved in this browser.':
-        '📱 Device-only Top 13 · enter your Worker address under Play Online for the shared leaderboard.';
+        '📱 Device-only Top 13 · shared server is unavailable or has not deployed the leaderboard update. Your local scores are safe.':
+        '📱 Device-only Top 13 · paste your Cloudflare Worker address above, then tap Connect.';
     }
   }
   function openHall(){
@@ -1639,6 +1750,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   });
   async function prepareWinningHighScore(){
     scoreEntry.hidden=true;highScoreStatus.textContent='';
+    syncBoardAddressFields();
+    resultBoardConnect.hidden=!!leaderboardBaseUrl();
+    resultConnectStatus.textContent='Paste your Cloudflare server address above to connect the shared scoreboard.';
     const submitButton=document.getElementById('submitHighScore');
     submitButton.disabled=false;
     submitButton.textContent='🏆 ENTER THE TOP 13';
@@ -1672,11 +1786,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       highScoreStatus.textContent=answer.accepted?
         '🎉 You made the shared Top 13 at #'+answer.rank+'! Open the board to see your Boo Crew portrait.':
         'Your victory was recorded for this attempt, but the shared Top 13 is currently higher.';
-    }catch{
+    }catch(error){
       const result=saveDeviceHall(entry);
       game.scoreSubmitted=true;
+      resultBoardConnect.hidden=false;
+      resultConnectStatus.textContent=leaderboardBaseUrl()?
+        'The shared server is unavailable or outdated. Reconnect when its leaderboard update is deployed.':
+        'Enter your Cloudflare server address to connect the shared scoreboard.';
       highScoreStatus.textContent=result.rank?
-        '📱 Saved as #'+result.rank+' on this device only. The shared server is not connected.':
+        '📱 Saved as #'+result.rank+' on this device. Open Top 13 to upload this saved score when connected.':
         'This score did not make your device’s Top 13. The shared server is unavailable.';
     }finally{
       button.disabled=!!game.scoreSubmitted;
