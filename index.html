@@ -161,7 +161,25 @@ button{font:inherit}
     // This eliminates the silence/gap at each clip boundary on Safari.
     let audioCtx=null, master=null, musicGain=null, musicSource=null, musicBuffer=null;
     let muted=false, wantsMusic=false;
-    const melody=[392,0,466.16,392,311.13,0,349.23,293.66,261.63,0,311.13,349.23,392,0,293.66,0];
+    // Original melodic Halloween arcade composition (not an existing copyrighted tune).
+    // 64 sixteenth-style melodic steps at 4 steps/sec, making a 16-second loop.
+    const melody=[
+      523.25,0,622.25,783.99,698.46,622.25,523.25,466.16,
+      392,466.16,523.25,0,587.33,698.46,622.25,0,
+      622.25,0,783.99,932.33,783.99,698.46,622.25,523.25,
+      466.16,523.25,622.25,0,698.46,622.25,523.25,0,
+      587.33,0,698.46,880,783.99,698.46,587.33,523.25,
+      466.16,523.25,587.33,0,698.46,783.99,698.46,0,
+      493.88,0,587.33,783.99,739.99,659.25,587.33,493.88,
+      392,493.88,587.33,0,523.25,466.16,392,0
+    ];
+    const bass=[130.81,103.83,116.54,98.0];
+    const arps=[
+      [261.63,311.13,392,466.16],
+      [207.65,261.63,311.13,415.30],
+      [233.08,293.66,349.23,466.16],
+      [196,246.94,293.66,392]
+    ];
     function setup(){
       if(audioCtx)return true;
       const C=window.AudioContext||window.webkitAudioContext;
@@ -172,24 +190,33 @@ button{font:inherit}
         musicGain=audioCtx.createGain();musicGain.gain.value=.6;musicGain.connect(master);
         audioCtx.addEventListener('statechange',()=>{
           if(audioCtx.state==='interrupted')status('audio interrupted; tap Test sound');
-          else if(audioCtx.state==='running'&&wantsMusic&&!muted)status('continuous loop active');
+          else if(audioCtx.state==='running'&&wantsMusic&&!muted)status('melodic Halloween loop playing');
         });
         return true;
       }catch(e){status('Audio initialization failed: '+e.message);return false}
     }
     function makeLoop(){
       if(musicBuffer)return musicBuffer;
-      const sr=22050, duration=8, frames=sr*duration;
-      const b=audioCtx.createBuffer(1,frames,sr), samples=b.getChannelData(0);
-      const bass=[130.81,116.54,103.83,116.54];
+      const sr=22050,duration=16,frames=sr*duration;
+      const b=audioCtx.createBuffer(1,frames,sr),samples=b.getChannelData(0);
+      // Synthesize melody, bouncy harmony, pulsing bass, and tinkling bells.
       for(let i=0;i<frames;i++){
-        const tt=i/sr,beat=Math.floor(tt*4),f=melody[beat%melody.length];
-        const phase=(tt*4)%1;
-        let v=.11*Math.sin(2*Math.PI*bass[Math.floor(tt)%bass.length]*tt);
-        if(f)v+=(Math.sin(2*Math.PI*f*.5*tt)+.21*Math.sin(2*Math.PI*f*tt))*.24*Math.pow(1-phase,1.5);
-        v+=.024*Math.sin(2*Math.PI*261.63*tt)*(.5+.5*Math.sin(2*Math.PI*.7*tt));
-        // Soft fades only at actual waveform edges; audioBufferSourceNode loops seamlessly.
-        samples[i]=Math.max(-1,Math.min(1,v));
+        const tt=i/sr,step=Math.floor(tt*4),phase=(tt*4)%1;
+        const section=Math.floor(tt/4),beat=Math.floor(tt*2),beatPhase=(tt*2)%1;
+        const note=melody[step%melody.length];
+        let v=0;
+        if(note){
+          const envelope=Math.pow(1-phase,1.65),trem=.92+.08*Math.sin(2*Math.PI*5.2*tt);
+          v+=(Math.sin(2*Math.PI*note*.5*tt)+.28*Math.sin(2*Math.PI*note*tt)+.10*Math.sin(2*Math.PI*note*1.5*tt))*.18*envelope*trem;
+        }
+        const a=arps[section%4][step%4];
+        v+=.075*(Math.sin(2*Math.PI*a*tt)+.18*Math.sin(2*Math.PI*a*2*tt))*Math.pow(1-phase,2);
+        v+=.11*Math.sin(2*Math.PI*bass[section%4]*tt)*(.66+.34*Math.pow(1-beatPhase,2));
+        if(step%4===2)v+=.038*Math.sin(2*Math.PI*arps[section%4][(step+1)%4]*2*tt)*Math.pow(1-phase,5);
+        if(beat%2===0)v+=.025*Math.sin(2*Math.PI*62*tt)*Math.pow(1-beatPhase,7);
+        // A 12 ms crossfade at loop boundaries prevents clicks.
+        const fade=Math.min(1,tt/.012,(duration-tt)/.012);
+        samples[i]=Math.max(-1,Math.min(1,v*fade));
       }
       musicBuffer=b;return b;
     }
@@ -213,7 +240,7 @@ button{font:inherit}
       ensureLoop();
       if(master)master.gain.setTargetAtTime(.34,audioCtx.currentTime,.02);
       resume();
-      status('continuous loop starting…');
+      status('new melodic Halloween loop starting…');
     }
     function tone(freq,duration=.16,type='sine',volume=.36,delay=0,slide=1){
       if(muted||!setup())return;
