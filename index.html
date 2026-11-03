@@ -602,7 +602,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function showOnlineLobby(onlineRoom){
     onlineStartEl.hidden=!onlineRoom?.host||!!onlineRoom.started||onlineRoom.seat===null;
-    onlineStartEl.disabled=!onlineRoom?.ws||onlineRoom.ws.readyState!==WebSocket.OPEN;
+    onlineStartEl.disabled=!onlineRoom?.ws||onlineRoom.ws.readyState!==WebSocket.OPEN||!!onlineRoom.preparing;
+    onlineStartEl.textContent=onlineRoom?.preparing?'⏳ Waiting for all players…':'🎮 Start online match';
+    startBtn.disabled=!!onlineRoom||onlinePending;
+    startBtn.textContent=onlineRoom?'LEAVE ROOM TO PLAY SOLO':'START GAME';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||onlineRoom.seat===null;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom;
@@ -661,7 +664,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       setOnlineStatus(error.message||'Could not reach the room server.');return;
     }
     onlinePending=false;
-    const session={ws,code,hostToken,seat:null,host:false,started:false,seats:[],inputs:new Map(),lastInput:0,lastSnapshot:0};
+    const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,seats:[],inputs:new Map(),lastInput:0,lastSnapshot:0};
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -689,12 +692,34 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
           '/8 people joined. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
+      }else if(msg.type==='prepare'){
+        // Nobody enters the arena until every open browser acknowledges
+        // this exact round. A late/duplicate message cannot start a match.
+        if(typeof msg.roundId!=='string'||session.started)return;
+        session.preparing=true;
+        session.roundId=msg.roundId;
+        showOnlineLobby(session);
+        setOnlineStatus('Getting everyone ready for Room '+code+'…');
+        sendOnline({type:'ready',roundId:msg.roundId});
+      }else if(msg.type==='readyStatus'){
+        if(session.preparing&&msg.roundId===session.roundId){
+          const ready=Array.isArray(msg.readySeats)?msg.readySeats.length:0;
+          const total=Array.isArray(msg.seats)?msg.seats.length:session.seats.length;
+          setOnlineStatus('Preparing online match: '+ready+'/'+total+' players ready…');
+        }
       }else if(msg.type==='start'){
         if(session.started)return;
+        if(!session.preparing||msg.roundId!==session.roundId){
+          // Only accept the confirmed round that this browser prepared.
+          setOnlineStatus('Ignoring an unexpected online start. Please create a new room.');
+          return;
+        }
+        session.preparing=false;
         session.started=true;
         reset();game.online=true;
         difficultyHud.textContent='🌐 ONLINE ROOM '+code;
         showOnlineLobby(session);
+        setOnlineStatus('👻 Everyone is ready! Online match started.');
         if(session.host)publishOnlineSnapshot();
       }else if(msg.type==='input'&&session.host&&session.started){
         if(session.seats.includes(msg.seat)&&msg.seat!==0){
@@ -709,6 +734,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       }else if(msg.type==='finish'){
         if(!session.host&&game?.phase==='playing')finish();
         session.started=false;
+        session.preparing=false;
+        session.roundId=null;
         showOnlineLobby(session);
       }else if(msg.type==='closed'){
         leaveOnline(msg.reason||'The room has closed.');
@@ -779,7 +806,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   onlineJoinEl.addEventListener('click',()=>startOnlineConnection(false));
   onlineLeaveEl.addEventListener('click',()=>leaveOnline());
   onlineStartEl.addEventListener('click',()=>{
-    if(online?.host&&!online.started)sendOnline({type:'start'});
+    if(online?.host&&!online.started&&!online.preparing&&online.seat===0&&
+       online.ws.readyState===WebSocket.OPEN){
+      onlineStartEl.disabled=true;
+      setOnlineStatus('Starting online match for everyone…');
+      sendOnline({type:'start'});
+    }
   });
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
@@ -2735,7 +2767,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
-  startBtn.addEventListener('click', () => {if(online)leaveOnline();reset();GhostAudio.thunder()});
+  startBtn.addEventListener('click', () => {
+    // Do not silently disconnect from a shared game when the solo button
+    // is clicked. Only the room host can start a multiplayer round.
+    if(online||onlinePending){
+      setOnlineStatus('You are in an online room. The host must press Start online match, or choose Leave room for solo play.');
+      return;
+    }
+    reset();GhostAudio.thunder();
+  });
   document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
   document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));

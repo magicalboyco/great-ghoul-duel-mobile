@@ -94,6 +94,25 @@ test('room creation requires a real reservation, host secret and join authorizat
   assert.equal(instance.room.started,false);
   await instance.room.webSocketMessage(host,JSON.stringify({type:'start'}));
   assert.equal(instance.room.started,true);
+  assert.equal(instance.room.preparing,true);
+  const hostPrepare=host.sent.find(message=>message.type==='prepare');
+  const guestPrepare=guest.sent.find(message=>message.type==='prepare');
+  assert.ok(hostPrepare,'Host receives the prepare event');
+  assert.ok(guestPrepare,'Guest receives the prepare event');
+  assert.equal(hostPrepare.roundId,guestPrepare.roundId,'Both devices prepare the same round');
+  assert.equal(host.sent.some(message=>message.type==='start'),false,'The host cannot start alone');
+  assert.equal(guest.sent.some(message=>message.type==='start'),false,'The guest is not skipped');
+  await instance.room.webSocketMessage(host,JSON.stringify({type:'ready',roundId:hostPrepare.roundId}));
+  assert.equal(instance.room.preparing,true,'Waiting for the guest to acknowledge');
+  assert.equal(host.sent.some(message=>message.type==='start'),false);
+  await instance.room.webSocketMessage(guest,JSON.stringify({type:'ready',roundId:'wrong-round'}));
+  assert.equal(instance.room.preparing,true,'Wrong round acknowledgments are ignored');
+  await instance.room.webSocketMessage(guest,JSON.stringify({type:'ready',roundId:guestPrepare.roundId}));
+  assert.equal(instance.room.preparing,false,'Both devices have acknowledged');
+  const hostStart=host.sent.find(message=>message.type==='start');
+  const guestStart=guest.sent.find(message=>message.type==='start');
+  assert.ok(hostStart&&guestStart,'Start is delivered to both connected browsers');
+  assert.equal(hostStart.roundId,guestStart.roundId,'The same round begins everywhere');
 
   await instance.room.webSocketMessage(guest,JSON.stringify({type:'input',x:.7,y:.2}));
   assert.ok(host.sent.some(message=>message.type==='input'&&message.seat!==0));

@@ -104,6 +104,9 @@ export class GhostRoom {
     this.started = false;
     this.lastSnapshot = 0;
     this.roomMeta=null;
+    this.preparing=false;
+    this.roundId=null;
+    this.readySeats=new Set();
     // Connection state is rehydrated from attachment metadata after hibernation.
     this.rebuild();
   }
@@ -118,12 +121,28 @@ export class GhostRoom {
     // Active matches are not resumed after hibernation; hibernation should
     // normally not occur during regular snapshots.
     this.started = sockets.some(ws => ws.deserializeAttachment()?.started === true);
-    // Room metadata is loaded on demand from Durable Object storage.
+    this.preparing = sockets.some(ws => ws.deserializeAttachment()?.preparing === true);
+    this.roundId = sockets.map(ws=>ws.deserializeAttachment()?.roundId).find(Boolean)||null;
+    this.readySeats=new Set(sockets.filter(ws=>ws.deserializeAttachment()?.ready===true)
+      .map(ws=>ws.deserializeAttachment()?.seat).filter(Number.isInteger));
+    // Recover match startup acknowledgments after Durable Object hibernation.
   }
   send(ws, data) { try { ws.send(ok(data)); } catch {} }
   broadcast(data) { for (const ws of this.players.values()) this.send(ws, data); }
   roster() {
-    this.broadcast({type:"roster",seats:[...this.players.keys()].sort((a,b)=>a-b),started:this.started});
+    this.broadcast({type:"roster",seats:[...this.players.keys()].sort((a,b)=>a-b),started:this.started,preparing:this.preparing});
+  }
+  beginRound(){
+    if(!this.started||!this.preparing)return;
+    this.preparing=false;
+    this.readySeats.clear();
+    for(const socket of this.players.values()){
+      const data=socket.deserializeAttachment();
+      socket.serializeAttachment({...data,preparing:false,ready:false});
+    }
+    // The server declares the round started only once ALL seated browsers
+    // have confirmed receiving the prepare message.
+    this.broadcast({type:'start',roundId:this.roundId,seats:[...this.players.keys()],serverTime:Date.now()});
   }
   async leaderboardRequest(request) {
     if(request.method!=='GET'&&request.method!=='POST')
@@ -182,7 +201,7 @@ export class GhostRoom {
     if(!meta||(!this.players.size&&meta.expiresAt<Date.now()))
       return roomReply({error:'Room not found or expired'},404);
     if(path==='/status'&&request.method==='GET')
-      return roomReply({exists:true,started:this.started,players:this.players.size});
+      return roomReply({exists:true,started:this.started,preparing:this.preparing,players:this.players.size});
     if(this.started)return new Response('Match already started',{status:409});
     // Verify status before opening the WebSocket. Seat allocation occurs
     // ONLY after the client explicitly authenticates its host or guest role.
@@ -237,15 +256,27 @@ export class GhostRoom {
       return;
     }
     if(msg.type==='start'&&meta.seat===0&&!this.started) {
-      this.started = true;
-      for (const socket of this.players.values()) {
+      this.started=true;
+      this.preparing=true;
+      this.roundId=crypto.randomUUID();
+      this.readySeats.clear();
+      for(const socket of this.players.values()){
         const data=socket.deserializeAttachment();
-        socket.serializeAttachment({...data,started:true});
+        socket.serializeAttachment({...data,started:true,preparing:true,ready:false,roundId:this.roundId});
       }
-      this.broadcast({type:"start",seats:[...this.players.keys()]});
+      this.broadcast({type:'prepare',roundId:this.roundId,seats:[...this.players.keys()]});
       return;
     }
-    if (!this.started) return;
+    if(msg.type==='ready'&&this.started&&this.preparing&&
+       msg.roundId===this.roundId&&this.players.get(meta.seat)===ws){
+      this.readySeats.add(meta.seat);
+      ws.serializeAttachment({...meta,ready:true});
+      const seats=[...this.players.keys()];
+      this.broadcast({type:'readyStatus',roundId:this.roundId,readySeats:[...this.readySeats],seats});
+      if(seats.every(seat=>this.readySeats.has(seat)))this.beginRound();
+      return;
+    }
+    if(!this.started||this.preparing)return;
     if (msg.type === "input" && meta.seat !== 0) {
       const x=Number(msg.x),y=Number(msg.y);
       if (!Number.isFinite(x)||!Number.isFinite(y)) return;
@@ -261,10 +292,13 @@ export class GhostRoom {
     }
     if (msg.type === "finish" && meta.seat === 0) {
       this.broadcast({type:"finish"});
-      this.started = false;
+      this.started=false;
+      this.preparing=false;
+      this.readySeats.clear();
+      this.roundId=null;
       for(const socket of this.players.values()){
         const data=socket.deserializeAttachment();
-        socket.serializeAttachment({...data,started:false});
+        socket.serializeAttachment({...data,started:false,preparing:false,ready:false,roundId:null});
       }
       this.roster();
     }
@@ -281,9 +315,13 @@ export class GhostRoom {
       this.broadcast({type:"closed",reason:"Host disconnected. Create or join a new room."});
       for (const socket of this.players.values()) try{ socket.close(1012,"Host disconnected"); }catch{}
       this.players.clear();this.host=null;this.started=false;
+      this.preparing=false;this.roundId=null;this.readySeats.clear();
     } else {
+      this.readySeats.delete(meta.seat);
       this.broadcast({type:"leave",seat:meta.seat});
       this.roster();
+      if(this.preparing&&[...this.players.keys()].every(seat=>this.readySeats.has(seat)))
+        this.beginRound();
     }
   }
 }
