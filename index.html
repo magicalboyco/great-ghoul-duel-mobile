@@ -191,6 +191,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 .swatch:hover{transform:scale(1.08)}
 .crewCard:focus-visible{outline:3px solid #ffe4aa;outline-offset:2px}
 #crewSelection{font-size:12px;color:#ffe6ad}
+#crewLore{max-width:48ch;min-height:44px;margin:8px auto 12px;padding:10px 13px;border-radius:14px;border:1px solid #f8cde84d;background:#fae9fa0b;color:#f1e1ff;font-size:12px;line-height:1.5;text-align:center}
 .swatches{grid-template-columns:repeat(7,minmax(0,1fr));max-width:435px}
 .swatch{width:35px;height:35px;justify-self:center}
 .bullets{margin:11px 0;gap:7px}.bullets div{padding:7px 9px;font-size:12px}
@@ -219,7 +220,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 18</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
-    <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div class="palette-label">Choose your spooky pastel colorway</div>
+    <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
 <div id="difficultyWrap">
@@ -1686,6 +1687,18 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
   const GHOST_CHARACTER_NAMES=['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'];
+  // Original ensemble comedy hooks: each ghost mixes contrasting qualities,
+  // a distinctive goal, and a flaw that generates their own ghost stories.
+  const GHOST_CHARACTER_LORE=[
+    'The party planner and secret repair whiz. Bowtie can fix a broken lantern, but not an awkward silence—so every rescue becomes a celebration.',
+    'A gentle daredevil who races the wind and collects lucky leaves. Gusty will sprint into trouble, then slow down for anybody left behind.',
+    'A showboating magician who learns by improvising. Abra-ca-dabra turns accidental spells into dazzling inventions and sometimes vice versa.',
+    'A soft-spoken sky navigator with a daring streak. Starshine follows lost lights through the darkest corners of the cemetery.',
+    'A deadpan ghost detective with a knack for tiny inventions. Shady records everyone’s secrets, then quietly protects them.',
+    'A bat-winged mischief-maker with surprisingly fragile feelings. Batty Boo wants the biggest laugh but cares even more about being invited back.',
+    'A dramatic royal costume-maker who crowns overlooked ghosts. Majesty may demand applause, but loves seeing a shy friend shine.',
+    'The cozy clubhouse caretaker and wildly experimental weather tinkerer. Flurry brings spare scarves, snacks, and occasionally a blizzard.'
+  ];
   // Unique visual identity is independent of team colors or awards.
   // Each character has its own silhouette accent, facial expression and backdrop.
   const INDIVIDUAL_ACCENTS=['#ff72af','#65cfa0','#ae8bff','#ffd766','#6e93ec','#ab7cef','#fff09a','#ed986d'];
@@ -1909,7 +1922,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   // Pick a character independently of its ghost color.
   const booCrewGrid=document.getElementById('booCrewGrid');
   const chosenCharacter=document.getElementById('chosenCharacter');
+  const crewLore=document.getElementById('crewLore');
   function refreshCrewCards(){
+    crewLore.textContent=GHOST_CHARACTER_LORE[selectedCharacter];
     const swatch=PASTELS[selectedIndex];
     const skinEdge=darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
@@ -1930,7 +1945,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   GHOST_CHARACTER_NAMES.forEach((name,id)=>{
     const button=document.createElement('button');
     button.type='button';button.className='crewCard';
-    button.setAttribute('aria-label','Choose '+name);
+    button.setAttribute('aria-label','Choose '+name+': '+GHOST_CHARACTER_LORE[id]);
+    button.title=GHOST_CHARACTER_LORE[id];
     button.setAttribute('aria-pressed',String(id===selectedCharacter));
     const portrait=document.createElement('div');portrait.className='crewPortrait';
     const label=document.createElement('span');label.textContent=name;
