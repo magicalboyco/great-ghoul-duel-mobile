@@ -385,3 +385,40 @@ header, all eight characters, color swatches, mode cards, room
 buttons and bottom actions remain accessible without horizontal
 scrolling or double-tap zoom. Automated source tests cannot replace
 real-device rendering.
+
+## Alpha 29 — player nicknames and iPhone menu viewport recovery
+
+The menu now displays an optional **Your player name** field before
+the Boo Crew character selector. Names are at most 16 Unicode letters,
+numbers, spaces or simple punctuation, trimmed and validated both in
+the client and on the Worker. A name appears on your room portrait,
+over your ghost in the match, and in the award/results screen.
+Leaving it blank remains allowed and uses the friendly generic
+player label. The name is saved only in the player's browser for
+future visits; the Worker relays it to the room's connected players
+but does not persist room names in the public leaderboard.
+
+This requires an updated Worker for names to appear to other
+players; the underlying game remains playable with an older Worker,
+but older servers do not echo names in the room roster.
+
+iPhone menu updates include `-webkit-text-size-adjust:100%` to stop
+Safari inflating text beyond its configured viewport font size, a
+stronger shrink-safe menu panel, and detection of a narrow physical
+phone with an unusually large desktop-style layout viewport.
+That case activates the alternate two-column `phoneView` layout.
+If Safari has actually been pinch-zoomed in, the game displays
+guidance rather than disabling user-initiated browser zoom, so
+accessibility remains intact. Larger devices retain their natural
+layouts; game Canvas camera, world physics, input and scoring are
+unchanged.
+
+To test iOS reliably, load
+`https://magicalboyco.github.io/great-ghoul-duel-mobile/?v=29`
+after GitHub Pages updates and confirm the menu says Alpha 29.
+The distinct query helps bypass previously loaded HTML on phones.
+Try portrait and landscape at normal Safari Page Zoom, test that
+all eight ghosts are accessible without horizontal scroll, then
+create or join a room and verify distinct nicknames on both screens.
+Automated tests cover source invariants and room-name validation, but
+physical browser layout should still be confirmed visually.
