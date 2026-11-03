@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 23)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 24)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -266,7 +266,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 23</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 24</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -283,10 +283,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="onlinePanel">
   <div class="palette-label">🌐 PLAY ONLINE WITH FRIENDS · TEST VERSION</div>
-  <p class="onlineIntro">Create a private room and share its six-character code. Everyone must enter the same Cloudflare server address once on their device. Up to eight people can join; bots fill empty spots. All ghosts wear matching team colors during a match; your chosen personal color appears in the lobby and as a tiny costume pin.</p>
-  <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Cloudflare server address (paste once per device)</label>
-  <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="Paste your HTTPS Cloudflare Worker address" aria-label="Your Cloudflare Worker URL">
-  <p class="onlineIntro" style="margin:4px 0 8px">Find this address by opening your deployed Cloudflare Worker and clicking <b>Visit</b>. An empty server field cannot create a room.</p>
+  <p class="onlineIntro">Create a room and invite a friend using just the six-character code. The official Joy Haus server connects automatically. Up to eight people can join; bots fill the other seats.</p>
+  <p class="onlineIntro">Each team wears one matching color. The first player on each team picks that team's color; other players keep their personal pastel as a costume pin.</p>
+  <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
+    <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
+    <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
+    <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
+    <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
+  </details>
   <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
   <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
   <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
@@ -581,11 +585,18 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   let keys = {};
   let game = null;
   let seed = 12345;
-  // Alpha 17 private rooms: connect directly to our Cloudflare Worker.
-  // The existing single-player simulation remains the default.
-  // Server location is user-configured, never committed to public source.
+  // Public multiplayer endpoint — intentionally shared in invitations.
+  // A Worker URL is public infrastructure, NOT an API token or credential.
+  // Keep host reservations secret in memory; never place them in a link.
+  const DEFAULT_ROOM_SERVER='https://ghost-duel-rooms.jonathanjoyner.workers.dev';
   const onlineServerEl=document.getElementById('onlineServer');
-  try{onlineServerEl.value=localStorage.getItem('ghost-duel-server-url')||''}catch{}
+  onlineServerEl.value=DEFAULT_ROOM_SERVER;
+  try{
+    const saved=localStorage.getItem('ghost-duel-server-url');
+    if(saved){const address=new URL(saved);if(address.protocol==='https:'&&
+      !address.username&&!address.password&&!address.search&&!address.hash&&
+      (address.pathname==='/'||address.pathname===''))onlineServerEl.value=address.origin;}
+  }catch{}
   function safeWebSocketServer(){
     const raw=onlineServerEl.value.trim();
     if(!raw)throw Error('Cloudflare server address is missing. Paste your Worker URL into the field above, then try Create Room again.');
@@ -622,6 +633,34 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function lobbyPlayerProfile(){
     return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex};
+  }
+  // First connected human on each team chooses the team body color.
+  // The guest's chosen color takes effect for the second team.
+  function resolveOnlineTeamColors(profiles,seats,defaultHex){
+    const pick=(team)=>{
+      const pref=seats.filter(seat=>(seat<4?0:1)===team).sort((a,b)=>a-b)
+        .map(seat=>profiles.get(seat)?.color).find(hex=>PASTELS.some(p=>p.hex===hex));
+      return PASTELS.find(p=>p.hex===(pref||defaultHex))||PASTELS[3];
+    };
+    const a=pick(0),b=pick(1);
+    return [a,a.hex!==b.hex?b:
+      PASTELS.find(p=>p.hex==='#D98A91'&&p.hex!==a.hex)||
+      PASTELS.find(p=>p.hex!==a.hex)];
+  }
+  function syncOnlineTeamColors(){
+    if(!online||!game)return;
+    if(!online.host&&online.teamColors?.length===2){
+      teamColors=online.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
+    }else{
+      // The PREPARE packet already contains everybody's chosen color.
+      // Guests can show their true team color on the very first frame,
+      // rather than briefly rendering the host's team with their own pastel.
+      const hostColor=online.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
+      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,hostColor);
+      if(online.host)online.teamColors=teamColors.map(p=>p.hex);
+    }
+    greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
+    greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
   }
   function applyHumanProfiles(){
     if(!game||!online)return;
@@ -756,7 +795,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     onlinePending=false;
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
       seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
-      inputSeq:0,receivedSeq:-1};
+      lastFullSnapshot:-Infinity,inputSeq:0,receivedSeq:-1,teamColors:null};
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -785,7 +824,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.profiles=new Map((Array.isArray(msg.profiles)?msg.profiles:[])
           .filter(p=>Number.isInteger(p.seat)&&session.seats.includes(p.seat))
           .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
-        if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
+        if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
           '/8 real people connected. '+(session.host?
@@ -822,6 +861,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.preparing=false;
         session.started=true;
         reset();game.online=true;
+        // The host's button tap and the guest's Join tap unlocked Web Audio
+        // before this asynchronous start packet; both now play the soundtrack.
+        syncOnlineTeamColors();
         applyHumanProfiles();
         refreshOnlineBadge();
         showOnlineLobby(session);
@@ -831,8 +873,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
           toast(GHOST_CHARACTER_NAMES[selected]+' was already chosen. You play as '+
             GHOST_CHARACTER_NAMES[resolved]+' in this match!');
         }
-        setOnlineStatus('👻 Multiplayer is live! '+session.seats.length+' humans, '+(8-session.seats.length)+
-          ' computer ghosts. Your ghost is #'+(session.seat+1)+'.');
+        const myTeam=game.ghosts[session.seat].team;
+        setOnlineStatus('👻 Multiplayer live! '+session.seats.length+' humans, '+(8-session.seats.length)+
+          ' computer ghosts. You are on the '+teamColors[myTeam].name+' team.');
         if(session.host)publishOnlineSnapshot();
       }else if(msg.type==='input'&&session.host&&session.started){
         if(session.seats.includes(msg.seat)&&msg.seat!==0){
@@ -858,7 +901,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.inputs.delete(msg.seat);
         session.profiles.delete(msg.seat);
         session.seats=session.seats.filter(seat=>seat!==msg.seat);
-        if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
+        if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
       }else if(msg.type==='finish'){
         if(!session.host&&game?.phase==='playing')finish();
         session.started=false;
@@ -880,7 +923,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function publishOnlineSnapshot(){
     if(!isOnlineHost()||!game)return;
-    sendOnline({type:'snapshot',state:{
+    const now=performance.now();
+    // Position/state updates are compact. The heavier inventory/flame state
+    // is sent less often to avoid queueing large WebSocket messages on phones.
+    const full=now-online.lastFullSnapshot>=240||game.phase==='finished';
+    if(full)online.lastFullSnapshot=now;
+    sendOnline({type:'snapshot',state:full?{
       remaining:game.remaining,phase:game.phase,scores:game.scores,difficulty:game.difficulty,
       teamColors:teamColors.map(c=>c.hex),humanSeats:online.seats,
       ghosts:game.ghosts.map(g=>({
@@ -890,32 +938,52 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         reactionDuration:g.reactionDuration,bounce:g.bounce,blink:g.blink,
         moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,human:!!g.human
       })),flames:game.flames
+    }:{
+      compact:true,remaining:game.remaining,phase:game.phase,scores:game.scores,
+      ghosts:game.ghosts.map(g=>({
+        id:g.id,x:g.x,y:g.y,heading:g.heading,moveAmount:g.moveAmount,
+        face:g.face,score:g.score
+      }))
     }});
   }
   function receiveOnlineSnapshot(s){
     if(!s||!game||!Array.isArray(s.ghosts)||s.ghosts.length!==8||
-      !Array.isArray(s.scores)||s.scores.length!==2||!Array.isArray(s.flames))return;
+      !Array.isArray(s.scores)||s.scores.length!==2||
+      (!s.compact&&!Array.isArray(s.flames)))return;
     game.remaining=Math.max(0,Math.min(120,Number(s.remaining)||0));
     game.scores=s.scores;
     if(Array.isArray(s.humanSeats)){
       online.seats=s.humanSeats.filter(n=>Number.isInteger(n)&&n>=0&&n<8);
     }
-    game.flames=s.flames;
-    game.difficulty=DIFFICULTIES[s.difficulty]?s.difficulty:'normal';
+    if(Array.isArray(s.flames))game.flames=s.flames;
+    if(s.difficulty&&DIFFICULTIES[s.difficulty])game.difficulty=s.difficulty;
     if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
-      teamColors=s.teamColors.map((hex,i)=>({
-        name:i===0?'Friendly Boo Crew':'Rivals',
-        hex:typeof hex==='string'&&/^#[0-9a-fA-F]{6}$/.test(hex)?hex:PASTELS[i].hex
-      }));
+      teamColors=s.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
+      online.teamColors=teamColors.map(p=>p.hex);
       greenScoreEl.style.color=color(0);
       purpleScoreEl.style.color=color(1);
     }
+    const before=game.ghosts[localGhostId()];
+    const beforeTrail=before?.trail.length||0,beforeScore=before?.score||0,
+      beforeStolen=before?.stats.stolen||0,beforeRobbed=before?.stats.robbed||0;
     for(const snap of s.ghosts){
       if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
       const g=game.ghosts[snap.id];
       for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
         'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','human']){
         if(snap[field]!==undefined)g[field]=snap[field];
+      }
+    }
+    if(!s.compact&&isOnlineGuest()&&game.phase==='playing'){
+      const you=game.ghosts[localGhostId()];
+      if(you){
+        if(you.stats.stolen>beforeStolen)GhostAudio.effect('steal');
+        else if(you.stats.robbed>beforeRobbed)GhostAudio.effect('loss');
+        else if(you.score>beforeScore)GhostAudio.effect('deposit');
+        else if(you.trail.length>beforeTrail)GhostAudio.effect('collect');
+        for(const [threshold,effect] of [[8,'speed'],[23,'glow'],[53,'magnet'],[113,'phase']]){
+          if(beforeTrail<threshold&&you.trail.length>=threshold)GhostAudio.effect(effect);
+        }
       }
     }
     if(game.phase==='playing'&&s.phase==='finished'){
@@ -933,8 +1001,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       setOnlineStatus('Invite code ready. Tap Join room to play with your friend.');
     }
   }catch{}
-  onlineCreateEl.addEventListener('click',()=>startOnlineConnection(true));
-  onlineJoinEl.addEventListener('click',()=>startOnlineConnection(false));
+  onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
+  onlineJoinEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(false)});
   onlineLeaveEl.addEventListener('click',()=>leaveOnline());
   onlineStartEl.addEventListener('click',()=>{
     if(online?.host&&!online.started&&!online.preparing&&online.seat===0&&
@@ -948,8 +1016,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
     const link=location.origin+location.pathname+'?room='+online.code;
-    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend also needs the same server address. Room '+online.code);}
-    catch{setOnlineStatus('Share this game address and room code: '+online.code);}
+    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend only needs this link (or room code '+online.code+').');}
+    catch{setOnlineStatus('Share the game link or this room code: '+online.code);}
   });
 
 
@@ -1116,6 +1184,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       source.connect(gain);gain.connect(musicBus);source.start(now);
       active={source,gain};
       if(wantsMusic&&!muted)status('Moonlit Mischief · '+(cue==='hurry'?'Hurry Up!':'Graveyard Hop'));
+    }
+    // iPhone/Safari requires an explicit user gesture to unlock Web Audio.
+    // This is called synchronously from Create/Join button clicks, *before*
+    // the asynchronous server response starts the round.
+    function unlock(){
+      if(muted)return;
+      if(setup())resume();
     }
     function init(){
       wantsMusic=true;
@@ -1344,7 +1419,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});
     }
     function onVisible(){if(!muted&&wantsMusic)resume()}
-    return {init,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
+    return {init,unlock,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
   })();
 
   function rand() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
@@ -1784,7 +1859,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
 
     updateGameHud();
-    if(isOnlineHost()&&performance.now()-online.lastSnapshot>=85){
+    if(isOnlineHost()&&performance.now()-online.lastSnapshot>=70){
       online.lastSnapshot=performance.now();
       publishOnlineSnapshot();
     }
@@ -2883,7 +2958,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       drawGlow(b.x, b.y, b.r + 74, alpha(color(team),.16));
       ctx.lineWidth = 9; ctx.strokeStyle = color(team); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
       ctx.strokeStyle = alpha(color(team),.45); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 18, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = color(team); ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui'; ctx.fillText(teamColors[team].name.toUpperCase()+' BASE', b.x, b.y + 62);
+      const myTeam=game.online?game.ghosts[localGhostId()].team:0;
+      ctx.fillStyle = color(team); ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui';
+      ctx.fillText(game.online?(team===myTeam?'YOUR BASE':'OTHER TEAM BASE'):
+        teamColors[team].name.toUpperCase()+' BASE',b.x,b.y+62);
     }
 
     // drifting fog
@@ -2927,10 +3005,24 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
     const player = game.ghosts[localGhostId()];
     const halfWidth=W/(scale*2),halfHeight=H/(scale*2);
+    // Guests smoothly approach frequent authoritative network positions
+    // instead of teleporting a few pixels on every WebSocket packet.
+    if(isOnlineGuest()){
+      for(const ghost of game.ghosts){
+        if(!Number.isFinite(ghost.viewX)||Math.abs(ghost.x-ghost.viewX)>200)
+          ghost.viewX=ghost.x;
+        if(!Number.isFinite(ghost.viewY)||Math.abs(ghost.y-ghost.viewY)>200)
+          ghost.viewY=ghost.y;
+        ghost.viewX=lerp(ghost.viewX,ghost.x,.32);
+        ghost.viewY=lerp(ghost.viewY,ghost.y,.32);
+      }
+    }
+    const playerX=isOnlineGuest()?player.viewX:player.x;
+    const playerY=isOnlineGuest()?player.viewY:player.y;
     const desiredX=halfWidth>=WORLD.w/2?WORLD.w/2:
-      clamp(player.x,halfWidth,WORLD.w-halfWidth);
+      clamp(playerX,halfWidth,WORLD.w-halfWidth);
     const desiredY=halfHeight>=WORLD.h/2?WORLD.h/2:
-      clamp(player.y,halfHeight,WORLD.h-halfHeight);
+      clamp(playerY,halfHeight,WORLD.h-halfHeight);
     camX = lerp(camX, desiredX, .08);
     camY = lerp(camY, desiredY, .08);
 
@@ -2942,7 +3034,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     for (const flame of game.flames) drawFlame(flame.x, flame.y, -1, flame.phase);
     for (const g of game.ghosts) drawSpiritChain(g);
     drawParticles();
-    for (const g of game.ghosts) drawGhost(g);
+    for (const g of game.ghosts){
+      if(isOnlineGuest()&&Number.isFinite(g.viewX)&&Number.isFinite(g.viewY)){
+        const sourceX=g.x,sourceY=g.y;
+        g.x=g.viewX;g.y=g.viewY;
+        try{drawGhost(g)}finally{g.x=sourceX;g.y=sourceY;}
+      }else drawGhost(g);
+    }
     drawPopups();
     ctx.restore();
 

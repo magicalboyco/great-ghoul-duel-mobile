@@ -262,3 +262,78 @@ test('Alpha 23: portrait layout respects safe areas and app-like installation',(
   assert.ok(manifest.icons.some(entry=>entry.src==='assets/boo-crew-icon.svg'));
   assert.match(icon,/<svg[^>]*viewBox="0 0 192 192"/);
 });
+
+test('Alpha 24: team uniform follows each team captain and guest sees own base',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const a=html.indexOf('  function resolveOnlineTeamColors(');
+  const b=html.indexOf('  function syncOnlineTeamColors()',a);
+  assert.ok(a>0&&b>a);
+  const PASTELS=[
+    {hex:'#D98A91'},{hex:'#E8AD87'},{hex:'#F2DF9D'},
+    {hex:'#B8DDC4'},{hex:'#A7D3EA'},{hex:'#C9B9E5'},{hex:'#F1B4D5'}
+  ];
+  const resolve=new Function('PASTELS',html.slice(a,b)+';return resolveOnlineTeamColors;')(PASTELS);
+  const duo=new Map([[0,{color:'#B8DDC4'}],[4,{color:'#F2DF9D'}]]);
+  assert.deepEqual(resolve(duo,[0,4],'#B8DDC4').map(x=>x.hex),['#B8DDC4','#F2DF9D']);
+  const same=resolve(new Map([[0,{color:'#A7D3EA'}],[4,{color:'#A7D3EA'}]]),[0,4],'#A7D3EA');
+  assert.notEqual(same[0].hex,same[1].hex,'Two teams must remain distinguishable');
+  const multiple=new Map([[0,{color:'#B8DDC4'}],[1,{color:'#C9B9E5'}],[4,{color:'#E8AD87'}]]);
+  assert.equal(resolve(multiple,[4,1,0],'#B8DDC4')[0].hex,'#B8DDC4');
+  assert.match(html,/team===myTeam\?'YOUR BASE':'OTHER TEAM BASE'/);
+});
+
+test('Alpha 24: guest unlocks sound by tapping Join and can hear local scoring',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/onlineJoinEl\.addEventListener\('click',\(\)=>\{GhostAudio\.unlock\(\);startOnlineConnection\(false\)\}/);
+  assert.match(html,/onlineCreateEl\.addEventListener\('click',\(\)=>\{GhostAudio\.unlock\(\);startOnlineConnection\(true\)\}/);
+  assert.match(html,/function unlock\(\)\{/);
+  assert.match(html,/if\(!s\.compact&&isOnlineGuest\(\)/);
+  assert.match(html,/GhostAudio\.effect\('deposit'\)/);
+  assert.match(html,/GhostAudio\.effect\('collect'\)/);
+});
+
+test('Alpha 24: compact snapshots reduce network traffic, retaining full state periodically',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  function publishOnlineSnapshot(){');
+  const end=html.indexOf('  function receiveOnlineSnapshot(',start);
+  assert.ok(start>0&&end>start);
+  const producer=new Function('online','game','teamColors','performance','sendOnline','isOnlineHost',
+    html.slice(start,end)+';return publishOnlineSnapshot;');
+  const messages=[];
+  let time=500;
+  const online={lastFullSnapshot:-Infinity,seats:[0,4]};
+  const ghost=id=>({
+    id,team:id<4?0:1,styleId:id,x:100+id,y:200+id,heading:1,
+    trail:Array(30).fill(1),trailPos:Array.from({length:30},(_,i)=>({x:i,y:i*2})),
+    score:10,face:'happy',reaction:'',reactionTime:0,reactionDuration:0,
+    bounce:1,blink:1,moveAmount:1,stats:{collected:10,stolen:0},playerColor:null,human:id===0||id===4
+  });
+  const game={
+    remaining:110,phase:'playing',scores:[10,15],difficulty:'normal',
+    ghosts:Array.from({length:8},(_,id)=>ghost(id)),
+    flames:Array.from({length:72},(_,id)=>({x:id*10,y:id*6,phase:0}))
+  };
+  const publish=producer(online,game,[{hex:'#B8DDC4'},{hex:'#F2DF9D'}],
+    {now:()=>time},msg=>messages.push(msg),()=>true);
+  publish();
+  assert.equal(messages[0].state.compact,undefined);
+  time=580;publish();
+  assert.equal(messages[1].state.compact,true);
+  assert.equal(messages[1].state.flames,undefined);
+  time=760;publish();
+  assert.ok(messages[2].state.flames,'Periodic full state includes trails and flames');
+  const fullBytes=JSON.stringify(messages[0]).length;
+  const compactBytes=JSON.stringify(messages[1]).length;
+  assert.ok(compactBytes<fullBytes*.3,'Compact packet must be under 30% of full packet');
+  assert.match(html,/ghost\.viewX=lerp\(ghost\.viewX,ghost\.x,\.32\)/);
+  assert.match(html,/try\{drawGhost\(g\)\}finally\{g\.x=sourceX;g\.y=sourceY;\}/);
+});
+
+test('Alpha 24: official Worker is prefilled; private host token stays out of invite links',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/const DEFAULT_ROOM_SERVER='https:\/\/ghost-duel-rooms\.jonathanjoyner\.workers\.dev'/);
+  assert.match(html,/onlineServerEl\.value=DEFAULT_ROOM_SERVER/);
+  assert.match(html,/id="onlineServerAdvanced"/);
+  assert.match(html,/only needs this link/);
+  assert.doesNotMatch(html,/hostToken[^;\n]*localStorage/);
+});
