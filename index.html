@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 12</title>
+<title>Ghost Duel — Alpha 13</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -44,6 +44,13 @@ button{font:inherit}
 .swatch[aria-pressed="true"]{border:3px solid #fff;outline:3px solid #f0e0ff;outline-offset:2px;transform:scale(1.05)}
 .swatch[aria-pressed="true"]::after{content:"✓";font-weight:bold;font-size:17px;color:#2b2342;position:absolute;inset:0;display:grid;place-items:center}
 #teamPreview{font-size:12px;color:#e9dfff;margin:6px auto 10px}
+#difficultyWrap{margin:13px auto 8px;max-width:470px}
+.difficultyButtons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:9px 0}
+.difficultyBtn{min-height:43px;padding:8px 3px;border-radius:13px;background:rgba(255,255,255,.08);color:#f2e6ff;border:1.5px solid rgba(255,255,255,.22);font-size:13px;font-weight:850;touch-action:manipulation;cursor:pointer}
+.difficultyBtn[aria-pressed="true"]{border:2px solid #c4ffda;background:rgba(147,255,190,.17);color:#d1ffe0;box-shadow:0 0 0 1px #a0ffba55}
+#difficultyDescription{color:#e9daff;font-size:12px;min-height:33px;line-height:1.4;margin:4px 0}
+#difficultyHud{position:absolute;top:calc(53px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);border:1px solid #ffffff44;border-radius:999px;padding:3px 12px;background:#16122bb8;color:#ecdefc;font-size:11px;font-weight:750;z-index:5;pointer-events:none}
+#difficultyHud[hidden]{display:none}
 #startBtn{padding:14px 22px;border-radius:16px;border:none;font-weight:900;letter-spacing:.03em;background:linear-gradient(180deg,#c4ffda,#68d49f);color:#13241c;box-shadow:0 12px 24px rgba(89,221,156,.28)}
 #startBtn:active{transform:translateY(1px)}
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
@@ -94,15 +101,24 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 12</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 13</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
     <div class="palette-label">Choose your pastel-goth ghost</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
+<div id="difficultyWrap">
+  <div class="palette-label">Computer opponent difficulty</div>
+  <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
+    <button type="button" class="difficultyBtn" data-difficulty="easy" aria-pressed="false">🌙 Easy</button>
+    <button type="button" class="difficultyBtn" data-difficulty="normal" aria-pressed="true">👻 Normal</button>
+    <button type="button" class="difficultyBtn" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
+  </div>
+  <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
+</div>
 <div class="bullets">
-      <div><b>New this build</b><br>Larger character portraits and dramatic ghost reactions: swoops, panic, hearts, stars and confetti.</div>
+      <div><b>New this build</b><br>Choose Easy, Normal or Hard opponent ghosts before the match. Different AI, same rules and powers.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -110,6 +126,7 @@ button{font:inherit}
     <button id="startBtn">START GAME</button>
   </div>
 </div>
+<div id="difficultyHud" hidden>👻 NORMAL OPPONENTS</div>
 <div id="results" role="dialog" aria-modal="true" aria-labelledby="resultHeading">
 <div class="resultsPanel">
 <div class="eyebrow">THE GHOSTLY SUPERLATIVES</div>
@@ -130,6 +147,30 @@ button{font:inherit}
   const ctx = canvas.getContext('2d', { alpha: false });
   const hud = document.getElementById('hud');
   const menu = document.getElementById('menu');
+  const difficultyButtons=document.getElementById('difficultyButtons');
+  const difficultyDescription=document.getElementById('difficultyDescription');
+  const difficultyHud=document.getElementById('difficultyHud');
+  const DIFFICULTIES={
+    easy:{name:'Easy',speed:.79,bankAt:3,thinkMin:1.15,thinkMax:1.75,chaseChance:.06,chaseRadius:190,preyLength:5,
+      description:'Gentle rivals: slower movement, fewer steals, and frequent small deposits.'},
+    normal:{name:'Normal',speed:1,bankAt:5,thinkMin:.3,thinkMax:.85,chaseChance:.35,chaseRadius:270,preyLength:4,
+      description:'Classic opponent ghosts: regular speed, collecting and stealing.'},
+    hard:{name:'Hard',speed:1.13,bankAt:7,thinkMin:.16,thinkMax:.36,chaseChance:.68,chaseRadius:415,preyLength:3,
+      description:'Clever rivals: faster decisions, more ambitious routes, and active attempts to steal.'}
+  };
+  let selectedDifficulty='normal';
+  function setDifficulty(mode){
+    if(!DIFFICULTIES[mode])return;
+    selectedDifficulty=mode;
+    for(const button of difficultyButtons.querySelectorAll('button')){
+      button.setAttribute('aria-pressed',String(button.dataset.difficulty===mode));
+    }
+    difficultyDescription.textContent=DIFFICULTIES[mode].description;
+  }
+  for(const button of difficultyButtons.querySelectorAll('button')){
+    button.addEventListener('click',()=>setDifficulty(button.dataset.difficulty));
+  }
+
   const results=document.getElementById('results');
   const resultHeading=document.getElementById('resultHeading');
   const resultScore=document.getElementById('resultScore');
@@ -487,7 +528,9 @@ button{font:inherit}
       ghosts.push(newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) }));
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], lastWarningSecond:16, toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+'!', toastLeft: 5, phase: 'playing' };
+    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing' };
+    difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
+    difficultyHud.hidden=false;
     warningEl.classList.remove('visible');
     results.classList.remove('open');
     clockEl.style.color='#fff5cb';
@@ -541,32 +584,52 @@ button{font:inherit}
   }
 
   function botDirection(g, dt) {
-    g.targetTimer -= dt;
-    if (g.targetTimer <= 0 || !g.target) {
-      g.targetTimer = randRange(.3, .85);
-      const home = BASES[g.team];
-      const targetEnemy = game.ghosts.find(o => o.team !== g.team && o.trail.length >= 4 && distance(o, g) < 270);
-      g.target = g.trail.length >= 5 ? home : (targetEnemy && rand() < .35 ? targetEnemy : bestFlame(g) || home);
-    }
-    let target = g.target;
-    if (g.trail.length >= 5) target = BASES[g.team];
-    let dx = target.x - g.x, dy = target.y - g.y;
-    let len = Math.hypot(dx, dy) || 1;
-    let dir = { x: dx / len, y: dy / len };
-    if (collides(g.x + dir.x * 38, g.y + dir.y * 38, 20)) {
-      const options = [-1.1, 1.1, -.55, .55, Math.PI];
-      for (const ang of options) {
-        const c = Math.cos(ang), s = Math.sin(ang);
-        const rx = dir.x * c - dir.y * s, ry = dir.x * s + dir.y * c;
-        if (!collides(g.x + rx * 44, g.y + ry * 44, 20)) { dir = { x: rx, y: ry }; break; }
+    // Adjust only the rival team. Friendly bots retain Alpha 12 Normal AI.
+    const mode=g.team===1?game.difficulty:'normal';
+    const config=DIFFICULTIES[mode]||DIFFICULTIES.normal;
+    g.targetTimer-=dt;
+    const home=BASES[g.team];
+    const underPressure=mode==='hard'&&g.trail.length>=3&&game.ghosts.some(other=>
+      other.team!==g.team&&distance(other,g)<140&&other.trail.length<g.trail.length);
+    // Hard bots bank any remaining trail as time expires; all bots use the
+    // exact same deposit zones, stealing collisions and pickup rules.
+    const goHome=g.trail.length>=config.bankAt||
+      (mode==='hard'&&g.trail.length>0&&game.remaining<20)||
+      (underPressure&&g.trail.length>=4);
+    if(g.targetTimer<=0||!g.target||goHome){
+      g.targetTimer=randRange(config.thinkMin,config.thinkMax);
+      if(goHome)g.target=home;
+      else{
+        const prey=game.ghosts.filter(other=>other.team!==g.team&&
+          other.trail.length>=config.preyLength&&distance(other,g)<config.chaseRadius)
+          .sort((a,b)=>b.trail.length/(distance(b,g)+80)-a.trail.length/(distance(a,g)+80));
+        const shouldChase=prey.length&&rand()<config.chaseChance;
+        g.target=shouldChase?prey[0]:(bestFlame(g)||home);
       }
     }
-    return { x: dir.x, y: dir.y, mag: 1 };
+    const target=goHome?home:g.target;
+    let dx=target.x-g.x,dy=target.y-g.y;
+    let len=Math.hypot(dx,dy)||1;
+    let dir={x:dx/len,y:dy/len};
+    const lookAhead=mode==='hard'?55:38;
+    if(collides(g.x+dir.x*lookAhead,g.y+dir.y*lookAhead,20)){
+      const options=mode==='hard'?[.42,-.42,.85,-.85,1.35,-1.35,Math.PI]:
+        [-1.1,1.1,-.55,.55,Math.PI];
+      for(const angle of options){
+        const c=Math.cos(angle),sn=Math.sin(angle);
+        const rx=dir.x*c-dir.y*sn,ry=dir.x*sn+dir.y*c;
+        if(!collides(g.x+rx*lookAhead,g.y+ry*lookAhead,20)){
+          dir={x:rx,y:ry};break;
+        }
+      }
+    }
+    return {x:dir.x,y:dir.y,mag:1};
   }
 
   function moveGhost(g, dir, dt) {
     const score=levelFor(g);
-    const speed=172*(score>=8?1.48:1);
+    const rivalSpeed=g.team===1?DIFFICULTIES[game.difficulty].speed:1;
+    const speed=172*(score>=8?1.48:1)*rivalSpeed;
     const phaseMove=score>=113;
     const beforeX=g.x,beforeY=g.y;
     let nx = g.x + dir.x * speed * dt;
@@ -857,7 +920,7 @@ button{font:inherit}
   }
   function buildResults(){
     const [a,b]=game.scores;
-    resultHeading.textContent=a>b?'YOUR TEAM WINS!':a<b?'THE RIVALS WIN!':'A SPOOKY DRAW!';
+    resultHeading.textContent=(a>b?'YOUR TEAM WINS!':a<b?'THE RIVALS WIN!':'A SPOOKY DRAW!')+' · '+DIFFICULTIES[game.difficulty].name.toUpperCase();
     resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
     const awardMap=assignAwards(game.ghosts),you=game.ghosts[0],mine=awardMap.get(0);
     myAwardEmoji.innerHTML=ghostPortrait(you);
@@ -889,7 +952,7 @@ button{font:inherit}
     game.phase='finished';
     warningEl.classList.remove('visible');
     GhostAudio.endRound(game.scores[0]>=game.scores[1]);
-    hud.hidden=true;carried.hidden=true;hint.classList.add('hidden');
+    hud.hidden=true;carried.hidden=true;difficultyHud.hidden=true;hint.classList.add('hidden');
     buildResults();
   }
 
