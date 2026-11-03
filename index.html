@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 32)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 33)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -509,7 +509,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 32</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 33</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
@@ -567,7 +567,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   </div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>Alpha 32: move the gold locator from the ground onto your ghost on desktop and mobile. Alpha 30 repaired startup; Alpha 29 added player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
+      <div><b>New this build</b><br>Alpha 33: the gold locator fades after five seconds while the YOU name label stays visible. Alpha 30 repaired startup; Alpha 29 added player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
       <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -1902,7 +1902,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       ghosts.push(ghost);
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
+    game = { localLocatorUntil:performance.now()+5000, ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
     document.getElementById('againBtn').textContent=online?.started?'👻 PLAY AGAIN (SOLO)':'👻 PLAY AGAIN';
     difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
     difficultyHud.hidden=false;
@@ -3000,15 +3000,21 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const nickname=sanitizePlayerName(g.playerName);
     const label=nickname?'YOU · '+nickname:'YOU';
     ctx.save();
-    // Alpha 32: outline the ghost's BODY rather than drawing a ground ring
-    // that seems attached to pumpkins or scenery on desktop.
-    const pulse=.5+.5*Math.sin(t*4.5);
-    ctx.strokeStyle='rgba(30,18,48,.94)';
-    ctx.lineWidth=5.2;
-    ctx.beginPath();ctx.ellipse(x,y-5,31+pulse*2,35+pulse*2,0,0,Math.PI*2);ctx.stroke();
-    ctx.strokeStyle='#fff1a3';
-    ctx.lineWidth=2.8;
-    ctx.beginPath();ctx.ellipse(x,y-5,31+pulse*2,35+pulse*2,0,0,Math.PI*2);ctx.stroke();
+    // First five seconds only: a subtle locator surrounds the local ghost.
+    // Fade during the final 750ms, while the YOU label remains throughout.
+    const locatorRemaining=(game.localLocatorUntil||0)-performance.now();
+    if(locatorRemaining>0){
+      ctx.save();
+      ctx.globalAlpha=Math.min(1,locatorRemaining/750);
+      const pulse=.5+.5*Math.sin(t*4.5);
+      ctx.strokeStyle='rgba(30,18,48,.94)';
+      ctx.lineWidth=5.2;
+      ctx.beginPath();ctx.ellipse(x,y-5,31+pulse*2,35+pulse*2,0,0,Math.PI*2);ctx.stroke();
+      ctx.strokeStyle='#fff1a3';
+      ctx.lineWidth=2.8;
+      ctx.beginPath();ctx.ellipse(x,y-5,31+pulse*2,35+pulse*2,0,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+    }
     // Keep the badge independent of body animation and team color.
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='900 13px system-ui';
