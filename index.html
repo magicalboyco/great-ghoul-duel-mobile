@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 11</title>
+<title>Ghost Duel — Alpha 12</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -60,10 +60,10 @@ button{font:inherit}
 .myAward .awardReason{font-size:13px;color:#eadcff}
 #myStats{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
 #myStats span{font-size:11px;padding:7px 9px;background:#ffffff13;border-radius:9px}
-.awardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
-.awardTile{min-width:0;display:flex;gap:8px;align-items:center;border-radius:12px;padding:9px;text-align:left;background:#ffffff0b;border:1px solid #ffffff1b;animation:tileAppear .35s both}
+.awardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.awardTile{min-width:0;display:flex;gap:10px;align-items:center;border-radius:14px;padding:11px;text-align:left;background:linear-gradient(115deg,var(--tile-tint,#ffffff15),#ffffff0a);border:1px solid #ffffff38;animation:tileAppear .35s both}
 .awardTile.player{border-color:#fff2ae8c;background:#fff4b91d}
-.awardTile .portrait{width:46px;height:50px;flex:0 0 46px;border-radius:11px;display:grid;place-items:center;background:#ffffff10;border:1px solid #ffffff22;overflow:hidden}.awardTile .portrait svg{width:100%;height:100%;display:block}
+.awardTile .portrait{width:76px;height:86px;flex:0 0 76px;border-radius:13px;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,var(--team),#252037 80%);border:2px solid #ffffff7c;overflow:visible}.awardTile .portrait svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 4px #140b2666)}
 .awardTile .who{font-weight:900;font-size:12px}
 .awardTile .what{font-size:11px;color:#f7e3ff}
 .awardTile .why{font-size:10px;color:#c7b8d9}
@@ -71,7 +71,7 @@ button{font:inherit}
 .resultsActions button{border-radius:13px;border:0;padding:12px 15px;font-weight:900;touch-action:manipulation}
 #againBtn{background:#aaf4c4;color:#173826}#colorBtn{background:#6c547e;color:white;border:1px solid #ffffff4a}
 @keyframes trophyBob{to{transform:translateY(-5px) rotate(5deg)}}@keyframes tileAppear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:480px){.resultsPanel{padding:12px}.awardGrid{gap:6px}.awardTile{padding:6px;gap:5px}.awardTile .portrait{width:39px;height:44px;flex-basis:39px}.awardTile .who{font-size:11px}.awardTile .what{font-size:10px}.awardTile .why{font-size:9px}}
+@media(max-width:480px){.resultsPanel{padding:12px}.awardGrid{grid-template-columns:1fr;gap:8px}.awardTile{padding:10px;gap:12px}.awardTile .portrait{width:71px;height:80px;flex-basis:71px}.awardTile .who{font-size:14px}.awardTile .what{font-size:13px}.awardTile .why{font-size:11px}}
 @media (max-width:680px){.bullets{grid-template-columns:1fr}.title{font-size:50px}.panel{padding:18px}.sub{font-size:14px}}
 </style>
 </head>
@@ -94,7 +94,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 11</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 12</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -102,7 +102,7 @@ button{font:inherit}
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
 <div class="bullets">
-      <div><b>New this build</b><br>Eight distinct ghost personalities and matching illustrated portraits on the awards screen.</div>
+      <div><b>New this build</b><br>Larger character portraits and dramatic ghost reactions: swoops, panic, hearts, stars and confetti.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -789,6 +789,25 @@ button{font:inherit}
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
+  const GHOST_CHARACTER_NAMES=['Ribbon','Sprout','Spellcaster','Stargazer','Scholar','Nightwing','Royal','Cozy'];
+  // Unique visual identity is independent of team colors or awards.
+  // Each character has its own silhouette accent, facial expression and backdrop.
+  const INDIVIDUAL_ACCENTS=['#ff72af','#65cfa0','#ae8bff','#ffd766','#6e93ec','#ab7cef','#fff09a','#ed986d'];
+  function drawReactionSymbols(g,x,y){
+    if(g.reactionTime<=0)return;
+    const r=g.reaction,age=1-g.reactionTime/Math.max(.01,g.reactionDuration);
+    ctx.save();ctx.font='bold 22px system-ui';ctx.textAlign='center';
+    const symbols=r==='collect'?['♥','✧']:r==='celebrate'?['✦','♥','★','✧','♥']:r==='steal'?['★','!','✦']:r==='robbed'?['!','?','💧']:[];
+    for(let i=0;i<symbols.length;i++){
+      const a=-Math.PI*.88+i*Math.PI*.76/(Math.max(1,symbols.length-1));
+      const spread=27+age*(r==='celebrate'?40:22);
+      const sx=x+Math.cos(a)*spread,sy=y-10+Math.sin(a)*spread-age*14;
+      ctx.globalAlpha=Math.min(1,g.reactionTime*3);
+      ctx.fillStyle=i%2?INDIVIDUAL_ACCENTS[g.id]:'#F2F0EF';
+      ctx.fillText(symbols[i],sx,sy);
+    }
+    ctx.restore();
+  }
   const AWARD_TYPES=[
     {emoji:'⏰',name:'Last-Second Hero',value:g=>g.stats.lastSecond,min:1,desc:n=>n+' points banked in final 15s'},
     {emoji:'🦇',name:'Spirit Snatcher',value:g=>g.stats.stolen,min:1,desc:n=>n+' spirits stolen'},
@@ -832,10 +851,11 @@ button{font:inherit}
       const award=awardMap.get(ghost.id),tile=document.createElement('div');
       tile.className='awardTile'+(ghost.id===0?' player':'');
       tile.style.animationDelay=i*.06+'s';
+      tile.style.setProperty('--tile-tint',alpha(color(ghost.team),.24));
       const avatar=document.createElement('div');avatar.className='portrait';
       avatar.style.setProperty('--team',color(ghost.team));avatar.innerHTML=ghostPortrait(ghost);
       const content=document.createElement('div');
-      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts';
+      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.id];
       const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
       const why=document.createElement('div');why.className='why';why.textContent=award.reason;
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
@@ -917,33 +937,41 @@ button{font:inherit}
 
   // Small illustrated portrait using the exact same signature accessory as in the arena.
   function ghostPortrait(g){
-    const fill=color(g.team);
-    const edge=darken(fill,.58);
-    const inks='#332946';
-    const accessories={
-      bow:'<path d="M19 21 Q6 8 6 24 Q8 31 19 24 Q31 10 30 25 Q27 31 19 24Z" fill="#f58bbd" stroke="#71446e" stroke-width="2"/><circle cx="19" cy="23" r="3" fill="#fff0a3"/>',
-      leaf:'<path d="M23 15 Q30 1 47 6 Q41 17 23 15Z" fill="#8ed1a3" stroke="#436a5d" stroke-width="2"/><path d="M23 16L43 7" stroke="#436a5d" stroke-width="2"/>',
-      hat:'<path d="M18 18L32 -2 45 18Z" fill="#423151" stroke="#f1abed" stroke-width="2"/><ellipse cx="31" cy="18" rx="22" ry="5" fill="#423151" stroke="#f1abed" stroke-width="2"/><path d="M24 13h15" stroke="#e7b2ff" stroke-width="3"/>',
-      star:'<path d="M47 7L50 14 58 15 52 20 54 28 47 24 40 28 42 20 36 15 44 14Z" fill="#ffe99b" stroke="#86688d" stroke-width="1.5"/>',
-      glasses:'<g stroke="#59486b" stroke-width="3" fill="#ffffff18"><circle cx="25" cy="36" r="8"/><circle cx="43" cy="36" r="8"/><path d="M33 35h2M17 34l-5 -2M51 34l5 -2"/></g>',
-      wings:'<g fill="#8c72aa" stroke="#493952" stroke-width="2"><path d="M20 41Q2 4 0 33L5 44 13 40 17 51Z"/><path d="M48 41Q67 4 68 33L63 44 55 40 51 51Z"/></g>',
-      crown:'<path d="M17 20L13 8 25 14 34 2 43 14 55 8 51 20Z" fill="#ffe6a1" stroke="#9e7772" stroke-width="2"/><circle cx="34" cy="15" r="3" fill="#f185b2"/>',
-      scarf:'<path d="M16 52Q34 63 52 52L51 61Q34 68 17 61Z" fill="#e9ab7c" stroke="#84596b" stroke-width="2"/><path d="M47 59h10v14H47Z" fill="#de8a7d" stroke="#84596b" stroke-width="2"/>'
-    };
-    const accessory=accessories[GHOST_STYLES[g.id]]||accessories.bow;
-    // Draw wings behind the body; glasses and scarf must appear on top.
-    const back=g.id===5?accessory:'',front=g.id===5?'':accessory;
-    const svg='<svg viewBox="0 0 68 78" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+GHOST_NAMES[g.id]+' ghost">'
-      +'<ellipse cx="34" cy="68" rx="21" ry="5" fill="#110d2470"/>'
-      +back
-      +'<path d="M13 58V36Q13 13 34 13Q55 13 55 36V58Q49 49 43 60Q37 51 34 61Q27 49 21 60Q16 50 13 58Z" fill="'+fill+'" stroke="'+edge+'" stroke-width="2.5"/>'
-      +'<ellipse cx="24" cy="32" rx="9" ry="4" fill="#ffffff55" transform="rotate(-20 24 32)"/>'
-      +'<ellipse cx="25" cy="36" rx="3.4" ry="5.7" fill="'+inks+'"/>'
-      +'<ellipse cx="43" cy="36" rx="3.4" ry="5.7" fill="'+inks+'"/>'
-      +'<circle cx="24" cy="33.5" r="1.5" fill="#fff"/><circle cx="42" cy="33.5" r="1.5" fill="#fff"/>'
-      +'<path d="M28 48Q34 55 40 48" stroke="'+inks+'" stroke-width="2.5" fill="none" stroke-linecap="round"/>'
-      +front+'</svg>';
-    return svg;
+    const fill=color(g.team),accent=INDIVIDUAL_ACCENTS[g.id],edge=darken(fill,.52);
+    const ink='#272038';
+    const faces=[
+      '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
+      '<path d="M28 55Q40 59 52 55" fill="none" stroke="'+ink+'" stroke-width="3.5" stroke-linecap="round"/>',
+      '<ellipse cx="40" cy="56" rx="5" ry="8" fill="'+ink+'"/>',
+      '<path d="M29 54Q40 68 51 54" fill="none" stroke="'+ink+'" stroke-width="4" stroke-linecap="round"/>',
+      '<path d="M34 56h12" stroke="'+ink+'" stroke-width="3" stroke-linecap="round"/>',
+      '<path d="M30 55Q40 62 50 55" fill="none" stroke="'+ink+'" stroke-width="4"/>',
+      '<path d="M28 52Q40 67 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8"/>',
+      '<ellipse cx="40" cy="57" rx="3" ry="5" fill="'+ink+'"/>'
+    ];
+    const shapes=[
+      '<path d="M25 29Q3 11 8 30Q14 40 25 32Q43 11 42 31Q34 40 25 32Z" fill="#ff5eab" stroke="#70395b" stroke-width="3"/><circle cx="25" cy="31" r="5" fill="#ffefd4"/>',
+      '<path d="M28 25Q33 4 57 10Q50 27 28 25Z" fill="#63cb87" stroke="#356c55" stroke-width="3"/><path d="M28 24L52 12" stroke="#356c55" stroke-width="2.5"/>',
+      '<path d="M22 31L40 -8 57 31Z" fill="#472d71" stroke="#dda2ff" stroke-width="3"/><ellipse cx="40" cy="31" rx="29" ry="6.5" fill="#472d71" stroke="#dda2ff" stroke-width="3"/><path d="M30 23h20" stroke="#ffdb8f" stroke-width="5"/>',
+      '<path d="M59 4L65 17 80 19 69 28 72 43 59 35 46 43 49 28 38 19 53 17Z" fill="#ffe36f" stroke="#c78f4c" stroke-width="2.5"/>',
+      '<g stroke="#3f3471" stroke-width="4" fill="#c8e5ff55"><circle cx="28" cy="44" r="12"/><circle cx="52" cy="44" r="12"/><path d="M40 44h0M16 43l-6 -3M64 43l6 -3"/></g>',
+      '<g fill="#7959a1" stroke="#433153" stroke-width="3"><path d="M22 46Q5 4 0 27L4 51 14 44 20 64Z"/><path d="M58 46Q76 4 80 27L76 51 66 44 60 64Z"/></g>',
+      '<path d="M20 29L14 8 29 17 40 -2 51 17 66 8 60 29Z" fill="#ffdb70" stroke="#b9894f" stroke-width="3"/><circle cx="40" cy="19" r="5" fill="#f17aa7"/>',
+      '<path d="M16 69Q40 81 64 69L62 80Q39 90 18 80Z" fill="#ffac75" stroke="#975b59" stroke-width="3"/><path d="M59 78h11v17H59Z" fill="#eb847d" stroke="#975b59" stroke-width="3"/>'
+    ];
+    const accessory=shapes[g.id]||shapes[0];
+    const behind=g.id===5?accessory:'',above=g.id===5?'':accessory;
+    const eyebrows=g.id===2?'<path d="M24 36L33 33M47 33L56 36" stroke="'+ink+'" stroke-width="3"/>':'';
+    const cheeks=g.id%3===0?'<ellipse cx="20" cy="55" rx="6" ry="3" fill="#ff87ab99"/><ellipse cx="60" cy="55" rx="6" ry="3" fill="#ff87ab99"/>':'';
+    return '<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+GHOST_NAMES[g.id]+' '+GHOST_CHARACTER_NAMES[g.id]+'">'
+      +'<circle cx="40" cy="48" r="39" fill="'+accent+'" opacity=".16"/>'
+      +'<ellipse cx="40" cy="92" rx="28" ry="6" fill="#0b092b88"/>'
+      +behind
+      +'<path d="M12 76V44Q12 17 40 17Q68 17 68 44V76Q62 63 53 79Q46 68 40 82Q32 65 24 80Q16 64 12 76Z" fill="'+fill+'" stroke="'+edge+'" stroke-width="3.5"/>'
+      +'<ellipse cx="24" cy="35" rx="10" ry="5" fill="#ffffff70" transform="rotate(-20 24 35)"/>'
+      +'<ellipse cx="28" cy="45" rx="4" ry="'+(g.id===3?8:6)+'" fill="'+ink+'"/><ellipse cx="52" cy="45" rx="4" ry="'+(g.id===3?8:6)+'" fill="'+ink+'"/>'
+      +'<circle cx="27" cy="42" r="1.6" fill="#fff"/><circle cx="51" cy="42" r="1.6" fill="#fff"/>'
+      +faces[g.id]+cheeks+eyebrows+above+'</svg>';
   }
 
   function drawGhost(g) {
@@ -1071,6 +1099,7 @@ button{font:inherit}
     }
     ctx.restore();
 
+    drawReactionSymbols(g,x,y);
     if(celebrating||stealing||g.reaction==='collect'){
       const n=celebrating?7:3;
       ctx.save();
