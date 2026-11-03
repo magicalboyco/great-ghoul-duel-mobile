@@ -904,6 +904,7 @@ html,body{
       g.human=human;
       g.styleId=styles[g.id]; // Exactly one of each Boo Crew costume per match.
       g.playerColor=human?(profile?.color||null):null; // Personal accent only.
+      g.playerName=human?sanitizePlayerName(profile?.name):'';
     }
   }
   function refreshOnlineBadge(){
@@ -943,7 +944,9 @@ html,body{
       const fill=occupied?(profile?.color||colors[team].hex):colors[team].hex;
       portrait.innerHTML=ghostPortrait({id:seat,styleId,team},fill);
       const title=document.createElement('span');title.className='seatTitle';
-      title.textContent=occupied?(seat===room.seat?(room.host?'You · Host':'★ YOU'):seat===0?'Host':'Friend '+(seat+1)):
+      const displayName=sanitizePlayerName(profile?.name);
+      title.textContent=occupied?(seat===room.seat?('★ YOU'+(displayName?' · '+displayName:'')+(room.host?' · Host':'')):
+        (displayName||(seat===0?'Host':'Friend '+(seat+1)))):
         room.mode==='coop'?(team===0?'Friendly Bot':'Rival Bot'):'Bot / Open';
       const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
       teamLabel.textContent=team===0?'✦ TEAM ONE':'✦ TEAM TWO';
@@ -1088,7 +1091,7 @@ html,body{
         session.seats=Array.isArray(msg.seats)?msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8):[];
         session.profiles=new Map((Array.isArray(msg.profiles)?msg.profiles:[])
           .filter(p=>Number.isInteger(p.seat)&&session.seats.includes(p.seat))
-          .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
+          .map(p=>[p.seat,{styleId:p.styleId,color:p.color,name:sanitizePlayerName(p.name)}]));
         if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus(MODE_NAMES[session.mode]+' · Room '+code+' · '+
@@ -1099,7 +1102,7 @@ html,body{
         if(Array.isArray(msg.profiles)){
           session.profiles=new Map(msg.profiles
             .filter(p=>Number.isInteger(p.seat)&&p.seat>=0&&p.seat<8)
-            .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
+            .map(p=>[p.seat,{styleId:p.styleId,color:p.color,name:sanitizePlayerName(p.name)}]));
         }
         if(Array.isArray(msg.seats))session.seats=msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8);
         // Nobody enters the arena until every open browser acknowledges
@@ -1205,7 +1208,7 @@ html,body{
         trail:g.trail,trailPos:g.trailPos,score:g.score,face:g.face,
         reaction:g.reaction,reactionTime:g.reactionTime,
         reactionDuration:g.reactionDuration,bounce:g.bounce,blink:g.blink,
-        moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,human:!!g.human
+        moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,playerName:g.playerName||'',human:!!g.human
       })),flames:game.flames
     }:{
       compact:true,remaining:game.remaining,phase:game.phase,scores:game.scores,
@@ -1239,7 +1242,7 @@ html,body{
       if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
       const g=game.ghosts[snap.id];
       for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
-        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','human']){
+        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','playerName','human']){
         if(snap[field]!==undefined)g[field]=snap[field];
       }
     }
@@ -2531,7 +2534,10 @@ html,body{
       const avatar=document.createElement('div');avatar.className='portrait';
       avatar.style.setProperty('--team',color(ghost.team));avatar.innerHTML=ghostPortrait(ghost);
       const content=document.createElement('div');
-      const who=document.createElement('div');who.className='who';who.textContent=(ghost.id===localGhostId()?'You':ghost.id===0?'Host':GHOST_NAMES[ghost.id])+
+      const who=document.createElement('div');who.className='who';
+      const displayName=sanitizePlayerName(ghost.playerName);
+      who.textContent=(ghost.id===localGhostId()?('You'+(displayName?' · '+displayName:'')):
+        (displayName||(!ghost.human?GHOST_NAMES[ghost.id]:ghost.id===0?'Host':'Player '+(ghost.id+1))))+
         ' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.styleId??ghost.id];
       const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
       const why=document.createElement('div');why.className='why';why.textContent=award.reason;
@@ -2845,8 +2851,9 @@ html,body{
       // real friends from computer opponents in the same shared arena.
       const mine=g.id===localGhostId();
       ctx.save();ctx.font='900 12px system-ui';ctx.textAlign='center';
-      const text=mine?'★ YOU':'● PLAYER '+(g.id+1);
-      const width=mine?69:94;
+      const displayName=sanitizePlayerName(g.playerName);
+      const text=(mine?'★ ':'● ')+(displayName||('PLAYER '+(g.id+1)));
+      const width=Math.max(69,Math.min(174,ctx.measureText(text).width+23));
       ctx.fillStyle=mine?'#b4f8d9ed':'#39294ff0';
       ctx.strokeStyle=mine?'#134d35':'#f0d2ff';
       ctx.lineWidth=1.6;ctx.beginPath();ctx.roundRect(x-width/2,y-64,width,21,9);
