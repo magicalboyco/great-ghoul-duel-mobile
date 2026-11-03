@@ -107,6 +107,7 @@ export class GhostRoom {
     this.preparing=false;
     this.roundId=null;
     this.readySeats=new Set();
+    this.profiles=new Map();
     // Connection state is rehydrated from attachment metadata after hibernation.
     this.rebuild();
   }
@@ -125,12 +126,26 @@ export class GhostRoom {
     this.roundId = sockets.map(ws=>ws.deserializeAttachment()?.roundId).find(Boolean)||null;
     this.readySeats=new Set(sockets.filter(ws=>ws.deserializeAttachment()?.ready===true)
       .map(ws=>ws.deserializeAttachment()?.seat).filter(Number.isInteger));
-    // Recover match startup acknowledgments after Durable Object hibernation.
+    this.profiles=new Map(sockets.map(ws=>ws.deserializeAttachment())
+      .filter(info=>info&&Number.isInteger(info.seat)&&info.profile)
+      .map(info=>[info.seat,info.profile]));
+    // Recover room player profiles and readiness after hibernation.
   }
   send(ws, data) { try { ws.send(ok(data)); } catch {} }
   broadcast(data) { for (const ws of this.players.values()) this.send(ws, data); }
   roster() {
-    this.broadcast({type:"roster",seats:[...this.players.keys()].sort((a,b)=>a-b),started:this.started,preparing:this.preparing});
+    this.broadcast({
+      type:'roster',
+      seats:[...this.players.keys()].sort((a,b)=>a-b),
+      profiles:[...this.profiles].map(([seat,profile])=>({seat,...profile})),
+      started:this.started,preparing:this.preparing
+    });
+  }
+  sanitizeProfile(message){
+    return {
+      styleId:Number.isInteger(message?.styleId)&&message.styleId>=0&&message.styleId<8?message.styleId:0,
+      color:GHOST_COLORS.has(message?.color)?message.color:'#C9B9E5'
+    };
   }
   beginRound(){
     if(!this.started||!this.preparing)return;
@@ -248,10 +263,19 @@ export class GhostRoom {
         try{ws.close(1008,'Invalid role')}catch{}
         return;
       }
-      ws.serializeAttachment({seat,started:false});
+      const profile=this.sanitizeProfile(msg);
+      ws.serializeAttachment({seat,started:false,profile});
       this.players.set(seat,ws);
+      this.profiles.set(seat,profile);
       if(seat===0)this.host=ws;
       this.send(ws,{type:'welcome',seat,host:seat===0});
+      this.roster();
+      return;
+    }
+    if(msg.type==='profile'&&!this.started){
+      const profile=this.sanitizeProfile(msg);
+      this.profiles.set(meta.seat,profile);
+      ws.serializeAttachment({...meta,profile});
       this.roster();
       return;
     }
@@ -264,7 +288,8 @@ export class GhostRoom {
         const data=socket.deserializeAttachment();
         socket.serializeAttachment({...data,started:true,preparing:true,ready:false,roundId:this.roundId});
       }
-      this.broadcast({type:'prepare',roundId:this.roundId,seats:[...this.players.keys()]});
+      this.broadcast({type:'prepare',roundId:this.roundId,seats:[...this.players.keys()],
+        profiles:[...this.profiles].map(([seat,profile])=>({seat,...profile}))});
       return;
     }
     if(msg.type==='ready'&&this.started&&this.preparing&&
@@ -277,10 +302,21 @@ export class GhostRoom {
       return;
     }
     if(!this.started||this.preparing)return;
-    if (msg.type === "input" && meta.seat !== 0) {
-      const x=Number(msg.x),y=Number(msg.y);
-      if (!Number.isFinite(x)||!Number.isFinite(y)) return;
-      this.send(this.host,{type:"input",seat:meta.seat,x:Math.max(-1,Math.min(1,x)),y:Math.max(-1,Math.min(1,y))});
+    if(msg.type==='input'&&meta.seat!==0&&this.players.get(meta.seat)===ws){
+      const x=Number(msg.x),y=Number(msg.y),seq=msg.seq;
+      if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isSafeInteger(seq)||seq<0||seq>1e9)return;
+      // Connected human controls go to the authoritative host. The host
+      // will NEVER substitute bot AI for a seat that is still connected.
+      if(this.host)this.send(this.host,{
+        type:'input',seat:meta.seat,seq,x:Math.max(-1,Math.min(1,x)),y:Math.max(-1,Math.min(1,y))
+      });
+      return;
+    }
+    if(msg.type==='controlAck'&&meta.seat===0){
+      if(!Number.isInteger(msg.seat)||!Number.isSafeInteger(msg.seq))return;
+      const target=this.players.get(msg.seat);
+      if(target&&msg.seat!==0)this.send(target,{type:'controlAck',seq:msg.seq});
+      return;
     }
     if (msg.type === "snapshot" && meta.seat === 0) {
       // Relay only; host is trusted in this first prototype.
@@ -309,6 +345,7 @@ export class GhostRoom {
     const meta=ws.deserializeAttachment();
     if (!meta || this.players.get(meta.seat)!==ws) return;
     this.players.delete(meta.seat);
+    this.profiles.delete(meta.seat);
     if(meta.seat===0) {
       this.roomMeta=null;
       this.state.storage.delete('room-meta').catch(()=>{});
@@ -316,6 +353,7 @@ export class GhostRoom {
       for (const socket of this.players.values()) try{ socket.close(1012,"Host disconnected"); }catch{}
       this.players.clear();this.host=null;this.started=false;
       this.preparing=false;this.roundId=null;this.readySeats.clear();
+      this.profiles.clear();
     } else {
       this.readySeats.delete(meta.seat);
       this.broadcast({type:"leave",seat:meta.seat});

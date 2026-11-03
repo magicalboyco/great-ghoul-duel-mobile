@@ -76,8 +76,14 @@ test('room creation requires a real reservation, host secret and join authorizat
     return instance.sockets.at(-1);
   }
   const guest=await enter();
-  await instance.room.webSocketMessage(guest,JSON.stringify({type:'hello',role:'guest'}));
+  await instance.room.webSocketMessage(guest,JSON.stringify({
+    type:'hello',role:'guest',styleId:5,color:'#C9B9E5'
+  }));
   assert.ok(guest.sent.some(message=>message.type==='welcome'&&message.seat!==0));
+  const guestSeat=guest.deserializeAttachment().seat;
+  assert.ok(guest.sent.some(message=>message.type==='roster'&&message.profiles
+    .some(profile=>profile.seat===guestSeat&&profile.styleId===5&&profile.color==='#C9B9E5')),
+    'Guest Boo Crew character and color are broadcast to the lobby');
 
   const wrongHost=await enter();
   await instance.room.webSocketMessage(wrongHost,JSON.stringify({type:'hello',role:'host',token:'x'.repeat(48)}));
@@ -85,7 +91,9 @@ test('room creation requires a real reservation, host secret and join authorizat
   assert.ok(wrongHost.sent.some(message=>message.type==='error'));
 
   const host=await enter();
-  await instance.room.webSocketMessage(host,JSON.stringify({type:'hello',role:'host',token:hostToken}));
+  await instance.room.webSocketMessage(host,JSON.stringify({
+    type:'hello',role:'host',token:hostToken,styleId:6,color:'#F2DF9D'
+  }));
   assert.ok(host.sent.some(message=>message.type==='welcome'&&message.seat===0&&message.host===true));
   assert.equal(instance.room.players.size,2);
   assert.ok(guest.sent.some(message=>message.type==='roster'&&message.seats.length===2));
@@ -114,8 +122,22 @@ test('room creation requires a real reservation, host secret and join authorizat
   assert.ok(hostStart&&guestStart,'Start is delivered to both connected browsers');
   assert.equal(hostStart.roundId,guestStart.roundId,'The same round begins everywhere');
 
-  await instance.room.webSocketMessage(guest,JSON.stringify({type:'input',x:.7,y:.2}));
-  assert.ok(host.sent.some(message=>message.type==='input'&&message.seat!==0));
+  await instance.room.webSocketMessage(guest,JSON.stringify({
+    type:'input',seq:1,x:.7,y:.2
+  }));
+  assert.ok(host.sent.some(message=>message.type==='input'&&message.seat===guestSeat&&
+    message.seq===1&&message.x===.7&&message.y===.2),
+    'Guest joystick movement reaches host physics, rather than running a bot');
+  await instance.room.webSocketMessage(host,JSON.stringify({
+    type:'controlAck',seat:guestSeat,seq:1
+  }));
+  assert.ok(guest.sent.some(message=>message.type==='controlAck'&&message.seq===1),
+    'Guest receives confirmation that the host processed joystick input');
+  await instance.room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:7,color:'#A7D3EA'
+  }));
+  assert.equal(instance.room.profiles.get(guestSeat).styleId,5,
+    'Live match profiles do not change after starting');
 
   instance.room.webSocketClose(host);
   assert.equal((await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms/'+code),env)).status,404);
@@ -134,4 +156,29 @@ test('leaderboard GET still works after room changes',async()=>{
   const response=await runtime.workerDefault.fetch(mockRequest('https://example.test/leaderboard'),env);
   assert.equal(response.status,200);
   assert.deepEqual((await response.json()).scores,[]);
+});
+
+test('Connected human ghosts keep control even when movement packets arrive late',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  const neutralDirection=()=>');
+  const end=html.indexOf('  function lobbyPlayerProfile()',start);
+  assert.ok(start>0&&end>start,'Movement ownership helper exists in game source');
+  const helpers=html.slice(start,end);
+  const humanSeatDirection=new Function(helpers+';return humanSeatDirection;')();
+  const room={seats:[0,4],inputs:new Map()};
+  // Connected human ghost 4 must remain still, not be handed to botDirection.
+  assert.deepEqual(humanSeatDirection(room,4,1200),{x:0,y:0,mag:0});
+  room.inputs.set(4,{x:.5,y:0,mag:.5,at:1200,seq:1});
+  assert.deepEqual(humanSeatDirection(room,4,1250),
+    {x:.5,y:0,mag:.5,at:1200,seq:1});
+  assert.deepEqual(humanSeatDirection(room,4,1600),{x:0,y:0,mag:0},
+    'Stale human inputs yield neutral movement rather than bot AI');
+  assert.equal(humanSeatDirection(room,5,1600),null,
+    'Unoccupied ghost seats retain computer opponents');
+
+  assert.match(html,/const humanInput=isOnlineHost\(\)\?humanSeatDirection/);
+  assert.match(html,/humanInput\?\?botDirection\(g,dt\)/);
+  assert.match(html,/seq:\+\+online\.inputSeq/);
+  assert.match(html,/humanSeats:online\.seats/);
+  assert.match(html,/★ YOU/);
 });

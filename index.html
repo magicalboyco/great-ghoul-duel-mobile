@@ -573,6 +573,42 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const onlineInviteEl=document.getElementById('onlineInvite');
   let online=null,onlinePending=false;
   const localGhostId=()=>Number.isInteger(online?.seat)?online.seat:0;
+  const neutralDirection=()=>({x:0,y:0,mag:0});
+  // Connected human seats are never taken over by computer AI if inputs
+  // pause or arrive late. The last movement expires to neutral instead.
+  function humanSeatDirection(room,seat,now){
+    if(!room?.seats.includes(seat))return null;
+    const last=room.inputs.get(seat);
+    if(!last||now-last.at>280)return neutralDirection();
+    return last;
+  }
+  function lobbyPlayerProfile(){
+    return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex};
+  }
+  function applyHumanProfiles(){
+    if(!game||!online)return;
+    for(const seat of online.seats){
+      const g=game.ghosts[seat],profile=online.profiles.get(seat);
+      if(!g)continue;
+      g.human=true;
+      g.styleId=profile?.styleId??g.styleId;
+      g.playerColor=profile?.color||null;
+    }
+    for(const g of game.ghosts){
+      if(!online.seats.includes(g.id)){g.human=false;g.playerColor=null;}
+    }
+  }
+  function refreshOnlineBadge(){
+    if(!online||!game?.online)return;
+    const players=online.seats.length;
+    const role=online.host?'HOST':'GUEST';
+    const health=online.host?'· Hosting game':
+      online.lastAckAt>0&&performance.now()-online.lastAckAt<1800?'· Controls connected':
+      online.lastSnapshot>0&&performance.now()-online.lastSnapshot<1800?'· Receiving game':
+      '· Waiting for updates';
+    difficultyHud.textContent='🌐 ROOM '+online.code+' · '+role+' · '+players+' HUMAN'+(players===1?'':'S')+
+      ' + '+(8-players)+' BOTS '+health;
+  }
   const isOnlineGuest=()=>online?.host===false&&online?.started===true;
   const isOnlineHost=()=>online?.host===true&&online?.started===true;
   function setOnlineStatus(message){onlineStatusEl.textContent=message;}
@@ -591,8 +627,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       tile.className='roomSeat'+(occupied?' full':'')+(seat===0?' host':'');
       const portrait=document.createElement('div');portrait.className='seatGhost';
       if(occupied){
-        const styleId=seat===room.seat?selectedCharacter:seat;
-        const fill=seat<4?PASTELS[selectedIndex].hex:PASTELS[5].hex;
+        const profile=room.profiles.get(seat);
+        const styleId=profile?.styleId??(seat===room.seat?selectedCharacter:seat);
+        const fill=profile?.color??PASTELS[selectedIndex].hex;
         portrait.innerHTML=ghostPortrait({id:seat,styleId,team:seat<4?0:1},fill);
       }else portrait.textContent='✨';
       const title=document.createElement('span');title.className='seatTitle';
@@ -618,6 +655,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(old){try{old.ws.close(1000,'Leaving')}catch{}}
     showOnlineLobby(null);
     setOnlineStatus(reason);
+    difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
     const wasOnlineMatch=!!game?.online;
     if(wasOnlineMatch){
       game.phase='finished';game.online=false;
@@ -664,7 +702,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       setOnlineStatus(error.message||'Could not reach the room server.');return;
     }
     onlinePending=false;
-    const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,seats:[],inputs:new Map(),lastInput:0,lastSnapshot:0};
+    const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
+      seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
+      inputSeq:0,receivedSeq:-1};
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -673,7 +713,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(online!==session)return;
       // Only the host receives the secret token. Neither invitation nor
       // localStorage contains this credential.
-      ws.send(JSON.stringify({type:'hello',role:hostToken?'host':'guest',...(hostToken?{token:hostToken}:{})}));
+      ws.send(JSON.stringify({type:'hello',role:hostToken?'host':'guest',
+        ...lobbyPlayerProfile(),...(hostToken?{token:hostToken}:{})}));
       setOnlineStatus('Connected. Waiting for the server to assign your ghost…');
     });
     ws.addEventListener('message',event=>{
@@ -689,10 +730,20 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
           'Share this code or the invite link, then tap Start online match.':'Waiting for the host to start.'));
       }else if(msg.type==='roster'){
         session.seats=Array.isArray(msg.seats)?msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8):[];
+        session.profiles=new Map((Array.isArray(msg.profiles)?msg.profiles:[])
+          .filter(p=>Number.isInteger(p.seat)&&session.seats.includes(p.seat))
+          .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
+        if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
-          '/8 people joined. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
+          '/8 real people connected. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
       }else if(msg.type==='prepare'){
+        if(Array.isArray(msg.profiles)){
+          session.profiles=new Map(msg.profiles
+            .filter(p=>Number.isInteger(p.seat)&&p.seat>=0&&p.seat<8)
+            .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
+        }
+        if(Array.isArray(msg.seats))session.seats=msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8);
         // Nobody enters the arena until every open browser acknowledges
         // this exact round. A late/duplicate message cannot start a match.
         if(typeof msg.roundId!=='string'||session.started)return;
@@ -717,20 +768,37 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.preparing=false;
         session.started=true;
         reset();game.online=true;
-        difficultyHud.textContent='🌐 ONLINE ROOM '+code;
+        applyHumanProfiles();
+        refreshOnlineBadge();
         showOnlineLobby(session);
-        setOnlineStatus('👻 Everyone is ready! Online match started.');
+        setOnlineStatus('👻 Multiplayer is live! '+session.seats.length+' humans, '+(8-session.seats.length)+
+          ' computer ghosts. Your ghost is #'+(session.seat+1)+'.');
         if(session.host)publishOnlineSnapshot();
       }else if(msg.type==='input'&&session.host&&session.started){
         if(session.seats.includes(msg.seat)&&msg.seat!==0){
           const x=Math.max(-1,Math.min(1,Number(msg.x)||0));
           const y=Math.max(-1,Math.min(1,Number(msg.y)||0));
-          session.inputs.set(msg.seat,{x,y,mag:Math.min(1,Math.hypot(x,y)),at:performance.now()});
+          const seq=msg.seq;
+          if(!Number.isSafeInteger(seq))return;
+          const previous=session.inputs.get(msg.seat);
+          if(previous&&previous.seq>=seq)return;
+          session.inputs.set(msg.seat,{x,y,mag:Math.min(1,Math.hypot(x,y)),at:performance.now(),seq});
+          sendOnline({type:'controlAck',seat:msg.seat,seq});
         }
       }else if(msg.type==='snapshot'&&!session.host&&session.started){
+        session.lastSnapshot=performance.now();
         receiveOnlineSnapshot(msg.state);
+        refreshOnlineBadge();
+      }else if(msg.type==='controlAck'&&!session.host&&session.started){
+        if(Number.isSafeInteger(msg.seq)&&msg.seq>=session.receivedSeq){
+          session.receivedSeq=msg.seq;session.lastAckAt=performance.now();
+          refreshOnlineBadge();
+        }
       }else if(msg.type==='leave'){
         session.inputs.delete(msg.seat);
+        session.profiles.delete(msg.seat);
+        session.seats=session.seats.filter(seat=>seat!==msg.seat);
+        if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
       }else if(msg.type==='finish'){
         if(!session.host&&game?.phase==='playing')finish();
         session.started=false;
@@ -754,13 +822,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(!isOnlineHost()||!game)return;
     sendOnline({type:'snapshot',state:{
       remaining:game.remaining,phase:game.phase,scores:game.scores,difficulty:game.difficulty,
-      teamColors:teamColors.map(c=>c.hex),
+      teamColors:teamColors.map(c=>c.hex),humanSeats:online.seats,
       ghosts:game.ghosts.map(g=>({
         id:g.id,team:g.team,styleId:g.styleId,x:g.x,y:g.y,heading:g.heading,
         trail:g.trail,trailPos:g.trailPos,score:g.score,face:g.face,
         reaction:g.reaction,reactionTime:g.reactionTime,
         reactionDuration:g.reactionDuration,bounce:g.bounce,blink:g.blink,
-        moveAmount:g.moveAmount,stats:g.stats
+        moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,human:!!g.human
       })),flames:game.flames
     }});
   }
@@ -769,6 +837,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       !Array.isArray(s.scores)||s.scores.length!==2||!Array.isArray(s.flames))return;
     game.remaining=Math.max(0,Math.min(120,Number(s.remaining)||0));
     game.scores=s.scores;
+    if(Array.isArray(s.humanSeats)){
+      online.seats=s.humanSeats.filter(n=>Number.isInteger(n)&&n>=0&&n<8);
+    }
     game.flames=s.flames;
     game.difficulty=DIFFICULTIES[s.difficulty]?s.difficulty:'normal';
     if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
@@ -783,7 +854,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
       const g=game.ghosts[snap.id];
       for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
-        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats']){
+        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','human']){
         if(snap[field]!==undefined)g[field]=snap[field];
       }
     }
@@ -1537,10 +1608,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if (!game || game.phase !== 'playing') return;
     if(isOnlineGuest()){
       game.toastLeft=Math.max(0,game.toastLeft-dt);
-      if(performance.now()-online.lastInput>=65){
+      if(performance.now()-online.lastInput>=50){
         online.lastInput=performance.now();
         const dir=inputDirection();
-        sendOnline({type:'input',x:dir.x*dir.mag,y:dir.y*dir.mag});
+        sendOnline({type:'input',seq:++online.inputSeq,x:dir.x*dir.mag,y:dir.y*dir.mag});
+      }
+      if(performance.now()-online.lastSnapshot>2500){
+        difficultyHud.textContent='⚠️ ROOM '+online.code+' · Waiting for host game updates';
+      }else if(online.lastAckAt>0&&performance.now()-online.lastAckAt>2500){
+        difficultyHud.textContent='⚠️ ROOM '+online.code+' · Controls reconnecting';
       }
       return;
     }
@@ -1573,10 +1649,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       g.reactionTime=Math.max(0,g.reactionTime-dt);
       if(g.reactionTime===0)g.reaction='';
       g.wiggle+=dt;
-      const remote=online?.inputs.get(i);
-      const present=isOnlineHost()&&online.seats.includes(i);
-      const input=i===0?inputDirection():(present&&remote&&performance.now()-remote.at<500?
-        remote:botDirection(g,dt));
+      // Human seats must never be driven by botDirection(). Lost or delayed
+      // packets stop the ghost briefly; they do NOT turn the player into AI.
+      const humanInput=isOnlineHost()?humanSeatDirection(online,i,performance.now()):null;
+      const input=i===0?inputDirection():(humanInput??botDirection(g,dt));
       const oldX=g.x,oldY=g.y;
       moveGhost(g, input, dt);
       g.moveAmount=Math.min(1,Math.hypot(g.x-oldX,g.y-oldY)/(dt*170));
@@ -2103,7 +2179,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const styleId=g.styleId??g.id;
     // Menu previews use the live color swatch, whereas results portraits
     // always reflect the actual team's match color.
-    const fill=previewColor??color(g.team),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
+    const fill=previewColor??g.playerColor??color(g.team),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
     const ink='#272038';
     const faces=[
       '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
@@ -2146,6 +2222,11 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const crewLore=document.getElementById('crewLore');
   function refreshCrewCards(){
     crewLore.textContent=GHOST_CHARACTER_LORE[selectedCharacter];
+    // A player can change their costume or color in the lobby without
+    // becoming a bot or changing the other team's competition color.
+    if(online&&online.seat!==null&&!online.started&&online.ws.readyState===WebSocket.OPEN){
+      sendOnline({type:'profile',...lobbyPlayerProfile()});
+    }
     const swatch=PASTELS[selectedIndex];
     const skinEdge=darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
@@ -2198,7 +2279,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const tilt=celebrating?Math.sin(progress*Math.PI*5)*.18:
       stolen?Math.sin(progress*Math.PI*12)*.18:
       moving?Math.sin(g.heading)*.085:Math.sin(motion)*.035;
-    const baseColor=color(g.team),edge=darken(baseColor,.56);
+    const baseColor=g.playerColor||color(g.team),edge=darken(baseColor,.56);
     if(carried>=23){
       const halo=88+Math.sin(t*5+g.bounce)*7;
       drawGlow(x,y-3,halo,alpha(baseColor,.59));
@@ -2304,6 +2385,20 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
     drawReactionSymbols(g,x,y);
     drawGhostEmote(g,x,y);
+    if(game.online&&g.human){
+      // Visible human badge: every player can immediately distinguish the
+      // real friends from computer opponents in the same shared arena.
+      const mine=g.id===localGhostId();
+      ctx.save();ctx.font='900 12px system-ui';ctx.textAlign='center';
+      const text=mine?'★ YOU':'● PLAYER '+(g.id+1);
+      const width=mine?69:94;
+      ctx.fillStyle=mine?'#b4f8d9ed':'#39294ff0';
+      ctx.strokeStyle=mine?'#134d35':'#f0d2ff';
+      ctx.lineWidth=1.6;ctx.beginPath();ctx.roundRect(x-width/2,y-64,width,21,9);
+      ctx.fill();ctx.stroke();
+      ctx.fillStyle=mine?'#1d4232':'#fff4ff';ctx.fillText(text,x,y-49);
+      ctx.restore();
+    }
     if(celebrating||stealing||g.reaction==='collect'){
       const n=celebrating?7:3;
       ctx.save();
