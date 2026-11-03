@@ -377,7 +377,7 @@ test('Alpha 25: illustrated cobblestones are cached, seeded and rendered below s
   const envEnd=html.indexOf('  function drawParticles() {',envStart);
   const env=html.slice(envStart,envEnd);
   const pathDraw=env.indexOf('ctx.drawImage(graveyardPathLayer,0,550-88)');
-  const propsDraw=env.indexOf('for (const p of props)');
+  const propsDraw=env.indexOf('for (const p of (isFourWay()?fourwayProps:props))');
   const baseDraw=env.indexOf('drawBaseNameplate(ctx,b,team)');
   assert.ok(pathDraw>=0&&propsDraw>pathDraw&&baseDraw>propsDraw,
     'Cached path sits underneath scenery and the base plaques');
