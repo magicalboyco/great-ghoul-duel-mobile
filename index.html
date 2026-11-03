@@ -857,6 +857,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.preparing=false;
         session.started=true;
         reset();game.online=true;
+        // The host's button tap and the guest's Join tap unlocked Web Audio
+        // before this asynchronous start packet; both now play the soundtrack.
         syncOnlineTeamColors();
         applyHumanProfiles();
         refreshOnlineBadge();
@@ -916,7 +918,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function publishOnlineSnapshot(){
     if(!isOnlineHost()||!game)return;
-    sendOnline({type:'snapshot',state:{
+    const now=performance.now();
+    // Position/state updates are compact. The heavier inventory/flame state
+    // is sent less often to avoid queueing large WebSocket messages on phones.
+    const full=now-online.lastFullSnapshot>=320||game.phase==='finished';
+    if(full)online.lastFullSnapshot=now;
+    sendOnline({type:'snapshot',state:full?{
       remaining:game.remaining,phase:game.phase,scores:game.scores,difficulty:game.difficulty,
       teamColors:teamColors.map(c=>c.hex),humanSeats:online.seats,
       ghosts:game.ghosts.map(g=>({
@@ -926,30 +933,52 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         reactionDuration:g.reactionDuration,bounce:g.bounce,blink:g.blink,
         moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,human:!!g.human
       })),flames:game.flames
+    }:{
+      compact:true,remaining:game.remaining,phase:game.phase,scores:game.scores,
+      ghosts:game.ghosts.map(g=>({
+        id:g.id,x:g.x,y:g.y,heading:g.heading,moveAmount:g.moveAmount,
+        face:g.face,score:g.score
+      }))
     }});
   }
   function receiveOnlineSnapshot(s){
     if(!s||!game||!Array.isArray(s.ghosts)||s.ghosts.length!==8||
-      !Array.isArray(s.scores)||s.scores.length!==2||!Array.isArray(s.flames))return;
+      !Array.isArray(s.scores)||s.scores.length!==2||
+      (!s.compact&&!Array.isArray(s.flames)))return;
     game.remaining=Math.max(0,Math.min(120,Number(s.remaining)||0));
     game.scores=s.scores;
     if(Array.isArray(s.humanSeats)){
       online.seats=s.humanSeats.filter(n=>Number.isInteger(n)&&n>=0&&n<8);
     }
-    game.flames=s.flames;
-    game.difficulty=DIFFICULTIES[s.difficulty]?s.difficulty:'normal';
+    if(Array.isArray(s.flames))game.flames=s.flames;
+    if(s.difficulty&&DIFFICULTIES[s.difficulty])game.difficulty=s.difficulty;
     if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
       teamColors=s.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
       online.teamColors=teamColors.map(p=>p.hex);
       greenScoreEl.style.color=color(0);
       purpleScoreEl.style.color=color(1);
     }
+    const before=game.ghosts[localGhostId()];
+    const beforeTrail=before?.trail.length||0,beforeScore=before?.score||0,
+      beforeStolen=before?.stats.stolen||0,beforeRobbed=before?.stats.robbed||0;
     for(const snap of s.ghosts){
       if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
       const g=game.ghosts[snap.id];
       for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
         'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','human']){
         if(snap[field]!==undefined)g[field]=snap[field];
+      }
+    }
+    if(!s.compact&&isOnlineGuest()&&game.phase==='playing'){
+      const you=game.ghosts[localGhostId()];
+      if(you){
+        if(you.stats.stolen>beforeStolen)GhostAudio.effect('steal');
+        else if(you.stats.robbed>beforeRobbed)GhostAudio.effect('loss');
+        else if(you.score>beforeScore)GhostAudio.effect('deposit');
+        else if(you.trail.length>beforeTrail)GhostAudio.effect('collect');
+        for(const [threshold,effect] of [[8,'speed'],[23,'glow'],[53,'magnet'],[113,'phase']]){
+          if(beforeTrail<threshold&&you.trail.length>=threshold)GhostAudio.effect(effect);
+        }
       }
     }
     if(game.phase==='playing'&&s.phase==='finished'){
@@ -967,8 +996,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       setOnlineStatus('Invite code ready. Tap Join room to play with your friend.');
     }
   }catch{}
-  onlineCreateEl.addEventListener('click',()=>startOnlineConnection(true));
-  onlineJoinEl.addEventListener('click',()=>startOnlineConnection(false));
+  onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
+  onlineJoinEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(false)});
   onlineLeaveEl.addEventListener('click',()=>leaveOnline());
   onlineStartEl.addEventListener('click',()=>{
     if(online?.host&&!online.started&&!online.preparing&&online.seat===0&&
@@ -1150,6 +1179,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       source.connect(gain);gain.connect(musicBus);source.start(now);
       active={source,gain};
       if(wantsMusic&&!muted)status('Moonlit Mischief · '+(cue==='hurry'?'Hurry Up!':'Graveyard Hop'));
+    }
+    // iPhone/Safari requires an explicit user gesture to unlock Web Audio.
+    // This is called synchronously from Create/Join button clicks, *before*
+    // the asynchronous server response starts the round.
+    function unlock(){
+      if(muted)return;
+      if(setup())resume();
     }
     function init(){
       wantsMusic=true;
@@ -1378,7 +1414,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});
     }
     function onVisible(){if(!muted&&wantsMusic)resume()}
-    return {init,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
+    return {init,unlock,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
   })();
 
   function rand() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
@@ -1818,7 +1854,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
 
     updateGameHud();
-    if(isOnlineHost()&&performance.now()-online.lastSnapshot>=85){
+    if(isOnlineHost()&&performance.now()-online.lastSnapshot>=70){
       online.lastSnapshot=performance.now();
       publishOnlineSnapshot();
     }
