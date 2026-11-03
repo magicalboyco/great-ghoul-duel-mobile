@@ -651,9 +651,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(!online||!game)return;
     if(!online.host&&online.teamColors?.length===2){
       teamColors=online.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
-    }else if(online.host){
-      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,PASTELS[selectedIndex].hex);
-      online.teamColors=teamColors.map(p=>p.hex);
+    }else{
+      // The PREPARE packet already contains everybody's chosen color.
+      // Guests can show their true team color on the very first frame,
+      // rather than briefly rendering the host's team with their own pastel.
+      const hostColor=online.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
+      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,hostColor);
+      if(online.host)online.teamColors=teamColors.map(p=>p.hex);
     }
     greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
     greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
@@ -869,8 +873,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
           toast(GHOST_CHARACTER_NAMES[selected]+' was already chosen. You play as '+
             GHOST_CHARACTER_NAMES[resolved]+' in this match!');
         }
-        setOnlineStatus('👻 Multiplayer is live! '+session.seats.length+' humans, '+(8-session.seats.length)+
-          ' computer ghosts. Your ghost is #'+(session.seat+1)+'.');
+        const myTeam=game.ghosts[session.seat].team;
+        setOnlineStatus('👻 Multiplayer live! '+session.seats.length+' humans, '+(8-session.seats.length)+
+          ' computer ghosts. You are on the '+teamColors[myTeam].name+' team.');
         if(session.host)publishOnlineSnapshot();
       }else if(msg.type==='input'&&session.host&&session.started){
         if(session.seats.includes(msg.seat)&&msg.seat!==0){
