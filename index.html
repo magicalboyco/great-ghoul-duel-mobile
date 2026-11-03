@@ -679,7 +679,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         setOnlineStatus('Room '+code+' · You are ghost #'+(msg.seat+1)+'. '+(session.host?
           'Share this code or the invite link, then tap Start online match.':'Waiting for the host to start.'));
       }else if(msg.type==='roster'){
-        session.seats=Array.isArray(msg.seats)?msg.seats:[];
+        session.seats=Array.isArray(msg.seats)?msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8):[];
+        showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
           '/8 people joined. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
       }else if(msg.type==='start'){
