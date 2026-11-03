@@ -4,6 +4,12 @@ Updated for Alpha 14 (2026-11-02).
 
 This document distinguishes **inspiration and thanks**, **materials currently included in the playable build**, and **third-party source code or media actually incorporated**. Appreciation is not a substitute for license compliance.
 
+## Game studio
+
+**Joy Haus** is the game studio behind the independent Ghost Duel project.
+
+The studio websites supplied by the project owner are `http://joy.haus`, `http://www.joy-haus.us`, and `http://www.joy-haus.com`. These are recorded as provided; site availability and the preferred official address remain unverified, so none has been selected as the main in-game link yet.
+
 ## Original gameplay inspiration — not bundled assets
 
 - **Google, The Great Ghoul Duel (Halloween 2018)** — central reference for the two-team, eight-ghost, two-minute spirit-flame collection/deposit/steal mechanics and individual end-of-match superlatives. [Official Doodle and complete original credits](https://doodles.google/doodle/halloween-2018/). The game thanks the artists, musicians, producers, designers, engineers, and Google Cloud contributors listed there.
