@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 28)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 29)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -357,6 +357,137 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   #menu>.panel{max-height:calc(100dvh - 16px);margin:auto;}
   .resultsPanel,.hallPanel,.creditsPanel{max-height:calc(100dvh - 16px);}
 }
+
+/* Alpha 29: Safari text inflation can make a correctly sized menu look
+   magnified even with the device-width viewport meta tag. Preserve normal
+   pinch zoom and accessibility zoom; prevent automatic font inflation. */
+html,body{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  min-width:0;
+  max-width:100%;
+}
+#playerIdentity{
+  width:100%;
+  max-width:400px;
+  min-width:0;
+  margin:13px auto 12px;
+  padding:11px 12px;
+  border-radius:14px;
+  background:linear-gradient(145deg,#5c3f7780,#301e5055);
+  border:1px solid #eecbff6b;
+}
+#playerIdentity label{
+  display:block;
+  font-size:13px;
+  font-weight:850;
+  color:#ffe5b8;
+  line-height:1.4;
+}
+#playerIdentity label span{color:#e2d3f3;font-size:11px;font-weight:500}
+#playerDisplayName{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-height:44px;
+  padding:10px 12px;
+  margin:8px auto 5px;
+  font:inherit;
+  font-size:16px;
+  color:#fff3df;
+  text-align:center;
+  background:#1e1734;
+  border:1.5px solid #efd8ff99;
+  border-radius:11px;
+}
+#playerDisplayName:focus-visible{outline:3px solid #c8f6d7;outline-offset:2px}
+#playerNameHint{font-size:11px;line-height:1.4;color:#e9dafa}
+#menu .panel{overflow-wrap:anywhere}
+#menu .panel .title{white-space:normal;hyphens:none}
+@media(max-width:520px){
+  #menu{align-items:stretch;}
+  #menu>.panel{
+    margin:auto;
+    flex:none;
+    max-width:100%;
+    width:100%;
+    padding:12px 10px 17px;
+  }
+  #menu .title{
+    font-size:clamp(25px,7.5vw,35px);
+    line-height:1.05;
+    letter-spacing:0;
+  }
+  #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .crewCard span{font-size:12px;line-height:1.18}
+  #playerIdentity{padding:10px 8px;margin:10px auto}
+  #onlinePanel .onlineControls{flex-wrap:wrap}
+  #onlinePanel .onlineControls button{min-width:110px}
+}
+@media (max-height:560px) and (orientation:landscape){
+  #menu{align-items:stretch}
+  #menu>.panel{margin:auto;max-height:calc(100dvh - 16px)}
+}
+
+/* Alpha 29 — responsive viewport recovery.
+   Safari may inflate text if the page is unusually wider than the phone
+   viewport; text-size-adjust prevents this without disabling pinch zoom. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+#menu{position:fixed;width:100%;min-width:0;max-width:100%;overflow:hidden;}
+#menu>.panel{box-sizing:border-box;flex:0 1 780px;min-width:0;max-width:min(780px,100%);width:100%;contain:inline-size;}
+#menu .title{overflow-wrap:anywhere;word-break:normal;}
+#menu .panel,#menu .playerIdentity,#menu #onlinePanel,
+#menu .swatches,#menu #booCrewGrid,#menu .crewCard,
+#menu .modeCard,#menu #onlineRoster{min-width:0;max-width:100%;}
+#menu .playerIdentity{margin:12px auto 9px;padding:10px 12px;border-radius:14px;
+  background:#b7dcdf0e;border:1px solid #e7c7ed77;text-align:left;max-width:460px;}
+.playerIdentity label{display:block;font-size:13px;font-weight:850;color:#ffe5b5;margin-bottom:7px;}
+.playerIdentity label span{font-size:11px;color:#e4d2f1;font-weight:500;}
+.playerIdentity input{display:block;width:100%;min-width:0;max-width:100%;border-radius:11px;
+  border:1.5px solid #d8afe7;background:#1e1835;color:#fff8df;padding:11px 12px;
+  font-family:inherit;font-size:16px;line-height:1.4;letter-spacing:.01em;}
+.playerIdentity input:focus-visible{outline:3px solid #a8ead0;outline-offset:2px;}
+#playerNameHint{font-size:11px;color:#e9dafa;line-height:1.4;padding-top:6px;}
+#zoomNotice{color:#ffe5a5;background:#2d1b3deb;border:1px solid #e8c48db8;
+  padding:8px;border-radius:12px;margin:5px 0;font-size:12px;line-height:1.4;}
+#zoomNotice[hidden]{display:none;}
+/* An explicit phone layout is also activated if Safari reports an oversized
+   desktop-style layout viewport despite a narrow physical phone screen. */
+#menu.phoneView{inset:auto;top:0;left:0;right:auto;bottom:auto;
+  width:var(--phone-menu-width,100%);height:100dvh;padding:9px;align-items:center;}
+#menu.phoneView>.panel{width:100%;max-width:100%;max-height:calc(100dvh - 18px);
+  overflow-y:auto;overflow-x:hidden;padding:12px 10px;}
+#menu.phoneView .title{font-size:clamp(25px,7.8vw,38px);line-height:1.02;}
+#menu.phoneView #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#menu.phoneView .crewCard span{font-size:12px;overflow-wrap:anywhere;}
+#menu.phoneView #onlineRoster{grid-template-columns:repeat(2,minmax(0,1fr));}
+#menu.phoneView .swatches{grid-template-columns:repeat(7,minmax(0,1fr));}
+@media(max-width:520px){
+  #menu>.panel{max-width:100%;contain:inline-size;}
+  #menu .title{font-size:clamp(25px,7.8vw,38px);letter-spacing:0;line-height:1.02;}
+  #menu .playerIdentity{padding:9px 10px;}
+  #menu #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+/* A physical iPhone remains an iPhone even when Safari requests a
+   desktop layout viewport, so reinforce the compact design by device. */
+#menu>.panel{contain:inline-size;}
+.phoneView #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.phoneView #menu .title{font-size:clamp(25px,7.6vw,37px);line-height:1.04;}
+.phoneView #menu>.panel{max-width:100%;min-width:0;overflow-x:hidden;}
+.phoneView #onlineRoster{grid-template-columns:repeat(2,minmax(0,1fr));}
+#zoomNotice{
+  max-width:440px;
+  margin:8px auto 12px;
+  padding:10px;
+  border-radius:11px;
+  color:#fff6d7;
+  background:#46315be8;
+  border:1px solid #ffd7a7a8;
+  font-size:12px;
+  line-height:1.45;
+}
+#zoomNotice[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -378,12 +509,18 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 28</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 29</div><div id="zoomNotice" hidden role="status">Safari is zoomed in. Pinch to zoom out, or set Safari Page Zoom to 100% for the full menu.</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
+    <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
+<div id="playerIdentity">
+  <label for="playerDisplayName">👻 Your ghost name <span>(optional · up to 16 characters)</span></label>
+  <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="16" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Choose a spooky nickname" aria-describedby="playerNameHint">
+  <div id="playerNameHint">Friends will see this name in the lobby and above your ghost. Each friend chooses their own.</div>
+</div>
 <div id="difficultyWrap">
   <div class="palette-label">Computer opponent difficulty</div>
   <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
@@ -430,7 +567,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   </div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>Top 13 Hall of Fame! Winning players can choose a 13-character nickname and country flag; their Boo Crew avatar joins the rankings. Private rooms, sounds and solo bots remain.</div>
+      <div><b>New this build</b><br>Alpha 29: player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
       <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -551,6 +688,49 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const ctx = canvas.getContext('2d', { alpha: false });
   const hud = document.getElementById('hud');
   const menu = document.getElementById('menu');
+  const zoomNotice=document.getElementById('zoomNotice');
+  function fitPhoneMenu(){
+    // A phone with a desktop-width layout viewport may bypass 520px media
+    // queries, while a user-set Safari Page Zoom can enlarge everything.
+    // Preserve pinch zoom; only apply visual layout fallback and guidance.
+    const screenEdge=Math.min(window.screen?.width||window.innerWidth,
+      window.screen?.height||window.innerHeight);
+    const isPhone=screenEdge<=540&&(navigator.maxTouchPoints>0||
+      /iPhone|Android/i.test(navigator.userAgent));
+    const portrait=(window.screen?.height||window.innerHeight)>=
+      (window.screen?.width||window.innerWidth);
+    const layoutWidth=document.documentElement.clientWidth||window.innerWidth;
+    const desktopViewportOnPhone=isPhone&&portrait&&layoutWidth>screenEdge*1.25;
+    document.documentElement.classList.toggle('phoneView',isPhone&&portrait);
+    zoomNotice.hidden=!(desktopViewportOnPhone||window.visualViewport?.scale>1.28);
+  }
+  window.addEventListener('resize',fitPhoneMenu,{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',fitPhoneMenu,{passive:true});
+  fitPhoneMenu();
+  const zoomNoticeEl=document.getElementById('zoomNotice');
+  function fitPhoneMenu(){
+    // CSS viewport media queries can be misleading in Safari's desktop
+    // viewport mode. Use screen points as a fallback, not UA sniffing.
+    const screenEdge=Math.min(window.screen?.width||9999,window.screen?.height||9999);
+    const isPhone=screenEdge>=240&&screenEdge<=540;
+    const portrait=window.matchMedia('(orientation: portrait)').matches;
+    const layoutWidth=document.documentElement.clientWidth||window.innerWidth;
+    const desktopViewportOnPhone=isPhone&&portrait&&layoutWidth>screenEdge*1.25;
+    menu.classList.toggle('phoneView',desktopViewportOnPhone);
+    if(desktopViewportOnPhone)
+      menu.style.setProperty('--phone-menu-width',Math.round(screenEdge)+'px');
+    else menu.style.removeProperty('--phone-menu-width');
+    // User-controlled zoom should remain accessible. Explain rather than
+    // programmatically overriding a deliberate Safari pinch-to-zoom.
+    const zoomed=window.visualViewport?.scale>1.28;
+    zoomNoticeEl.hidden=!zoomed;
+  }
+  window.addEventListener('resize',fitPhoneMenu,{passive:true});
+  window.addEventListener('orientationchange',fitPhoneMenu,{passive:true});
+  if(window.visualViewport)
+    window.visualViewport.addEventListener('resize',fitPhoneMenu,{passive:true});
+  fitPhoneMenu();
+
   const difficultyButtons=document.getElementById('difficultyButtons');
   const difficultyDescription=document.getElementById('difficultyDescription');
   const difficultyHud=document.getElementById('difficultyHud');
@@ -781,6 +961,30 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   let online=null,onlinePending=false;
   const localGhostId=()=>Number.isInteger(online?.seat)?online.seat:0;
   const neutralDirection=()=>({x:0,y:0,mag:0});
+  const playerDisplayNameEl=document.getElementById('playerDisplayName');
+  // Only this optional nickname is shared in room profiles. Room names are
+  // never submitted to the public high-score list automatically.
+  function sanitizePlayerName(value){
+    const name=typeof value==='string'?value.trim().replace(/\s+/g,' '):'';
+    return name.length<=16&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
+      (!name||/[\p{L}\p{N}]/u.test(name))?name:'';
+  }
+  try{
+    const saved=localStorage.getItem('boo-crew-player-name')||
+      localStorage.getItem('boo-crew-score-name')||'';
+    playerDisplayNameEl.value=sanitizePlayerName(saved);
+  }catch{}
+  playerDisplayNameEl.addEventListener('input',()=>{
+    const next=playerDisplayNameEl.value
+      .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,16);
+    if(next!==playerDisplayNameEl.value)playerDisplayNameEl.value=next;
+    try{localStorage.setItem('boo-crew-player-name',
+      sanitizePlayerName(playerDisplayNameEl.value))}catch{}
+    if(online&&online.seat!==null&&!online.started&&
+      online.ws.readyState===WebSocket.OPEN){
+      sendOnline({type:'profile',...lobbyPlayerProfile()});
+    }
+  });
   // Connected human seats are never taken over by computer AI if inputs
   // pause or arrive late. The last movement expires to neutral instead.
   function humanSeatDirection(room,seat,now){
@@ -790,7 +994,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     return last;
   }
   function lobbyPlayerProfile(){
-    return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex};
+    return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex,
+      name:sanitizePlayerName(playerDisplayNameEl.value)};
   }
   // First connected human on each team chooses the team body color.
   // The guest's chosen color takes effect for the second team.
@@ -828,6 +1033,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       g.human=human;
       g.styleId=styles[g.id]; // Exactly one of each Boo Crew costume per match.
       g.playerColor=human?(profile?.color||null):null; // Personal accent only.
+      g.playerName=human?sanitizePlayerName(profile?.name):'';
     }
   }
   function refreshOnlineBadge(){
@@ -867,7 +1073,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       const fill=occupied?(profile?.color||colors[team].hex):colors[team].hex;
       portrait.innerHTML=ghostPortrait({id:seat,styleId,team},fill);
       const title=document.createElement('span');title.className='seatTitle';
-      title.textContent=occupied?(seat===room.seat?(room.host?'You · Host':'★ YOU'):seat===0?'Host':'Friend '+(seat+1)):
+      const displayName=sanitizePlayerName(profile?.name);
+      title.textContent=occupied?(seat===room.seat?('★ YOU'+(displayName?' · '+displayName:'')+(room.host?' · Host':'')):
+        (displayName||(seat===0?'Host':'Friend '+(seat+1)))):
         room.mode==='coop'?(team===0?'Friendly Bot':'Rival Bot'):'Bot / Open';
       const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
       teamLabel.textContent=team===0?'✦ TEAM ONE':'✦ TEAM TWO';
@@ -1012,7 +1220,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         session.seats=Array.isArray(msg.seats)?msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8):[];
         session.profiles=new Map((Array.isArray(msg.profiles)?msg.profiles:[])
           .filter(p=>Number.isInteger(p.seat)&&session.seats.includes(p.seat))
-          .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
+          .map(p=>[p.seat,{styleId:p.styleId,color:p.color,name:sanitizePlayerName(p.name)}]));
         if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus(MODE_NAMES[session.mode]+' · Room '+code+' · '+
@@ -1023,7 +1231,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         if(Array.isArray(msg.profiles)){
           session.profiles=new Map(msg.profiles
             .filter(p=>Number.isInteger(p.seat)&&p.seat>=0&&p.seat<8)
-            .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
+            .map(p=>[p.seat,{styleId:p.styleId,color:p.color,name:sanitizePlayerName(p.name)}]));
         }
         if(Array.isArray(msg.seats))session.seats=msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8);
         // Nobody enters the arena until every open browser acknowledges
@@ -1129,7 +1337,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         trail:g.trail,trailPos:g.trailPos,score:g.score,face:g.face,
         reaction:g.reaction,reactionTime:g.reactionTime,
         reactionDuration:g.reactionDuration,bounce:g.bounce,blink:g.blink,
-        moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,human:!!g.human
+        moveAmount:g.moveAmount,stats:g.stats,playerColor:g.playerColor,playerName:g.playerName||'',human:!!g.human
       })),flames:game.flames
     }:{
       compact:true,remaining:game.remaining,phase:game.phase,scores:game.scores,
@@ -1163,7 +1371,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
       const g=game.ghosts[snap.id];
       for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
-        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','human']){
+        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','playerName','human']){
         if(snap[field]!==undefined)g[field]=snap[field];
       }
     }
@@ -1705,7 +1913,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       const team = i < 4 ? 0 : 1;
       const base = BASES[team];
       const ghost=newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) });
-      ghost.styleId=roster[i]; ghosts.push(ghost);
+      ghost.styleId=roster[i];
+      ghost.playerName=i===0?sanitizePlayerName(playerDisplayNameEl.value):'';
+      ghosts.push(ghost);
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
     game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
@@ -2455,7 +2665,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       const avatar=document.createElement('div');avatar.className='portrait';
       avatar.style.setProperty('--team',color(ghost.team));avatar.innerHTML=ghostPortrait(ghost);
       const content=document.createElement('div');
-      const who=document.createElement('div');who.className='who';who.textContent=(ghost.id===localGhostId()?'You':ghost.id===0?'Host':GHOST_NAMES[ghost.id])+
+      const who=document.createElement('div');who.className='who';
+      const displayName=sanitizePlayerName(ghost.playerName);
+      who.textContent=(ghost.id===localGhostId()?('You'+(displayName?' · '+displayName:'')):
+        (displayName||(!ghost.human?GHOST_NAMES[ghost.id]:ghost.id===0?'Host':'Player '+(ghost.id+1))))+
         ' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.styleId??ghost.id];
       const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
       const why=document.createElement('div');why.className='why';why.textContent=award.reason;
@@ -2769,13 +2982,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       // real friends from computer opponents in the same shared arena.
       const mine=g.id===localGhostId();
       ctx.save();ctx.font='900 12px system-ui';ctx.textAlign='center';
-      const text=mine?'★ YOU':'● PLAYER '+(g.id+1);
-      const width=mine?69:94;
+      const displayName=sanitizePlayerName(g.playerName);
+      const text=(mine?'★ ':'● ')+(displayName||('PLAYER '+(g.id+1)));
+      const width=Math.max(69,Math.min(174,ctx.measureText(text).width+23));
       ctx.fillStyle=mine?'#b4f8d9ed':'#39294ff0';
       ctx.strokeStyle=mine?'#134d35':'#f0d2ff';
       ctx.lineWidth=1.6;ctx.beginPath();ctx.roundRect(x-width/2,y-64,width,21,9);
       ctx.fill();ctx.stroke();
-      ctx.fillStyle=mine?'#1d4232':'#fff4ff';ctx.fillText(text,x,y-49);
+      ctx.fillStyle=mine?'#1d4232':'#fff4ff';ctx.fillText(text,x,y-49,width-12);
       ctx.restore();
     }
     if(celebrating||stealing||g.reaction==='collect'){

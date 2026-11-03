@@ -155,9 +155,16 @@ export class GhostRoom {
     });
   }
   sanitizeProfile(message){
+    // User-chosen display names are shared only inside their private room.
+    // Keep them short and printable; browsers render them with textContent or
+    // canvas fillText, never innerHTML. A blank name remains optional.
+    const raw=typeof message?.name==='string'?message.name.trim():'';
+    const name=raw.length<=16&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(raw)&&
+      (!raw||/[\p{L}\p{N}]/u.test(raw))?raw:'';
     return {
       styleId:Number.isInteger(message?.styleId)&&message.styleId>=0&&message.styleId<8?message.styleId:0,
-      color:GHOST_COLORS.has(message?.color)?message.color:'#C9B9E5'
+      color:GHOST_COLORS.has(message?.color)?message.color:'#C9B9E5',
+      name
     };
   }
   beginRound(){
