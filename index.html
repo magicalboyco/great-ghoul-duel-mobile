@@ -791,7 +791,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     onlinePending=false;
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
       seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
-      lastFullSnapshot:0,inputSeq:0,receivedSeq:-1,teamColors:null};
+      lastFullSnapshot:-Infinity,inputSeq:0,receivedSeq:-1,teamColors:null};
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -921,7 +921,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const now=performance.now();
     // Position/state updates are compact. The heavier inventory/flame state
     // is sent less often to avoid queueing large WebSocket messages on phones.
-    const full=now-online.lastFullSnapshot>=320||game.phase==='finished';
+    const full=now-online.lastFullSnapshot>=240||game.phase==='finished';
     if(full)online.lastFullSnapshot=now;
     sendOnline({type:'snapshot',state:full?{
       remaining:game.remaining,phase:game.phase,scores:game.scores,difficulty:game.difficulty,
@@ -3000,10 +3000,24 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
     const player = game.ghosts[localGhostId()];
     const halfWidth=W/(scale*2),halfHeight=H/(scale*2);
+    // Guests smoothly approach frequent authoritative network positions
+    // instead of teleporting a few pixels on every WebSocket packet.
+    if(isOnlineGuest()){
+      for(const ghost of game.ghosts){
+        if(!Number.isFinite(ghost.viewX)||Math.abs(ghost.x-ghost.viewX)>200)
+          ghost.viewX=ghost.x;
+        if(!Number.isFinite(ghost.viewY)||Math.abs(ghost.y-ghost.viewY)>200)
+          ghost.viewY=ghost.y;
+        ghost.viewX=lerp(ghost.viewX,ghost.x,.32);
+        ghost.viewY=lerp(ghost.viewY,ghost.y,.32);
+      }
+    }
+    const playerX=isOnlineGuest()?player.viewX:player.x;
+    const playerY=isOnlineGuest()?player.viewY:player.y;
     const desiredX=halfWidth>=WORLD.w/2?WORLD.w/2:
-      clamp(player.x,halfWidth,WORLD.w-halfWidth);
+      clamp(playerX,halfWidth,WORLD.w-halfWidth);
     const desiredY=halfHeight>=WORLD.h/2?WORLD.h/2:
-      clamp(player.y,halfHeight,WORLD.h-halfHeight);
+      clamp(playerY,halfHeight,WORLD.h-halfHeight);
     camX = lerp(camX, desiredX, .08);
     camY = lerp(camY, desiredY, .08);
 
@@ -3015,7 +3029,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     for (const flame of game.flames) drawFlame(flame.x, flame.y, -1, flame.phase);
     for (const g of game.ghosts) drawSpiritChain(g);
     drawParticles();
-    for (const g of game.ghosts) drawGhost(g);
+    for (const g of game.ghosts){
+      if(isOnlineGuest()&&Number.isFinite(g.viewX)&&Number.isFinite(g.viewY)){
+        const sourceX=g.x,sourceY=g.y;
+        g.x=g.viewX;g.y=g.viewY;
+        try{drawGhost(g)}finally{g.x=sourceX;g.y=sourceY;}
+      }else drawGhost(g);
+    }
     drawPopups();
     ctx.restore();
 
