@@ -555,16 +555,16 @@ test('Alpha 27: new modes and old Worker fallback remain explicit and safe',()=>
   assert.match(html,/data-mode="coop"/);
   assert.match(html,/data-mode="classic"/);
   assert.match(html,/Four-Way Haunt/);
-  assert.match(html,/aria-disabled="true"/);
+  assert.match(html,/data-mode="fourway"/,'Four-Way Haunt is now selectable');
   assert.match(html,/function selectOnlineMode\(mode\)/);
   assert.match(html,/roomCapacity=mode=>mode==='coop'\?4:8/);
   assert.match(html,/mode:selectedOnlineMode/);
   assert.match(html,/JSON\.stringify\(\{mode:selectedOnlineMode\}\)/);
-  assert.match(html,/includes\('coop'\)/);
+  assert.match(html,/includes\(selectedOnlineMode\)/);
   assert.match(html,/The server does not support the selected mode yet/);
   assert.match(html,/if\(MODE_NAMES\[msg\.mode\]\)session\.mode=msg\.mode/);
   assert.match(html,/room\.mode==='coop'\?\(team===0\?'Friendly Bot':'Rival Bot'\)/);
-  assert.match(html,/mode==='coop'\?'BOO CREW CO-OP':'CLASSIC DUEL'/);
+  assert.match(html,/MODE_NAMES\[online\?\.mode\]/);
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
   assert.match(html,/humanInput\?\?botDirection\(g,dt\)/);
 });
@@ -576,7 +576,7 @@ test('Alpha 27 hotfix: health handshake allows GitHub Pages cross-origin Co-op r
   assert.equal(health.status,200);
   assert.equal(health.headers['Access-Control-Allow-Origin'],'*',
     'Health CORS must match /rooms so Safari can read the mode list');
-  assert.deepEqual((await health.json()).modes,['classic','coop']);
+  assert.deepEqual((await health.json()).modes,['classic','coop','fourway']);
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   assert.match(html,/const health=await fetch\(endpoint\+'\/health'/,
     'Co-op verifies the deployed Worker has the selected mode');
