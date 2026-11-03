@@ -204,3 +204,39 @@ should spawn as two *different* characters; no bot duplicates either,
 and the player's label/joystick still map to the original seat.
 On an iPhone portrait screen, safe-area controls must remain tappable
 and arena artwork must cover the full available game viewport.
+
+## Alpha 24 — Guest audio, team color ownership, efficient updates, and official server
+
+The game now defaults to the **public** Joy Haus multiplayer Worker URL
+`https://ghost-duel-rooms.jonathanjoyner.workers.dev`.
+Players only need to create a room or enter a six-character code. An
+advanced server field remains available for development or other hosting.
+The URL is public infrastructure, not a secret; private host authorization
+tokens are kept out of copied invitation links and source code.
+
+Every online player can select a costume and personal pastel. The **first
+human player on each team** chooses that team's visible uniform color, with
+a contrasting fallback if both team captains pick exactly the same color.
+Other human teammates keep their personal color as an accent. The guest
+sees **YOUR BASE** at their own scoring base, never a misleading host-centric
+"rivals" label.
+
+Guest devices unlock Web Audio on a deliberate Join Room tap before any
+asynchronous WebSocket messages. The already-existing original game music
+starts when the round begins, and local guest milestone cues (collection,
+deposit, steal, loss, powers) now respond to incoming authoritative game
+snapshots. Mobile Safari can still suspend audio due to OS/browser policies;
+the Test Sound button remains available for manual reactivation.
+
+For gameplay latency, the host now sends compact position/score updates
+approximately every 70 ms and full flame/trail/inventory snapshots roughly
+every 240 ms, rather than sending every large state packet every 85 ms.
+Guest rendering interpolates nearby ghost positions while retaining the
+host's authoritative physics and scores. No server protocol or Durable
+Object migration is required for this client-compatible snapshot format.
+
+Automated tests cover selected team colors, guest-relative base labels,
+gesture-triggered audio initialization, compact snapshot volume, full-state
+periodicity, default server, and preservation of invitation secrecy.
+A live iPhone/Safari guest test is still necessary, especially for audio
+interruption and connection quality.
