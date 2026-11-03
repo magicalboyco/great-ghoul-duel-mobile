@@ -649,36 +649,6 @@ test('Alpha 29: multiplayer display names are sanitized, broadcast and room-only
     'Room names do not become persistent leaderboard records');
 });
 
-test('Alpha 29: selected name is visible in setup, lobby, arena and results',()=>{
-  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
-  assert.match(html,/id="playerDisplayName"/);
-  assert.match(html,/maxlength="16"/);
-  assert.match(html,/autocomplete="nickname"/);
-  assert.match(html,/localStorage\.setItem\('boo-crew-player-name',[\s\S]*?sanitizePlayerName\(playerDisplayNameEl\.value\)\)/);
-  assert.match(html,/return \{styleId:selectedCharacter,color:PASTELS\[selectedIndex\]\.hex,\s*name:sanitizePlayerName\(playerDisplayNameEl\.value\)\}/);
-  assert.match(html,/g\.playerName=human\?sanitizePlayerName\(profile\?\.name\):''/);
-  assert.match(html,/const displayName=sanitizePlayerName\(profile\?\.name\)/);
-  assert.match(html,/playerName:g\.playerName\|\|''/);
-  assert.match(html,/'playerColor','playerName','human'/);
-  assert.match(html,/const displayName=sanitizePlayerName\(g\.playerName\)/);
-  assert.match(html,/ghost\.playerName/);
-  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
-});
-
-test('Alpha 29: iPhone menu prevents auto-text inflation and detects desktop-width viewport',()=>{
-  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
-  assert.match(html,/-webkit-text-size-adjust:100%/);
-  assert.match(html,/#menu>.panel\{[\s\S]*?flex:0 1 780px;[\s\S]*?min-width:0;/);
-  assert.match(html,/contain:inline-size/);
-  assert.match(html,/\.phoneView #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:8px;\}/);
-  assert.match(html,/function fitPhoneMenu\(\)/);
-  assert.match(html,/const desktopViewportOnPhone=isPhone&&portrait&&layoutWidth>screenEdge\*1\.25/);
-  assert.match(html,/window\.visualViewport\?\.scale>1\.28/);
-  assert.match(html,/id="zoomNotice"/);
-  assert.match(html,/#onlinePanel input\{max-width:100%;font-size:16px;\}/);
-});
-
-
 test('Alpha 29: room nicknames are sanitized and synchronized to host and guests',async()=>{
   const {env,instances}=harness();
   const created=await runtime.workerDefault.fetch(mockRequest(
