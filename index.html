@@ -197,7 +197,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     <div class="creditsBody">
       <div class="creditSection">
         <h3>💖 Game Studio — Joy Haus</h3>
-        <p><strong>Joy Haus</strong> is the game studio behind this independent Ghost Duel project. A little celebration of playful ideas, pastel ghosts, and people making things together.</p>
+        <p><strong>Joy Haus</strong> is the game studio behind this independent Spooktacular Showdown project. A little celebration of playful ideas, pastel ghosts, and people making things together.</p>
       </div>
       <div class="creditSection">
         <h3>🎃 To the original ghost makers</h3>
@@ -211,7 +211,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         <h3>🧑‍💻 To the programmers and open-web community</h3>
         <p>Thank you to the creators of JavaScript, HTML, CSS, browser canvas, Web Audio, and the open tools and shared knowledge that make small independent games possible.</p>
         <p>We also appreciate the independent <a href="https://github.com/JasonTheKitten/custom-ggd-server" target="_blank" rel="noopener noreferrer">Great Ghoul Duel multiplayer-server community reference</a> and the experiments that help people study and preserve games. Its server code is <strong>not bundled</strong> in this build.</p>
-        <p class="creditSmall">This game's playable single-page implementation and character drawings live in the <a href="https://github.com/magicalboyco/great-ghoul-duel-mobile" target="_blank" rel="noopener noreferrer">Ghost Duel source repository</a>.</p>
+        <p class="creditSmall">This game's playable single-page implementation and character drawings live in the <a href="https://github.com/magicalboyco/great-ghoul-duel-mobile" target="_blank" rel="noopener noreferrer">Spooktacular Showdown source repository</a>.</p>
       </div>
       <div class="creditSection">
         <h3>🎶 To the musicians and sound explorers</h3>
@@ -232,7 +232,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         <h3>💞 And especially to you, the players</h3>
         <p>For every brave dash across the map, every daring spirit rescue, every silly ghost face, and every second chance: <strong>thank you for playing.</strong></p>
       </div>
-      <p class="creditsFinePrint">Ghost Duel is an independent, unofficial fan recreation, not sponsored or endorsed by Google, Hasbro, or any referenced artist or platform. Referenced names and trademarks belong to their owners. Inspiration and appreciation are not claims of permission to reuse original assets.</p>
+      <p class="creditsFinePrint">Spooktacular Showdown is an independent, unofficial fan recreation, not sponsored or endorsed by Google, Hasbro, or any referenced artist or platform. Referenced names and trademarks belong to their owners. Inspiration and appreciation are not claims of permission to reuse original assets.</p>
     </div>
     <div class="creditsActions"><button type="button" id="creditsBackBtn">← BACK</button></div>
   </div>
@@ -350,6 +350,30 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)))});
     palettePicker.appendChild(b);
   });
+
+  // Pick a character independently of its ghost color.
+  const booCrewGrid=document.getElementById('booCrewGrid');
+  const chosenCharacter=document.getElementById('chosenCharacter');
+  function refreshCrewCards(){
+    [...booCrewGrid.children].forEach((button,id)=>{
+      button.setAttribute('aria-pressed',String(id===selectedCharacter));
+      button.querySelector('.crewPortrait').innerHTML=ghostPortrait({id,styleId:id,team:0});
+    });
+  }
+  GHOST_CHARACTER_NAMES.forEach((name,id)=>{
+    const button=document.createElement('button');
+    button.type='button';button.className='crewCard';
+    button.setAttribute('aria-label','Choose '+name);
+    button.setAttribute('aria-pressed',String(id===selectedCharacter));
+    const portrait=document.createElement('div');portrait.className='crewPortrait';
+    const label=document.createElement('span');label.textContent=name;
+    button.append(portrait,label);
+    button.addEventListener('click',()=>{selectedCharacter=id;chosenCharacter.textContent=name;refreshCrewCards()});
+    booCrewGrid.appendChild(button);
+  });
+  refreshCrewCards();
+  palettePicker.addEventListener('click',refreshCrewCards);
+
   const joy = document.getElementById('joystick');
   const knob = document.getElementById('knob');
 
@@ -659,13 +683,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
     greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
     const ghosts = [];
+    const roster=[selectedCharacter,...Array.from({length:8},(_,i)=>i).filter(i=>i!==selectedCharacter)];
     for (let i = 0; i < 8; i++) {
       const team = i < 4 ? 0 : 1;
       const base = BASES[team];
-      ghosts.push(newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) }));
+      const ghost=newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) });
+      ghost.styleId=roster[i]; ghosts.push(ghost);
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing' };
+    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing' };
     difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
     difficultyHud.hidden=false;
     warningEl.classList.remove('visible');
@@ -1003,7 +1029,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       const spread=27+age*(r==='celebrate'?40:22);
       const sx=x+Math.cos(a)*spread,sy=y-10+Math.sin(a)*spread-age*14;
       ctx.globalAlpha=Math.min(1,g.reactionTime*3);
-      ctx.fillStyle=i%2?INDIVIDUAL_ACCENTS[g.id]:'#F2F0EF';
+      ctx.fillStyle=i%2?INDIVIDUAL_ACCENTS[g.styleId??g.id]:'#F2F0EF';
       ctx.fillText(symbols[i],sx,sy);
     }
     ctx.restore();
@@ -1014,14 +1040,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       g.reaction==='steal'?['GOTCHA!','MINE!','HEHE!','SNEAKY!']:
       g.reaction==='robbed'?['HEY!','NOOO!','RUDE!','EEK!']:[];
     if(!words.length)return;
-    const word=words[g.id%words.length];
+    const word=words[(g.styleId??g.id)%words.length];
     const duration=g.reactionDuration||1,age=1-g.reactionTime/duration;
     const rise=age*13;
     ctx.save();ctx.globalAlpha=Math.min(1,g.reactionTime*3,age*7);
     ctx.textAlign='center';ctx.font='900 14px system-ui';
     const width=Math.max(58,ctx.measureText(word).width+17),px=x-width/2,py=y-68-rise;
     ctx.fillStyle='rgba(29,20,50,.93)';
-    ctx.strokeStyle=INDIVIDUAL_ACCENTS[g.id];ctx.lineWidth=2;
+    ctx.strokeStyle=INDIVIDUAL_ACCENTS[g.styleId??g.id];ctx.lineWidth=2;
     ctx.beginPath();
     if(ctx.roundRect)ctx.roundRect(px,py,width,25,9);
     else ctx.rect(px,py,width,25);
@@ -1077,7 +1103,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       const avatar=document.createElement('div');avatar.className='portrait';
       avatar.style.setProperty('--team',color(ghost.team));avatar.innerHTML=ghostPortrait(ghost);
       const content=document.createElement('div');
-      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.id];
+      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.styleId??ghost.id];
       const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
       const why=document.createElement('div');why.className='why';why.textContent=award.reason;
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
@@ -1159,7 +1185,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   // Small illustrated portrait using the exact same signature accessory as in the arena.
   function ghostPortrait(g){
-    const fill=color(g.team),accent=INDIVIDUAL_ACCENTS[g.id],edge=darken(fill,.52);
+    const styleId=g.styleId??g.id;
+    const fill=color(g.team),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
     const ink='#272038';
     const faces=[
       '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
@@ -1181,19 +1208,19 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       '<path d="M20 29L14 8 29 17 40 -2 51 17 66 8 60 29Z" fill="#ffdb70" stroke="#b9894f" stroke-width="3"/><circle cx="40" cy="19" r="5" fill="#f17aa7"/>',
       '<path d="M16 69Q40 81 64 69L62 80Q39 90 18 80Z" fill="#ffac75" stroke="#975b59" stroke-width="3"/><path d="M59 78h11v17H59Z" fill="#eb847d" stroke="#975b59" stroke-width="3"/>'
     ];
-    const accessory=shapes[g.id]||shapes[0];
-    const behind=g.id===5?accessory:'',above=g.id===5?'':accessory;
-    const eyebrows=g.id===2?'<path d="M24 36L33 33M47 33L56 36" stroke="'+ink+'" stroke-width="3"/>':'';
-    const cheeks=g.id%3===0?'<ellipse cx="20" cy="55" rx="6" ry="3" fill="#ff87ab99"/><ellipse cx="60" cy="55" rx="6" ry="3" fill="#ff87ab99"/>':'';
-    return '<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+GHOST_NAMES[g.id]+' '+GHOST_CHARACTER_NAMES[g.id]+'">'
+    const accessory=shapes[styleId]||shapes[0];
+    const behind=styleId===5?accessory:'',above=styleId===5?'':accessory;
+    const eyebrows=styleId===2?'<path d="M24 36L33 33M47 33L56 36" stroke="'+ink+'" stroke-width="3"/>':'';
+    const cheeks=styleId%3===0?'<ellipse cx="20" cy="55" rx="6" ry="3" fill="#ff87ab99"/><ellipse cx="60" cy="55" rx="6" ry="3" fill="#ff87ab99"/>':'';
+    return '<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+GHOST_NAMES[g.id]+' '+GHOST_CHARACTER_NAMES[styleId]+'">'
       +'<circle cx="40" cy="48" r="39" fill="'+accent+'" opacity=".16"/>'
       +'<ellipse cx="40" cy="92" rx="28" ry="6" fill="#0b092b88"/>'
       +behind
       +'<path d="M12 76V44Q12 17 40 17Q68 17 68 44V76Q62 63 53 79Q46 68 40 82Q32 65 24 80Q16 64 12 76Z" fill="'+fill+'" stroke="'+edge+'" stroke-width="3.5"/>'
       +'<ellipse cx="24" cy="35" rx="10" ry="5" fill="#ffffff70" transform="rotate(-20 24 35)"/>'
-      +'<ellipse cx="28" cy="45" rx="4" ry="'+(g.id===3?8:6)+'" fill="'+ink+'"/><ellipse cx="52" cy="45" rx="4" ry="'+(g.id===3?8:6)+'" fill="'+ink+'"/>'
+      +'<ellipse cx="28" cy="45" rx="4" ry="'+(styleId===3?8:6)+'" fill="'+ink+'"/><ellipse cx="52" cy="45" rx="4" ry="'+(g.id===3?8:6)+'" fill="'+ink+'"/>'
       +'<circle cx="27" cy="42" r="1.6" fill="#fff"/><circle cx="51" cy="42" r="1.6" fill="#fff"/>'
-      +faces[g.id]+cheeks+eyebrows+above+'</svg>';
+      +faces[styleId]+cheeks+eyebrows+above+'</svg>';
   }
 
   function drawGhost(g) {
@@ -1311,7 +1338,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
 
     // Signature accessory makes each ghost recognizable at a glance.
-    drawGhostAccessory(g.id);
+    drawGhostAccessory(g.styleId??g.id);
 
     // Tears when robbed; mischievous twinkle when stealing.
     if(stolen){
@@ -1452,10 +1479,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     ctx.restore();
   }
 
+  const booCrewBackdrop=new Image();
+  booCrewBackdrop.src='assets/boo-crew-night.svg';
   function drawEnvironment() {
     const sky = ctx.createLinearGradient(0, 0, 0, WORLD.h);
     sky.addColorStop(0, '#1d1534'); sky.addColorStop(.6, '#1f1930'); sky.addColorStop(1, '#20182c');
     ctx.fillStyle = sky; ctx.fillRect(0, 0, WORLD.w, WORLD.h);
+    if(booCrewBackdrop.complete&&booCrewBackdrop.naturalWidth){ctx.save();ctx.globalAlpha=.42;ctx.drawImage(booCrewBackdrop,0,0,WORLD.w,WORLD.h);ctx.restore();}
     for (let y = 0; y < WORLD.h; y += 64) {
       for (let x = 0; x < WORLD.w; x += 64) {
         if ((Math.floor(x / 64) + Math.floor(y / 64)) % 2 === 0) { ctx.fillStyle = 'rgba(75,56,95,.11)'; ctx.fillRect(x, y, 64, 64); }
@@ -1466,10 +1496,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       ctx.fillStyle = `rgba(255,255,255,${a})`;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
     }
-    // moon
-    drawGlow(1530, 135, 120, 'rgba(252,247,255,.14)');
-    ctx.fillStyle = '#f4f0ff'; ctx.beginPath(); ctx.arc(1530, 135, 38, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#c8bbe8'; ctx.beginPath(); ctx.arc(1545, 126, 12, 0, Math.PI * 2); ctx.fill();
+    // Moon belongs to the illustrated scene; fallback if not loaded.
+    if(!booCrewBackdrop.complete||!booCrewBackdrop.naturalWidth){drawGlow(1530,135,120,'rgba(252,247,255,.14)');ctx.fillStyle='#f4f0ff';ctx.beginPath();ctx.arc(1530,135,38,0,Math.PI*2);ctx.fill();}
 
     // paths
     ctx.strokeStyle = 'rgba(174,155,113,.18)'; ctx.lineWidth = 74; ctx.lineCap = 'round';
