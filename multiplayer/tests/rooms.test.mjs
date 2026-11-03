@@ -605,3 +605,74 @@ test('Alpha 28: narrow-screen menu shrinks inside the viewport and remains scrol
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/,
     'Gameplay power thresholds stay unchanged');
 });
+
+
+test('Alpha 29: multiplayer display names are sanitized, broadcast and room-only',async()=>{
+  const {env,instances}=harness();
+  const created=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms','POST',{Origin:'https://magicalboyco.github.io'},{mode:'coop'}),env);
+  assert.equal(created.status,201);
+  const {code,hostToken}=await created.json();
+  const room=instances.get('room-'+code).room;
+  const sockets=instances.get('room-'+code).sockets;
+  const open=async()=> {
+    const response=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(response.status,101);
+    return sockets.at(-1);
+  };
+  const host=await open();
+  await room.webSocketMessage(host,JSON.stringify({type:'hello',role:'host',token:hostToken,
+    name:'  Moonbeam  ',styleId:2,color:'#B8DDC4'}));
+  assert.equal(room.profiles.get(0).name,'Moonbeam','Names trim surrounding spaces');
+  const guest=await open();
+  await room.webSocketMessage(guest,JSON.stringify({type:'hello',role:'guest',
+    name:'✨<script>alert(1)</script>',styleId:3,color:'#F1B4D5'}));
+  assert.equal(room.profiles.get(1).name,'','Markup or emoji is not accepted as a name');
+  await room.webSocketMessage(guest,JSON.stringify({type:'profile',name:'Spooky Pal',
+    styleId:3,color:'#F1B4D5'}));
+  assert.equal(room.profiles.get(1).name,'Spooky Pal');
+  const roster=host.sent.filter(m=>m.type==='roster').at(-1);
+  assert.ok(roster.profiles.some(p=>p.seat===1&&p.name==='Spooky Pal'));
+  await room.webSocketMessage(guest,JSON.stringify({type:'profile',
+    name:'This Name Is Far Too Long',styleId:3,color:'#F1B4D5'}));
+  assert.equal(room.profiles.get(1).name,'','Names longer than 16 characters are refused');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  const prep=host.sent.find(m=>m.type==='prepare');
+  assert.ok(prep.profiles.some(p=>p.seat===0&&p.name==='Moonbeam'),
+    'The match begins with human identities from the lobby');
+  assert.ok(prep.profiles.some(p=>p.seat===1&&p.name===''),
+    'Invalid names remain optional without leaking unsafe input');
+  const worker=readFileSync(new URL('../src/worker.js',import.meta.url),'utf8');
+  assert.doesNotMatch(worker,/storage\.put\([^)]*(?:profile|playerName|\.name)/,
+    'Room names do not become persistent leaderboard records');
+});
+
+test('Alpha 29: selected name is visible in setup, lobby, arena and results',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/id="playerDisplayName"/);
+  assert.match(html,/maxlength="16"/);
+  assert.match(html,/autocomplete="nickname"/);
+  assert.match(html,/localStorage\.setItem\('boo-crew-player-name',cleaned\)/);
+  assert.match(html,/return \{styleId:selectedCharacter,color:PASTELS\[selectedIndex\]\.hex,name:playerName\(\)\}/);
+  assert.match(html,/g\.playerName=human\?sanitizePlayerName\(profile\?\.name\):''/);
+  assert.match(html,/const displayName=sanitizePlayerName\(profile\?\.name\)/);
+  assert.match(html,/playerName:g\.playerName\|\|''/);
+  assert.match(html,/'playerColor','playerName','human'/);
+  assert.match(html,/const displayName=sanitizePlayerName\(g\.playerName\)/);
+  assert.match(html,/ghost\.playerName/);
+  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
+});
+
+test('Alpha 29: iPhone menu prevents auto-text inflation and detects desktop-width viewport',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/html\{-webkit-text-size-adjust:100%;text-size-adjust:100%;\}/);
+  assert.match(html,/#menu>.panel\{box-sizing:border-box;flex:0 1 780px;min-width:0;/);
+  assert.match(html,/contain:inline-size/);
+  assert.match(html,/\.phoneView #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:8px;\}/);
+  assert.match(html,/function fitPhoneMenu\(\)/);
+  assert.match(html,/const desktopViewportOnPhone=isPhone&&portrait&&layoutWidth>screenEdge\*1\.25/);
+  assert.match(html,/window\.visualViewport\?\.scale>1\.28/);
+  assert.match(html,/id="zoomNotice"/);
+  assert.match(html,/#onlinePanel input\{max-width:100%;font-size:16px;\}/);
+});
