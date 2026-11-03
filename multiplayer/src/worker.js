@@ -9,11 +9,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/health") return Response.json({ok:true,service:"ghost-duel-alpha14"});
-    const match = /^\/room\/([A-Z2-9]{6})$/.exec(url.pathname.toUpperCase());
-    if (!match || !validCode(match[1])) return new Response("Not found", {status:404});
+    const match = /^\/room\/([A-Z2-9]{6})$/i.exec(url.pathname);
+    if (!match || !validCode(match[1].toUpperCase())) return new Response("Not found", {status:404});
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
       return new Response("WebSocket required", {status:426});
-    const id = env.GHOST_ROOMS.idFromName(match[1]);
+    const id = env.GHOST_ROOMS.idFromName(match[1].toUpperCase());
     return env.GHOST_ROOMS.get(id).fetch(request);
   }
 };
