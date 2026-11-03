@@ -357,3 +357,31 @@ menu wiring. A real two-device browser check is still required.
 **Do not tell users Co-op is live until the Worker deployment is
 confirmed.** GitHub merge alone does not guarantee a Cloudflare build
 has completed successfully.
+
+## Alpha 28 — Adaptive menu on phones and tablets
+
+The front-end menu now explicitly permits its centered flex child to
+shrink below content's intrinsic minimum width. Character names, the
+two-line title, mode selectors, and online roster labels wrap rather
+than pushing the entire scene wider than a phone's CSS viewport.
+
+Under 520 CSS pixels, the eight-character selection grid uses two
+columns, online roster positions use two columns, and the panel's
+padding and title size shrink. Intermediate screens from 521–679
+pixels use three crew columns; larger screens retain four. The menu
+stays vertically scrollable with safe-area padding, including short
+landscape viewports. Form inputs use 16px text to reduce Safari's
+focus-zoom behavior.
+
+This is a UI-only change. No Canvas camera, world geometry, controls,
+AI, game mechanics, server protocol, multiplayer seating, power
+unlock threshold, sound, or leaderboard logic has been modified.
+
+Regression tests cover mobile shrink rules, grid breakpoints, safe
+area handling and input text size. For live visual acceptance, review
+iPhone portrait at 320, 375, 390 and 430 CSS pixels, Android
+portrait, 600–800px tablets, and phone landscape. Check that the
+header, all eight characters, color swatches, mode cards, room
+buttons and bottom actions remain accessible without horizontal
+scrolling or double-tap zoom. Automated source tests cannot replace
+real-device rendering.
