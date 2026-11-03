@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 08</title>
+<title>Ghost Duel — Alpha 09</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -70,7 +70,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 08</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 09</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -78,7 +78,7 @@ button{font:inherit}
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
 <div class="bullets">
-      <div><b>New this build</b><br>Animated ghost personalities: blinking, squash-and-stretch, curious eyes, panic, celebrations, stealing reactions and floating sparkles.</div>
+      <div><b>New this build</b><br>Now the little spirit flames blink, drift, shimmer, and dance in fluid pastel trails. Ghost reactions and game rules stay intact.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -442,7 +442,7 @@ button{font:inherit}
       const base = BASES[team];
       ghosts.push(newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) }));
     }
-    const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2) }));
+    const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
     game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], lastWarningSecond:16, toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+'!', toastLeft: 5, phase: 'playing' };
     warningEl.classList.remove('visible');
     clockEl.style.color='#fff5cb';
@@ -577,7 +577,7 @@ button{font:inherit}
           // A quick delighted bounce when a flame is collected.
           react(g,'collect',.43);
           game.flames.splice(i, 1);
-          game.flames.push({ ...randomPoint(), phase: randRange(0, Math.PI * 2) });
+          game.flames.push({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) });
           emitBurst(flame.x, flame.y, color(g.team), 9);
           if (g.id === 0) { GhostAudio.effect('collect'); popup('+1', flame.x, flame.y, '#ffefad'); }
           break;
@@ -883,23 +883,115 @@ button{font:inherit}
     }
   }
 
-  function drawFlame(x, y, team, phase = 0) {
-    const c = team >= 0 ? color(team) : '#F2F0EF';
-    const g = team >= 0 ? alpha(color(team),.36) : '#F2F0EF66';
-    const bob = Math.sin(t * 5 + phase) * 3;
-    drawGlow(x, y + bob, 26, g);
+  // This animation never alters gameplay positions. Pickups, trails, stealing
+  // and collision detection still use the same coordinates as Alpha 08.
+  function flameVisualPosition(x,y,phase,team){
+    const moving=team>=0;
+    return {
+      x:x+Math.sin(t*(moving?2.1:1.6)+phase*1.7)*(moving?1.5:4.8),
+      y:y+Math.sin(t*(moving?4.6:3.3)+phase)* (moving?2.7:5.2)
+    };
+  }
+
+  function drawFlame(x,y,team,phase=0){
+    const unclaimed=team<0;
+    const mainColor=unclaimed?'#F2F0EF':color(team);
+    const glowColor=unclaimed?'#F2F0EF67':alpha(color(team),.38);
+    const p=flameVisualPosition(x,y,phase,team);
+    const wiggle=Math.sin(t*6+phase);
+    const blink=(Math.sin(t*.73+phase*1.9)>.992);
+    const sway=Math.sin(t*2.7+phase)*.12;
+    const stretch=1+Math.sin(t*4.8+phase)*.065;
+
     ctx.save();
-    ctx.translate(x, y + bob);
-    ctx.fillStyle = c;
+    ctx.translate(p.x,p.y);
+    drawGlow(0,0,unclaimed?27:24,glowColor);
+    // Small twinkling embers hover around the free spirits, drawing attention
+    // without ever changing the requested neutral off-white collectible color.
+    if(unclaimed){
+      ctx.globalAlpha=.45+.32*Math.sin(t*2.2+phase);
+      ctx.strokeStyle='#F2F0EF';ctx.lineWidth=1.5;
+      const sparkX=19*Math.cos(t*.7+phase),sparkY=15*Math.sin(t*.85+phase);
+      ctx.beginPath();ctx.moveTo(sparkX-2,sparkY);ctx.lineTo(sparkX+2,sparkY);
+      ctx.moveTo(sparkX,sparkY-2);ctx.lineTo(sparkX,sparkY+2);ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+
+    ctx.rotate(sway);
+    ctx.scale(1/stretch,stretch);
+    const gradient=ctx.createLinearGradient(-9,-17,9,15);
+    gradient.addColorStop(0,'#ffffff');
+    gradient.addColorStop(.48,mainColor);
+    gradient.addColorStop(1,unclaimed?'#dcd8e8':darken(mainColor,.86));
+    ctx.fillStyle=gradient;
     ctx.beginPath();
-    ctx.moveTo(0, -14);
-    ctx.quadraticCurveTo(15, -2, 8, 10);
-    ctx.quadraticCurveTo(0, 18, -8, 10);
-    ctx.quadraticCurveTo(-15, -2, 0, -14);
+    ctx.moveTo(0,-15-wiggle*2);
+    ctx.bezierCurveTo(5,-11,13,-6,12,1);
+    ctx.quadraticCurveTo(13,8,7,11+wiggle);
+    ctx.quadraticCurveTo(1,18,-5,11-wiggle);
+    ctx.quadraticCurveTo(-14,7,-12,-1);
+    ctx.quadraticCurveTo(-11,-8,0,-15-wiggle*2);
     ctx.fill();
-    ctx.fillStyle = '#48344d';
-    ctx.beginPath(); ctx.ellipse(-3, 2, 1.6, 2.1, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(4, 2, 1.6, 2.1, 0, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle='#3b3047';
+    if(blink){
+      ctx.strokeStyle='#3b3047';ctx.lineCap='round';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(-5,1);ctx.lineTo(-1,1);ctx.moveTo(3,1);ctx.lineTo(7,1);ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.ellipse(-3,1,1.6,2.5,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(4,1,1.6,2.5,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-3.5,.2,.7,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(3.4,.2,.7,0,Math.PI*2);ctx.fill();
+    }
+    // The collected spirits grin as they follow; free spirits have a curious O.
+    ctx.strokeStyle='#3b3047';ctx.lineWidth=1.3;ctx.beginPath();
+    if(unclaimed){ctx.ellipse(.5,7,1.7,2,0,0,Math.PI*2)}
+    else {ctx.arc(.5,5,3.2,0,Math.PI)}
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSpiritChain(g){
+    const spirits=g.trailPos;
+    if(!spirits.length)return;
+    ctx.save();
+    ctx.lineCap='round';ctx.lineJoin='round';
+
+    // A smoothed ribbon through the same physics points. Its edge and trailing
+    // sparkles wobble visually, but stealing still checks original positions.
+    const chainColor=color(g.team),phase=t*4+g.bounce;
+    const control=(p,index)=>({
+      x:p.x+Math.sin(phase-index*.71)*Math.min(4,index*.22),
+      y:p.y+Math.cos(phase*.8-index*.52)*Math.min(4,index*.22)
+    });
+    const coords=[{x:g.x,y:g.y}];
+    for(let i=0;i<spirits.length;i++)coords.push(control(spirits[i],i+1));
+    function smoothPath(){
+      ctx.beginPath();ctx.moveTo(coords[0].x,coords[0].y);
+      if(coords.length===2){ctx.lineTo(coords[1].x,coords[1].y);return}
+      for(let i=1;i<coords.length-1;i++){
+        const a=coords[i],b=coords[i+1];
+        ctx.quadraticCurveTo(a.x,a.y,(a.x+b.x)/2,(a.y+b.y)/2);
+      }
+      const end=coords[coords.length-1];ctx.lineTo(end.x,end.y);
+    }
+    // Glow + narrow central ribbon: more legible than a single broad line.
+    smoothPath();ctx.strokeStyle=alpha(chainColor,.16);ctx.lineWidth=18;ctx.stroke();
+    smoothPath();ctx.strokeStyle=alpha(chainColor,.55);ctx.lineWidth=9;ctx.stroke();
+    smoothPath();ctx.strokeStyle=alpha('#F2F0EF',.28);ctx.lineWidth=2;ctx.stroke();
+
+    for(let i=0;i<spirits.length;i++){
+      const p=spirits[i];
+      drawFlame(p.x,p.y,g.team,g.id*.7+i*.83+p.x*.001);
+      if(i%5===0){
+        const shimmer=.35+.3*Math.sin(t*7+i);
+        const v=flameVisualPosition(p.x,p.y,g.id+i*.83,g.team);
+        ctx.globalAlpha=shimmer;
+        ctx.fillStyle='#F2F0EF';ctx.beginPath();
+        ctx.arc(v.x+12,v.y-12,2,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }
     ctx.restore();
   }
 
@@ -1018,16 +1110,7 @@ button{font:inherit}
 
     drawEnvironment();
     for (const flame of game.flames) drawFlame(flame.x, flame.y, -1, flame.phase);
-    for (const g of game.ghosts) {
-      if (g.trailPos.length) {
-        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.beginPath(); ctx.moveTo(g.x, g.y);
-        for (const p of g.trailPos) ctx.lineTo(p.x, p.y);
-        ctx.strokeStyle = alpha(color(g.team),.55);
-        ctx.lineWidth = 9; ctx.stroke();
-      }
-      for (const p of g.trailPos) drawFlame(p.x, p.y, g.team, g.id + p.x * .001);
-    }
+    for (const g of game.ghosts) drawSpiritChain(g);
     drawParticles();
     for (const g of game.ghosts) drawGhost(g);
     drawPopups();
