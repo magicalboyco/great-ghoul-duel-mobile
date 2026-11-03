@@ -737,8 +737,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       online.lastAckAt>0&&performance.now()-online.lastAckAt<1800?'· Controls connected':
       online.lastSnapshot>0&&performance.now()-online.lastSnapshot<1800?'· Receiving game':
       '· Waiting for updates';
-    difficultyHud.textContent='🌐 ROOM '+online.code+' · '+role+' · '+players+' HUMAN'+(players===1?'':'S')+
-      ' + '+(8-players)+' BOTS '+health;
+    difficultyHud.textContent='🌐 '+(online.mode==='coop'?'CO-OP':'CLASSIC')+' · '+role+' · '+players+
+      ' HUMAN'+(players===1?'':'S')+' + '+(8-players)+' BOTS '+health;
   }
   const isOnlineGuest=()=>online?.host===false&&online?.started===true;
   const isOnlineHost=()=>online?.host===true&&online?.started===true;
@@ -753,20 +753,24 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(!room||room.seat===null){onlineInviteEl.textContent='';return}
     onlineInviteEl.textContent=MODE_NAMES[room.mode]+' · Room '+room.code+' · '+
       room.seats.length+'/'+roomCapacity(room.mode)+' humans';
+    const hostColor=room.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
+    const colors=resolveOnlineTeamColors(room.profiles,room.seats,hostColor);
     for(let seat=0;seat<8;seat++){
-      const occupied=room.seats.includes(seat);
+      const occupied=room.seats.includes(seat),team=seat<4?0:1;
       const tile=document.createElement('div');
-      tile.className='roomSeat'+(occupied?' full':'')+(seat===0?' host':'');
+      tile.className='roomSeat'+(occupied?' full':'')+(seat===0?' host':'')+(team===1?' rival':'');
+      tile.style.borderColor=colors[team].hex;
       const portrait=document.createElement('div');portrait.className='seatGhost';
-      if(occupied){
-        const profile=room.profiles.get(seat);
-        const styleId=profile?.styleId??(seat===room.seat?selectedCharacter:seat);
-        const fill=profile?.color??PASTELS[selectedIndex].hex;
-        portrait.innerHTML=ghostPortrait({id:seat,styleId,team:seat<4?0:1},fill);
-      }else portrait.textContent='✨';
+      const profile=room.profiles.get(seat);
+      const styleId=occupied?(profile?.styleId??(seat===room.seat?selectedCharacter:seat)):seat;
+      const fill=occupied?(profile?.color||colors[team].hex):colors[team].hex;
+      portrait.innerHTML=ghostPortrait({id:seat,styleId,team},fill);
       const title=document.createElement('span');title.className='seatTitle';
-      title.textContent=!occupied?'Bot / Open':seat===room.seat?(room.host?'You · Host':'You'):seat===0?'Host':'Player '+(seat+1);
-      tile.append(portrait,title);onlineRosterEl.appendChild(tile);
+      title.textContent=occupied?(seat===room.seat?(room.host?'You · Host':'★ YOU'):seat===0?'Host':'Friend '+(seat+1)):
+        room.mode==='coop'?(team===0?'Friendly Bot':'Rival Bot'):'Bot / Open';
+      const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
+      teamLabel.textContent=team===0?'✦ TEAM ONE':'✦ TEAM TWO';
+      tile.append(portrait,title,teamLabel);onlineRosterEl.appendChild(tile);
     }
   }
   function showOnlineLobby(onlineRoom){
@@ -954,6 +958,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
             GHOST_CHARACTER_NAMES[resolved]+' in this match!');
         }
         const myTeam=game.ghosts[session.seat].team;
+        game.toast=(session.mode==='coop'?'🤝 Work together! ':'⚔️ Compete for spirits! ')+
+          'You are '+GHOST_CHARACTER_NAMES[resolved]+' on the '+teamColors[myTeam].name+' team.';
+        game.toastLeft=4;
         setOnlineStatus('👻 '+MODE_NAMES[session.mode]+' live! '+session.seats.length+' humans, '+
           (8-session.seats.length)+' computer ghosts. You are on the '+teamColors[myTeam].name+' team.');
         if(session.host)publishOnlineSnapshot();
@@ -2320,7 +2327,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const [a,b]=game.scores;
     const myTeam=game.ghosts[localGhostId()].team;
     resultHeading.textContent=(a===b?'A SPOOKY DRAW!':(game.scores[myTeam]>game.scores[1-myTeam]?
-      'YOUR TEAM WINS!':'THE RIVALS WIN!'))+' · '+(game.online?'ONLINE':' '+DIFFICULTIES[game.difficulty].name.toUpperCase());
+      (game.online&&online?.mode==='coop'?'YOUR CREW WINS!':'YOUR TEAM WINS!'):
+      'THE RIVALS WIN!'))+' · '+(game.online?(online?.mode==='coop'?'BOO CREW CO-OP':'CLASSIC DUEL'):
+      DIFFICULTIES[game.difficulty].name.toUpperCase());
     resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
     const awardMap=assignAwards(game.ghosts),you=game.ghosts[localGhostId()],mine=awardMap.get(localGhostId());
     myAwardEmoji.innerHTML=ghostPortrait(you);
