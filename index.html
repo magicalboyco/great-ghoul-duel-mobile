@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 17)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 18)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -70,6 +70,33 @@ button{font:inherit}
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
 #notice{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));font-size:11px;color:#c8bde7;background:rgba(17,14,38,.72);padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.06);z-index:5;pointer-events:none}
 
+#hallOfFame{position:absolute;inset:0;z-index:24;display:flex;justify-content:center;align-items:center;padding:12px;background:radial-gradient(ellipse at 50% 15%,#624185f0,#110d27fa 80%)}
+#hallOfFame[hidden]{display:none}
+.hallPanel{width:min(94vw,680px);max-height:94dvh;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:20px;border:2px solid #ffd0ee8a;border-radius:24px;background:linear-gradient(155deg,#38234e,#1b1734 80%);box-shadow:0 30px 85px #050313e6;text-align:center}
+.hallPanel h2{margin:9px 0;font-size:clamp(26px,6vw,41px);color:#ffdfba;font-family:Caprasimo,Georgia,serif}
+.hallSubtitle{font-size:13px;color:#e8d6f3;line-height:1.6}
+.hallRows{display:grid;gap:8px;margin:17px 0}
+.hallRow{display:grid;grid-template-columns:30px 56px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid #ffffff33;border-radius:14px;background:#ffffff0c;padding:7px 11px;text-align:left}
+.hallRow:nth-child(1){background:#ffdc9d25;border-color:#ffdfaf82}
+.hallRow:nth-child(2){background:#def1ff1c}
+.hallRow:nth-child(3){background:#ffd5dd1c}
+.hallRank{color:#fce0ad;font-weight:900;text-align:center}
+.hallPortrait{width:51px;height:57px;border-radius:11px;background:radial-gradient(circle,#ffffff27,#251936 83%);overflow:hidden}
+.hallPortrait svg{width:100%;height:100%}
+.hallName{font-weight:900;overflow-wrap:anywhere;font-size:14px}
+.hallCountry{font-size:12px;color:#e9d8fb}
+.hallPoints{text-align:right;color:#ffedbd;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hallActions{display:flex;justify-content:center;flex-wrap:wrap;gap:9px}
+.hallActions button,#hallMenuBtn,#hallResultsBtn,#submitHighScore{cursor:pointer;border-radius:13px;border:1px solid #f8deff88;padding:11px 15px;font-weight:900;background:#efb8df;color:#372342}
+#hallOfFame button:focus-visible,#highScoreEntry :focus-visible{outline:3px solid #adf5c5;outline-offset:3px}
+#highScoreEntry{margin:14px 0;padding:15px;background:#d4bbf01b;border:1px solid #f6d8ff66;border-radius:15px;text-align:center}
+#highScoreEntry[hidden]{display:none}
+#highScoreEntry h3{margin:3px 0 9px;font-size:18px;color:#ffdfba}
+#highScoreEntry label{display:block;text-align:left;font-size:12px;font-weight:850;color:#f5dcff;margin-top:9px}
+#highScoreEntry input,#highScoreEntry select{display:block;width:100%;padding:11px 12px;border-radius:10px;border:1px solid #ffffff66;background:#1c1433;color:#fff;font:inherit;font-size:15px;margin-top:4px}
+#highScoreEntry input{text-transform:none}
+#highScoreEntry .scoreTip,#hallStatus,#highScoreStatus{font-size:12px;line-height:1.5;color:#eddcfb;margin:9px 0}
+#hallMenuBtn{display:inline-block;margin-top:10px}
 #results{display:none;position:absolute;inset:0;z-index:15;padding:12px;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 12%,#553c77c9,#0c091bea 78%)}
 #results.open{display:flex}
 .resultsPanel{width:min(100%,650px);max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y;overscroll-behavior:contain;border:1px solid #e6cfff70;border-radius:24px;padding:18px;background:linear-gradient(160deg,#332747,#1a162f);box-shadow:0 25px 80px #04030bbb;text-align:center}
@@ -189,7 +216,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 16</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 18</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -220,12 +247,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   </div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>Private online rooms join our existing soundscape, Boo Crew portraits, and gratitude credits. Solo Easy, Normal and Hard bots remain.</div>
+      <div><b>New this build</b><br>Top 13 Hall of Fame! Winning players can choose a 13-character nickname and country flag; their Boo Crew avatar joins the rankings. Private rooms, sounds and solo bots remain.</div>
       <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
-    <button id="startBtn">START GAME</button><div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
+    <button id="startBtn">START GAME</button>
+    <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
+    <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
   </div>
 </div>
 <div id="difficultyHud" hidden>👻 NORMAL OPPONENTS</div>
@@ -237,10 +266,32 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 <div class="eyebrow">YOUR GHOSTLY TITLE</div><div class="awardName" id="myAwardName"></div>
 <div class="awardReason" id="myAwardReason"></div></div>
 <div id="myStats"></div>
+    <form id="highScoreEntry" hidden>
+      <h3>🏆 A WINNING BOO CREW GHOST!</h3>
+      <p class="scoreTip">Put your personal banked score in contention for the Top 13. Choose a nickname and flag. Only these display details are public. Scores are currently unverified.</p>
+      <label for="highScoreName">Ghostly name · 13 characters maximum</label>
+      <input id="highScoreName" type="text" maxlength="13" minlength="1" autocomplete="nickname" placeholder="Your spooky name" required>
+      <label for="highScoreCountry">Your country flag · chosen by you</label>
+      <select id="highScoreCountry" required><option value="">Choose your flag…</option></select>
+      <p class="scoreTip" id="highScorePreview"></p>
+      <button type="submit" id="submitHighScore">🏆 ENTER THE TOP 13</button>
+      <p id="highScoreStatus" role="status" aria-live="polite"></p>
+    </form>
 <div class="eyebrow" style="margin-top:15px">ALL EIGHT GHOSTS</div>
 <div id="awardGrid" class="awardGrid"></div>
-<div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button><button id="resultDifficultyBtn">🎚️ DIFFICULTY</button><button id="resultsCreditsBtn">💗 CREDITS</button></div>
+<div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button><button id="resultDifficultyBtn">🎚️ DIFFICULTY</button><button id="hallResultsBtn">🏆 TOP 13</button><button id="resultsCreditsBtn">💗 CREDITS</button></div>
 </div></div>
+<section id="hallOfFame" role="dialog" aria-modal="true" aria-labelledby="hallHeading" hidden>
+  <div class="hallPanel" tabindex="-1">
+    <div class="eyebrow">THE SPOOKTACULAR HALL OF FAME</div>
+    <h2 id="hallHeading">🏆 TOP 13 🏆</h2>
+    <p class="hallSubtitle">Thirteen legendary Boo Crew ghosts. Each score is that player's own banked spirit flames in a winning match.</p>
+    <p id="hallStatus" role="status" aria-live="polite">Opening the crypt…</p>
+    <div id="hallRows" class="hallRows"></div>
+    <div class="hallActions"><button id="hallRefresh" type="button">↻ REFRESH SCORES</button><button id="hallBack" type="button">← BACK</button></div>
+    <p class="hallSubtitle">Names and flags are player-chosen. These casual scores are not independently verified. No account or personal photo is needed.</p>
+  </div>
+</section>
 <section id="credits" role="dialog" aria-modal="true" aria-labelledby="creditsHeading" hidden>
   <div class="creditsPanel" tabindex="-1">
     <div class="creditsHero">
@@ -335,12 +386,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     creditsBackBtn.textContent=results.classList.contains('open')?'← BACK TO AWARDS':'← BACK TO MENU';
     menu.inert=true;
     results.inert=true;
+    hallOfFame.inert=true;
     creditsBackBtn.focus();
   }
   function closeCredits(){
     credits.hidden=true;
     menu.inert=false;
     results.inert=false;
+    hallOfFame.inert=false;
     if(creditsReturnFocus&&typeof creditsReturnFocus.focus==='function')creditsReturnFocus.focus();
   }
   function returnToMenu(purpose){
@@ -365,6 +418,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
   });
+  const hallOfFame=document.getElementById('hallOfFame');
+  const hallRows=document.getElementById('hallRows');
+  const hallStatus=document.getElementById('hallStatus');
+  const hallBack=document.getElementById('hallBack');
+  const scoreEntry=document.getElementById('highScoreEntry');
+  const highScoreName=document.getElementById('highScoreName');
+  const highScoreCountry=document.getElementById('highScoreCountry');
+  const highScoreStatus=document.getElementById('highScoreStatus');
+  const highScorePreview=document.getElementById('highScorePreview');
   const resultHeading=document.getElementById('resultHeading');
   const resultScore=document.getElementById('resultScore');
   const myAwardEmoji=document.getElementById('myAwardEmoji');
@@ -1442,6 +1504,184 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-levelFor(you))+' to go</span>').join(' · ');
     clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
   }
+
+  // Player-selected flags, never derived from location.
+  const COUNTRY_CODES="AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(' ');
+  const COUNTRY_SET=new Set(COUNTRY_CODES);
+  const flagEmoji=code=>/^[A-Z]{2}$/.test(code)?
+    [...code].map(c=>String.fromCodePoint(c.charCodeAt(0)+127397)).join(''):'🏳️';
+  const countryLabel=(()=>{
+    let display=null;
+    try{display=new Intl.DisplayNames([navigator.language||'en'],{type:'region'})}catch{}
+    return code=>(display?.of(code)||code);
+  })();
+  const countryOptions=COUNTRY_CODES.map(code=>({code,label:countryLabel(code)}))
+    .sort((a,b)=>a.label.localeCompare(b.label));
+  countryOptions.forEach(({code,label})=>{
+    const option=document.createElement('option');option.value=code;
+    option.textContent=flagEmoji(code)+' '+label;
+    highScoreCountry.appendChild(option);
+  });
+  try{
+    highScoreName.value=localStorage.getItem('boo-crew-score-name')||'';
+    highScoreCountry.value=localStorage.getItem('boo-crew-score-country')||'';
+  }catch{}
+  const nicknameIsValid=value=>value.length>=1&&value.length<=13&&
+    value.trim()===value&&/^[\p{L}\p{M}\p{N} ._'-]+$/u.test(value)&&/[\p{L}\p{N}]/u.test(value);
+  const scoreColorSet=new Set(PASTELS.map(p=>p.hex));
+  const validHallEntry=e=>e&&typeof e.name==='string'&&nicknameIsValid(e.name)&&
+    COUNTRY_SET.has(e.country)&&Number.isInteger(e.styleId)&&e.styleId>=0&&e.styleId<8&&
+    scoreColorSet.has(e.color)&&Number.isInteger(e.score)&&e.score>0&&e.score<=99999;
+  const localHallKey='boo-crew-top13-device-v1';
+  function readDeviceHall(){
+    try{
+      const items=JSON.parse(localStorage.getItem(localHallKey)||'[]');
+      return Array.isArray(items)?items.filter(validHallEntry).sort((a,b)=>b.score-a.score).slice(0,13):[];
+    }catch{return []}
+  }
+  function saveDeviceHall(entry){
+    const records=[...readDeviceHall(),entry].sort((a,b)=>b.score-a.score).slice(0,13);
+    try{localStorage.setItem(localHallKey,JSON.stringify(records))}catch{}
+    return {scores:records,rank:records.indexOf(entry)+1};
+  }
+  function leaderboardBaseUrl(){
+    try{const address=new URL(onlineServerEl.value.trim());
+      if(address.protocol!=='https:'||address.username||address.password||address.search||address.hash||
+        (address.pathname!==''&&address.pathname!=='/'))return null;
+      return address.origin;
+    }catch{return null}
+  }
+  async function fetchHall(){
+    const endpoint=leaderboardBaseUrl();
+    if(!endpoint)throw Error('no-server');
+    const response=await fetch(endpoint+'/leaderboard',{method:'GET',cache:'no-store'});
+    if(!response.ok)throw Error('Server returned '+response.status);
+    const result=await response.json();
+    if(!Array.isArray(result.scores))throw Error('Invalid leaderboard');
+    return result.scores.filter(validHallEntry).slice(0,13);
+  }
+  async function postHall(entry){
+    const endpoint=leaderboardBaseUrl();
+    if(!endpoint)throw Error('no-server');
+    const response=await fetch(endpoint+'/leaderboard',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(entry)
+    });
+    const result=await response.json();
+    if(!response.ok)throw Error(result.error||'Unable to submit score');
+    return result;
+  }
+  function renderHallScores(entries,scope){
+    hallRows.replaceChildren();
+    if(!entries.length){
+      const empty=document.createElement('p');
+      empty.className='hallSubtitle';
+      empty.textContent='The crypt is empty. Be the first ghost to earn a place!';
+      hallRows.appendChild(empty);return;
+    }
+    entries.slice(0,13).forEach((e,i)=>{
+      if(!validHallEntry(e))return;
+      const tile=document.createElement('div');tile.className='hallRow';
+      const rank=document.createElement('div');rank.className='hallRank';
+      rank.textContent=i<3?['🥇','🥈','🥉'][i]:String(i+1).padStart(2,'0');
+      const image=document.createElement('div');image.className='hallPortrait';
+      // SVG comes from our known 8 Boo Crew costumes, never player HTML.
+      image.innerHTML=ghostPortrait({id:e.styleId,styleId:e.styleId,team:0},e.color);
+      const details=document.createElement('div');
+      const nickname=document.createElement('div');nickname.className='hallName';
+      nickname.textContent=e.name;
+      const country=document.createElement('div');country.className='hallCountry';
+      country.textContent=flagEmoji(e.country)+' '+countryLabel(e.country);
+      details.append(nickname,country);
+      const points=document.createElement('div');points.className='hallPoints';
+      points.textContent=e.score.toLocaleString()+' pts';
+      tile.append(rank,image,details,points);hallRows.appendChild(tile);
+    });
+  }
+  let hallPreviousFocus=null;
+  function closeHall(){
+    hallOfFame.hidden=true;
+    menu.inert=false;results.inert=false;
+    if(hallPreviousFocus?.focus)hallPreviousFocus.focus();
+  }
+  async function refreshHall(){
+    hallStatus.textContent='Looking for the most legendary ghosts…';
+    try{
+      const entries=await fetchHall();
+      renderHallScores(entries,'global');
+      hallStatus.textContent='🌐 Shared Top 13 · 120-second matches · unverified player-submitted scores';
+    }catch{
+      renderHallScores(readDeviceHall(),'device');
+      hallStatus.textContent=leaderboardBaseUrl()?
+        '📱 Device-only Top 13 · shared server is unavailable. Scores here are saved in this browser.':
+        '📱 Device-only Top 13 · enter your Worker address under Play Online for the shared leaderboard.';
+    }
+  }
+  function openHall(){
+    hallPreviousFocus=document.activeElement;
+    hallOfFame.hidden=false;
+    menu.inert=true;results.inert=true;
+    hallBack.focus();
+    refreshHall();
+  }
+  document.getElementById('hallMenuBtn').addEventListener('click',openHall);
+  document.getElementById('hallResultsBtn').addEventListener('click',openHall);
+  document.getElementById('hallRefresh').addEventListener('click',refreshHall);
+  hallBack.addEventListener('click',closeHall);
+  hallOfFame.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();closeHall()}
+    if(event.key!=='Tab')return;
+    const items=[...hallOfFame.querySelectorAll('button:not([disabled])')];
+    const first=items[0],last=items[items.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+  });
+  async function prepareWinningHighScore(){
+    scoreEntry.hidden=true;highScoreStatus.textContent='';
+    const submitButton=document.getElementById('submitHighScore');
+    submitButton.disabled=false;
+    submitButton.textContent='🏆 ENTER THE TOP 13';
+    if(!game)return;
+    const player=game.ghosts[localGhostId()];
+    if(!player||game.scores[player.team]<=game.scores[1-player.team]||player.score<=0)return;
+    const chosen=GHOST_CHARACTER_NAMES[player.styleId??player.id];
+    highScorePreview.textContent=chosen+' · '+player.score+' banked spirit flames · '+(game.online?'Online':'Solo')+' victory';
+    scoreEntry.hidden=false;
+  }
+  scoreEntry.addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(!game||game.phase!=='finished'||game.scoreSubmitted)return;
+    const player=game.ghosts[localGhostId()];
+    if(!player||game.scores[player.team]<=game.scores[1-player.team]||player.score<=0)return;
+    const name=highScoreName.value.trim();
+    const country=highScoreCountry.value;
+    if(!nicknameIsValid(name)||!COUNTRY_SET.has(country)){
+      highScoreStatus.textContent='Choose a nickname of 1–13 letters/numbers and a country flag.';return;
+    }
+    const entry={name,country,styleId:player.styleId??player.id,color:color(player.team),score:player.score};
+    const button=document.getElementById('submitHighScore');
+    button.disabled=true;highScoreStatus.textContent='Checking the Top 13…';
+    try{
+      localStorage.setItem('boo-crew-score-name',name);
+      localStorage.setItem('boo-crew-score-country',country);
+    }catch{}
+    try{
+      const answer=await postHall(entry);
+      game.scoreSubmitted=true;
+      highScoreStatus.textContent=answer.accepted?
+        '🎉 You made the shared Top 13 at #'+answer.rank+'! Open the board to see your Boo Crew portrait.':
+        'Your victory was recorded for this attempt, but the shared Top 13 is currently higher.';
+    }catch{
+      const result=saveDeviceHall(entry);
+      game.scoreSubmitted=true;
+      highScoreStatus.textContent=result.rank?
+        '📱 Saved as #'+result.rank+' on this device only. The shared server is not connected.':
+        'This score did not make your device’s Top 13. The shared server is unavailable.';
+    }finally{
+      button.disabled=!!game.scoreSubmitted;
+      button.textContent=game.scoreSubmitted?'✓ SCORE SUBMITTED':'🏆 ENTER THE TOP 13';
+    }
+  });
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
@@ -1542,6 +1782,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
     });
     results.classList.add('open');
+    prepareWinningHighScore();
     results.querySelector('.resultsPanel').scrollTop=0;
   }
   function finish() {
