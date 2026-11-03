@@ -676,3 +676,96 @@ test('Alpha 29: iPhone menu prevents auto-text inflation and detects desktop-wid
   assert.match(html,/id="zoomNotice"/);
   assert.match(html,/#onlinePanel input\{max-width:100%;font-size:16px;\}/);
 });
+
+
+test('Alpha 29: room nicknames are sanitized and synchronized to host and guests',async()=>{
+  const {env,instances}=harness();
+  const created=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms','POST',{Origin:'https://magicalboyco.github.io'},
+    {mode:'coop'}),env);
+  assert.equal(created.status,201);
+  const {code,hostToken}=await created.json();
+  const {room,sockets}=instances.get('room-'+code);
+  async function enter(role,profile){
+    const response=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(response.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({type:'hello',role,
+      ...(role==='host'?{token:hostToken}:{}),...profile}));
+    return socket;
+  }
+  const host=await enter('host',{styleId:0,color:'#B8DDC4',name:'Boo Baron'});
+  const guest=await enter('guest',{styleId:1,color:'#C9B9E5',name:'  Lúcia Moon  '});
+  assert.equal(room.profiles.get(0).name,'Boo Baron');
+  assert.equal(room.profiles.get(1).name,'Lúcia Moon');
+  const roster=host.sent.findLast(m=>m.type==='roster');
+  assert.equal(roster.profiles.find(p=>p.seat===1)?.name,'Lúcia Moon',
+    'The host sees a guest-selected nickname');
+  const guestRoster=guest.sent.findLast(m=>m.type==='roster');
+  assert.equal(guestRoster.profiles.find(p=>p.seat===0)?.name,'Boo Baron',
+    'The guest sees the host name');
+  await room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:1,color:'#C9B9E5',name:'Moonlit Fox'
+  }));
+  assert.equal(room.profiles.get(1).name,'Moonlit Fox',
+    'Before the match a guest may change their own nickname');
+  await room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:1,color:'#C9B9E5',name:'<img src=x>'
+  }));
+  assert.equal(room.profiles.get(1).name,'',
+    'HTML and markup are rejected by the Worker');
+  await room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:1,color:'#C9B9E5',name:'Name👻'
+  }));
+  assert.equal(room.profiles.get(1).name,'',
+    'Unsupported characters are not sent to other players');
+  await room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:1,color:'#C9B9E5',name:'Spooky Specter 123'
+  }));
+  assert.equal(room.profiles.get(1).name,'',
+    'Names longer than 16 code units are rejected');
+  await room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:1,color:'#C9B9E5',name:'Gusty'
+  }));
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  assert.equal(host.sent.find(m=>m.type==='prepare')?.profiles
+    .find(p=>p.seat===1)?.name,'Gusty');
+  await room.webSocketMessage(guest,JSON.stringify({
+    type:'profile',styleId:1,color:'#C9B9E5',name:'Changed During Play'
+  }));
+  assert.equal(room.profiles.get(1).name,'Gusty',
+    'Player names cannot be rewritten during an active round');
+});
+
+test('Alpha 29: player name field, lobby, match and mobile sizing stay integrated',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/<input id="playerDisplayName"[^>]+maxlength="16"/,
+    'Every player can type a name before creating or joining');
+  assert.match(html,/function sanitizePlayerName\(value\)/);
+  assert.match(html,/name:sanitizePlayerName\(playerDisplayNameEl\.value\)/,
+    'The chosen name is sent with the socket hello/profile');
+  assert.match(html,/type:'profile',\.\.\.lobbyPlayerProfile\(\)/,
+    'Live lobby name changes propagate to connected friends');
+  assert.match(html,/name:sanitizePlayerName\(p\.name\)/,
+    'Roster parsing accepts the server-sanitized player name');
+  assert.match(html,/g\.playerName=human\?sanitizePlayerName\(profile\?\.name\)/);
+  assert.match(html,/playerName:g\.playerName\|\|''/,
+    'Authoritative full match snapshots preserve names');
+  assert.match(html,/sanitizePlayerName\(g\.playerName\)/,
+    'In-game labels display player names');
+  assert.match(html,/sanitizePlayerName\(ghost\.playerName\)/,
+    'End-of-match awards display player names');
+  assert.match(html,/ctx\.fillText\(text,x,y-49,width-12\)/,
+    'Name badges fit their canvas panels');
+  assert.match(html,/-webkit-text-size-adjust:100%/,
+    'Safari must not inflate already responsive menu text');
+  assert.match(html,/text-size-adjust:100%/);
+  assert.match(html,/#menu>.panel\{\s*margin:auto;\s*flex:none;/,
+    'Small-screen setup panel respects viewport and keeps scrolling');
+  assert.match(html,/font-size:16px;/,'Input text avoids iOS focus zoom');
+  assert.doesNotMatch(html,/user-scalable=no|maximum-scale=1/,
+    'Pinch zoom must remain accessible');
+  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/,
+    'Power-up requirements stay intact');
+});
