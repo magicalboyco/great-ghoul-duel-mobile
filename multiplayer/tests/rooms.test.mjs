@@ -384,3 +384,74 @@ test('Alpha 25: illustrated cobblestones are cached, seeded and rendered below s
   assert.match(html,/function collides\(x, y, r = 19\)/,
     'Existing gameplay collision function is untouched');
 });
+
+test('Alpha 26: Easy/Normal/Hard rival AI pressure increases without runaway speed',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  const DIFFICULTIES={');
+  const end=html.indexOf('  let selectedDifficulty=',start);
+  assert.ok(start>0&&end>start,'Difficulty configuration is available');
+  const config=new Function(html.slice(start,end)+';return {DIFFICULTIES,FRIENDLY_BOT_CONFIG};')();
+  const {easy,normal,hard}=config.DIFFICULTIES;
+  const before={
+    easy:{speed:.79,thinkMin:1.15,thinkMax:1.75,chaseChance:.06,chaseRadius:190},
+    normal:{speed:1,thinkMin:.3,thinkMax:.85,chaseChance:.35,chaseRadius:270},
+    hard:{speed:1.13,thinkMin:.16,thinkMax:.36,chaseChance:.68,chaseRadius:415}
+  };
+  for(const [name,profile,pressure] of [['easy',easy,.10],['normal',normal,.15],['hard',hard,.20]]){
+    assert.ok(profile.speed>=before[name].speed&&
+      profile.speed<=before[name].speed*1.06,
+      name+' movement boost is modest (no 20% speed shock)');
+    assert.ok(profile.thinkMin<=before[name].thinkMin*(1-pressure+.02));
+    assert.ok(profile.thinkMax<=before[name].thinkMax*(1-pressure+.02));
+    assert.ok(profile.chaseChance>=before[name].chaseChance*(1+pressure-.02));
+    assert.ok(profile.chaseRadius>=before[name].chaseRadius*(1+pressure-.02));
+    assert.equal(profile.bankAt,{easy:3,normal:5,hard:7}[name],
+      'Preserve each skill tier banking identity');
+  }
+  assert.equal(config.FRIENDLY_BOT_CONFIG.speed,1);
+  assert.equal(config.FRIENDLY_BOT_CONFIG.thinkMin,.3);
+  assert.equal(config.FRIENDLY_BOT_CONFIG.chaseChance,.35);
+  assert.ok(easy.speed<normal.speed&&normal.speed<hard.speed);
+  assert.ok(easy.thinkMin>normal.thinkMin&&normal.thinkMin>hard.thinkMin);
+});
+
+test('Alpha 26: guest and host humans have equal movement speeds at all difficulties',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  function isComputerGhost(g){');
+  const end=html.indexOf('  function botDirection(g, dt) {',start);
+  assert.ok(start>0&&end>start);
+  const profileSource=html.slice(start,end);
+  const profiles={easy:{speed:.82},normal:{speed:1.04},hard:{speed:1.18}};
+  const ally={speed:1};
+  for(const difficulty of ['easy','normal','hard']){
+    const game={online:true,difficulty};
+    const online={seats:[0,4]};
+    const helpers=new Function('game','online','DIFFICULTIES','FRIENDLY_BOT_CONFIG',
+      profileSource+';return {isComputerGhost,movementSpeedFactor};')(
+        game,online,profiles,ally);
+    assert.equal(helpers.movementSpeedFactor({id:0,team:0}),1,
+      'Host human seat 0 moves at normal speed');
+    assert.equal(helpers.movementSpeedFactor({id:4,team:1}),1,
+      'Guest human seat 4 is not sped up by rival difficulty');
+    assert.equal(helpers.movementSpeedFactor({id:5,team:1}),profiles[difficulty].speed,
+      'Rival bot gets its intended difficulty speed');
+    assert.equal(helpers.movementSpeedFactor({id:1,team:0}),1,
+      'Friendly bot stays at baseline speed');
+  }
+  const solo=new Function('game','online','DIFFICULTIES','FRIENDLY_BOT_CONFIG',
+    profileSource+';return {isComputerGhost,movementSpeedFactor};')(
+      {online:false,difficulty:'hard'},null,profiles,ally);
+  assert.equal(solo.movementSpeedFactor({id:0,team:0}),1);
+  assert.equal(solo.movementSpeedFactor({id:4,team:1}),1.18);
+  assert.match(html,/const speed=172\*\(score>=8\?1\.48:1\)\*movementSpeedFactor\(g\)/);
+});
+
+test('Alpha 26: power-up spirit requirements stay fixed across difficulty modes',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
+  for(const [name,spirits] of [['Speed',8],['Glow',23],['Magnet',53],['Phase',113]]){
+    assert.ok(html.includes("name:'"+({Speed:'⚡ Speed',Glow:'✨ Glow',Magnet:'🧲 Magnet',Phase:'👻 Phase'}[name])+"',at:"+spirits),
+      name+' power threshold stays unchanged');
+  }
+  assert.match(html,/function levelFor\(g\)\{return g\.trail\.length\}/);
+});

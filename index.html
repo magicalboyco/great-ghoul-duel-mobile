@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 25)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 26)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -266,7 +266,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 25</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 26</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -430,13 +430,23 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const difficultyButtons=document.getElementById('difficultyButtons');
   const difficultyDescription=document.getElementById('difficultyDescription');
   const difficultyHud=document.getElementById('difficultyHud');
+  // Alpha 26: stronger decision-making, NOT 10–20% faster movement.
+  // Easy/Normal/Hard strategic pressure rises ~10/15/20% through shorter
+  // thinking intervals, more chase opportunities and greater awareness.
+  // Movement speed changes only slightly (+3–5%); human speed never changes.
   const DIFFICULTIES={
-    easy:{name:'Easy',speed:.79,bankAt:3,thinkMin:1.15,thinkMax:1.75,chaseChance:.06,chaseRadius:190,preyLength:5,
-      description:'Gentle rivals: slower movement, fewer steals, and frequent small deposits.'},
-    normal:{name:'Normal',speed:1,bankAt:5,thinkMin:.3,thinkMax:.85,chaseChance:.35,chaseRadius:270,preyLength:4,
-      description:'Classic opponent ghosts: regular speed, collecting and stealing.'},
-    hard:{name:'Hard',speed:1.13,bankAt:7,thinkMin:.16,thinkMax:.36,chaseChance:.68,chaseRadius:415,preyLength:3,
-      description:'Clever rivals: faster decisions, more ambitious routes, and active attempts to steal.'}
+    easy:{name:'Easy',speed:.82,bankAt:3,thinkMin:1.04,thinkMax:1.58,chaseChance:.066,chaseRadius:209,preyLength:5,
+      description:'A little livelier (+10%): gentle rivals think sooner and notice more spirits to steal.'},
+    normal:{name:'Normal',speed:1.04,bankAt:5,thinkMin:.255,thinkMax:.723,chaseChance:.40,chaseRadius:311,preyLength:4,
+      description:'A playful challenge (+15%): quicker choices, better pursuit and more thoughtful rivals.'},
+    hard:{name:'Hard',speed:1.18,bankAt:7,thinkMin:.128,thinkMax:.288,chaseChance:.816,chaseRadius:498,preyLength:3,
+      description:'A mischievous challenge (+20%): sharper reactions, bold steals and clever escapes.'}
+  };
+  // Teammate bots retain the previous Normal tuning. That keeps the
+  // human player's allies useful without undoing the added rival pressure.
+  const FRIENDLY_BOT_CONFIG={
+    ...DIFFICULTIES.normal,speed:1,thinkMin:.3,thinkMax:.85,
+    chaseChance:.35,chaseRadius:270
   };
   let selectedDifficulty='normal';
   function setDifficulty(mode){
@@ -1571,10 +1581,22 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     return best;
   }
 
+  function isComputerGhost(g){
+    // Seat zero belongs to the solo player; online human seats are known
+    // from the room roster, including guests assigned to team 1.
+    return game?.online?!online?.seats.includes(g.id):g.id!==0;
+  }
+  function botDifficultyConfig(g){
+    return g.team===0?FRIENDLY_BOT_CONFIG:
+      DIFFICULTIES[game.difficulty]||DIFFICULTIES.normal;
+  }
+  function movementSpeedFactor(g){
+    return isComputerGhost(g)?botDifficultyConfig(g).speed:1;
+  }
   function botDirection(g, dt) {
-    // Adjust only the rival team. Friendly bots retain Alpha 12 Normal AI.
+    // Bot decisions use explicit AI profiles; human controls never do.
     const mode=g.team===1?game.difficulty:'normal';
-    const config=DIFFICULTIES[mode]||DIFFICULTIES.normal;
+    const config=botDifficultyConfig(g);
     g.targetTimer-=dt;
     const home=BASES[g.team];
     const underPressure=mode==='hard'&&g.trail.length>=3&&game.ghosts.some(other=>
@@ -1616,8 +1638,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   function moveGhost(g, dir, dt) {
     const score=levelFor(g);
-    const rivalSpeed=g.team===1?DIFFICULTIES[game.difficulty].speed:1;
-    const speed=172*(score>=8?1.48:1)*rivalSpeed;
+    const speed=172*(score>=8?1.48:1)*movementSpeedFactor(g);
     const phaseMove=score>=113;
     const beforeX=g.x,beforeY=g.y;
     let nx = g.x + dir.x * speed * dt;

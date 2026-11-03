@@ -266,3 +266,36 @@ removal of the flat stripe. Run the existing test command:
 Live visual check: confirm both base names read clearly in very light
 colorways and at iPhone portrait scale, and confirm the walkway remains
 subtle enough to distinguish ghosts and spirit flames during play.
+
+## Alpha 26 — more competitive computer ghosts (power thresholds unchanged)
+
+Beta feedback was that computer opponents felt a little too easy. This
+update strengthens rival AI's strategic pressure **10% on Easy, 15% on
+Normal, and 20% on Hard** by shortening thinking intervals and increasing
+chase opportunities and awareness radius. Movement speed rises by only
+about 3–5%, so the game remains casual rather than becoming a twitch
+reflex challenge.
+
+The player's helpful computer teammates retain their previous Normal
+AI tuning, so difficulty increases apply to the **rival** team and remain
+visible in solo matches. Each difficulty retains its established small,
+medium or large banking behavior.
+
+A separate `movementSpeedFactor(g)` checks whether a ghost belongs to
+a real human or an AI seat. **Both the host and guests in multiplayer
+always move at the same base speed**, regardless of their teams or the
+selected bot difficulty. Only computer-controlled opponents receive the
+difficulty speed modifier.
+
+All four existing upgrade thresholds stay at **8 (Speed), 23 (Glow),
+53 (Magnet), and 113 (Phase)** carried spirits in every mode.
+Player abilities, score mechanics, match time, physics, background,
+music and online room protocol are otherwise unchanged.
+
+New regression tests check tier-by-tier strategic differences,
+small movement increments, human movement parity across all three
+difficulty modes, teammate bot consistency and the unchanged power-ups.
+
+After deployment, compare several games at each difficulty on the same
+device and with similar play strategies. This is an initial tuning
+experiment, not proof that wins become exactly 10/15/20% harder.
