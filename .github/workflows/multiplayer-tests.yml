@@ -1,0 +1,32 @@
+name: Verify multiplayer rooms
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'multiplayer/**'
+      - '.github/workflows/multiplayer-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'multiplayer/**'
+      - '.github/workflows/multiplayer-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  multiplayer-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out game
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check worker syntax
+        run: node --check multiplayer/src/worker.js
+      - name: Test room creation and leaderboard
+        run: node --test multiplayer/tests/*.test.mjs
