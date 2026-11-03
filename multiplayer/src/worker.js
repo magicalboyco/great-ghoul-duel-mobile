@@ -25,11 +25,59 @@ const validNickname=name=>typeof name==='string'&&
 const seats = [0,4,1,5,2,6,3,7];
 const ok = (value) => JSON.stringify(value);
 const validCode = (code) => /^[A-Z2-9]{6}$/.test(code);
+const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ROOM_LIFETIME_MS=60*60*1000;
+const roomHeaders={
+  ...leaderboardCors,
+  'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers':'Content-Type'
+};
+const roomReply=(body,status=200)=>Response.json(body,{status,headers:roomHeaders});
+const secureRandom=(length,alphabet=CODE_ALPHABET)=>{
+  const bytes=new Uint8Array(length);crypto.getRandomValues(bytes);
+  return [...bytes].map(n=>alphabet[n%alphabet.length]).join('');
+};
+const tokenHash=async token=>{
+  const bytes=new TextEncoder().encode(token);
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
+};
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/health") return Response.json({ok:true,service:"ghost-duel-alpha18"});
+    if (url.pathname === '/rooms' && request.method==='OPTIONS')
+      return new Response(null,{status:204,headers:roomHeaders});
+    if (url.pathname === '/rooms' && request.method==='POST') {
+      const origin=request.headers.get('Origin');
+      if(origin&&!ALLOWED_GAME_ORIGINS.test(origin))
+        return roomReply({error:'Origin not allowed'},403);
+      // The server creates a room before either client can join it.
+      // The host secret is never put in an invite link or stored in the browser.
+      for(let attempt=0;attempt<5;attempt++){
+        const code=secureRandom(6),token=secureRandom(48);
+        const id=env.GHOST_ROOMS.idFromName('room-'+code);
+        const result=await env.GHOST_ROOMS.get(id).fetch(
+          new Request('https://room.internal/reserve',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({hash:await tokenHash(token)})
+          })
+        );
+        if(result.status===409)continue;
+        if(!result.ok)return roomReply({error:'Could not reserve a room'},503);
+        return roomReply({code,hostToken:token,expiresInSeconds:ROOM_LIFETIME_MS/1000},201);
+      }
+      return roomReply({error:'Could not create a unique room. Try again.'},503);
+    }
+    const roomStatus=/^\/rooms\/([A-Z2-9]{6})$/i.exec(url.pathname);
+    if(roomStatus&&request.method==='GET'){
+      const code=roomStatus[1].toUpperCase();
+      const id=env.GHOST_ROOMS.idFromName('room-'+code);
+      return env.GHOST_ROOMS.get(id).fetch(
+        new Request('https://room.internal/status')
+      );
+    }
     if (url.pathname === "/leaderboard") {
       if(request.method==='OPTIONS')
         return new Response(null,{status:204,headers:leaderboardCors});
@@ -43,7 +91,7 @@ export default {
     if (!match || !validCode(match[1].toUpperCase())) return new Response("Not found", {status:404});
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
       return new Response("WebSocket required", {status:426});
-    const id = env.GHOST_ROOMS.idFromName(match[1].toUpperCase());
+    const id = env.GHOST_ROOMS.idFromName('room-'+match[1].toUpperCase());
     return env.GHOST_ROOMS.get(id).fetch(request);
   }
 };
@@ -55,6 +103,7 @@ export class GhostRoom {
     this.host = null;
     this.started = false;
     this.lastSnapshot = 0;
+    this.roomMeta=null;
     // Connection state is rehydrated from attachment metadata after hibernation.
     this.rebuild();
   }
@@ -69,6 +118,7 @@ export class GhostRoom {
     // Active matches are not resumed after hibernation; hibernation should
     // normally not occur during regular snapshots.
     this.started = sockets.some(ws => ws.deserializeAttachment()?.started === true);
+    // Room metadata is loaded on demand from Durable Object storage.
   }
   send(ws, data) { try { ws.send(ok(data)); } catch {} }
   broadcast(data) { for (const ws of this.players.values()) this.send(ws, data); }
@@ -108,29 +158,85 @@ export class GhostRoom {
     return boardReply({accepted:rank>0,rank:rank||null,scores:top,unverified:true});
   }
 
+  async getRoomMeta(){
+    // Cached only after the first storage read; every creation is serialized
+    // by the Durable Object's single-threaded storage operations.
+    if(this.roomMeta===null)this.roomMeta=await this.state.storage.get('room-meta')||null;
+    return this.roomMeta;
+  }
   async fetch(request) {
-    if (new URL(request.url).pathname==='/leaderboard')
-      return this.leaderboardRequest(request);
-    if (this.started) return new Response("Match already started", {status:409});
-    const seat = seats.find(n => !this.players.has(n));
-    if (seat === undefined) return new Response("Room full", {status:409});
-    const pair = new WebSocketPair();
-    const [client, server] = Object.values(pair);
+    const path=new URL(request.url).pathname;
+    if(path==='/leaderboard')return this.leaderboardRequest(request);
+    if(path==='/reserve'&&request.method==='POST'){
+      const previous=await this.getRoomMeta();
+      if(previous&&previous.expiresAt>Date.now())return roomReply({error:'Room already exists'},409);
+      if(this.players.size>0)return roomReply({error:'Room is occupied'},409);
+      const body=await request.json().catch(()=>null);
+      if(!body||!(/^[a-f0-9]{64}$/.test(body.hash)))return roomReply({error:'Invalid reservation'},400);
+      this.roomMeta={hash:body.hash,createdAt:Date.now(),expiresAt:Date.now()+ROOM_LIFETIME_MS};
+      await this.state.storage.put('room-meta',this.roomMeta);
+      this.started=false;
+      return roomReply({reserved:true},201);
+    }
+    const meta=await this.getRoomMeta();
+    if(!meta||(!this.players.size&&meta.expiresAt<Date.now()))
+      return roomReply({error:'Room not found or expired'},404);
+    if(path==='/status'&&request.method==='GET')
+      return roomReply({exists:true,started:this.started,players:this.players.size});
+    if(this.started)return new Response('Match already started',{status:409});
+    // Verify status before opening the WebSocket. Seat allocation occurs
+    // ONLY after the client explicitly authenticates its host or guest role.
+    if(request.headers.get('Upgrade')?.toLowerCase()!=='websocket')
+      return new Response('WebSocket required',{status:426});
+    if(this.players.size>=8)return new Response('Room full',{status:409});
+    const pair=new WebSocketPair();
+    const [client,server]=Object.values(pair);
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({seat,started:false});
-    this.players.set(seat, server);
-    if (seat === 0) this.host = server;
-    this.send(server,{type:"welcome",seat,host:seat===0});
-    this.roster();
+    server.serializeAttachment({seat:null,started:false});
     return new Response(null,{status:101,webSocket:client});
   }
-  webSocketMessage(ws, raw) {
-    const meta = ws.deserializeAttachment();
-    if (!meta || typeof raw !== "string" || raw.length > 200000) return;
-    let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
-    if (!msg || typeof msg.type !== "string") return;
-    if (msg.type === "start" && meta.seat === 0 && !this.started) {
+  async webSocketMessage(ws, raw) {
+    const meta=ws.deserializeAttachment();
+    if(!meta||typeof raw!=='string'||raw.length>200000)return;
+    let msg;try{msg=JSON.parse(raw)}catch{return}
+    if(!msg||typeof msg.type!=='string')return;
+    if(meta.seat===null){
+      if(msg.type!=='hello'){
+        this.send(ws,{type:'error',reason:'Room handshake required'});
+        try{ws.close(1008,'Handshake required')}catch{}
+        return;
+      }
+      const room=await this.getRoomMeta();
+      if(!room)return this.send(ws,{type:'error',reason:'Room no longer exists'});
+      let seat;
+      if(msg.role==='host'){
+        if(typeof msg.token!=='string'||msg.token.length!==48
+           ||await tokenHash(msg.token)!==room.hash||this.players.has(0)){
+          this.send(ws,{type:'error',reason:'Host authentication failed'});
+          try{ws.close(1008,'Not authorized')}catch{}
+          return;
+        }
+        seat=0;
+      }else if(msg.role==='guest'){
+        seat=seats.find(s=>s!==0&&!this.players.has(s));
+        if(seat===undefined){
+          this.send(ws,{type:'error',reason:'Room is full'});
+          try{ws.close(1008,'Room full')}catch{}
+          return;
+        }
+      }else{
+        this.send(ws,{type:'error',reason:'Invalid room role'});
+        try{ws.close(1008,'Invalid role')}catch{}
+        return;
+      }
+      ws.serializeAttachment({seat,started:false});
+      this.players.set(seat,ws);
+      if(seat===0)this.host=ws;
+      this.send(ws,{type:'welcome',seat,host:seat===0});
+      this.roster();
+      return;
+    }
+    if(msg.type==='start'&&meta.seat===0&&!this.started) {
       this.started = true;
       for (const socket of this.players.values()) {
         const data=socket.deserializeAttachment();
@@ -170,6 +276,8 @@ export class GhostRoom {
     if (!meta || this.players.get(meta.seat)!==ws) return;
     this.players.delete(meta.seat);
     if(meta.seat===0) {
+      this.roomMeta=null;
+      this.state.storage.delete('room-meta').catch(()=>{});
       this.broadcast({type:"closed",reason:"Host disconnected. Create or join a new room."});
       for (const socket of this.players.values()) try{ socket.close(1012,"Host disconnected"); }catch{}
       this.players.clear();this.host=null;this.started=false;

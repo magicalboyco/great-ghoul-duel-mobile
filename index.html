@@ -66,6 +66,16 @@ button{font:inherit}
 #onlinePanel input{width:min(100%,210px);margin:7px auto 10px;padding:10px;border-radius:10px;border:1px solid #dac3eb85;background:#1d1634;color:#fff;letter-spacing:.18em;font-weight:800;text-align:center;text-transform:uppercase}
 #onlinePanel #onlineStatus{min-height:32px;margin:10px 0 5px;font-size:12px;line-height:1.55;color:#f2e3ff;overflow-wrap:anywhere}
 #onlinePanel button[hidden]{display:none}
+#onlineRoster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px auto 6px;max-width:400px}
+#onlineRoster[hidden]{display:none}
+.roomSeat{background:#ffffff0d;border:1px solid #c8b5e64d;border-radius:11px;padding:6px 3px 4px;text-align:center;min-width:0}
+.roomSeat.full{background:#b3e4fc1e;border-color:#b9e5e87d}
+.roomSeat.host{background:#f3d0ff24;border-color:#ffddbd}
+.roomSeat .seatGhost{height:48px;display:grid;place-items:center}
+.roomSeat .seatGhost svg{height:45px;width:41px;filter:drop-shadow(0 4px 3px #12091f55)}
+.roomSeat .seatTitle{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e2ff}
+#onlineInvite{font-size:12px;color:#f9dfaa;font-weight:800;margin:10px 0;min-height:16px}
+#onlineInvite[hidden]{display:none}
 
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
 #notice{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));font-size:11px;color:#c8bde7;background:rgba(17,14,38,.72);padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.06);z-index:5;pointer-events:none}
@@ -250,6 +260,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
   <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
   <div id="onlineStatus" role="status" aria-live="polite">Online play uses our Ghost Duel Cloudflare server. The host must keep their game open.</div>
+  <div id="onlineInvite" hidden></div>
+  <div id="onlineRoster" hidden aria-label="Eight room seats"></div>
   <div class="onlineControls">
     <button type="button" id="onlineCopy" hidden>🔗 Copy invite link</button>
     <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 Start online match</button>
@@ -551,7 +563,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const onlineLeaveEl=document.getElementById('onlineLeave');
   const onlineCopyEl=document.getElementById('onlineCopy');
   const onlineStatusEl=document.getElementById('onlineStatus');
-  let online=null;
+  const onlineRosterEl=document.getElementById('onlineRoster');
+  const onlineInviteEl=document.getElementById('onlineInvite');
+  let online=null,onlinePending=false;
   const localGhostId=()=>Number.isInteger(online?.seat)?online.seat:0;
   const isOnlineGuest=()=>online?.host===false&&online?.started===true;
   const isOnlineHost=()=>online?.host===true&&online?.started===true;
@@ -559,17 +573,35 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   function sendOnline(data){
     if(online?.ws?.readyState===WebSocket.OPEN)online.ws.send(JSON.stringify(data));
   }
-  function roomCode(){
-    const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const bytes=new Uint8Array(6);crypto.getRandomValues(bytes);
-    return [...bytes].map(n=>alphabet[n%alphabet.length]).join('');
+  function renderOnlineRoster(room){
+    onlineRosterEl.replaceChildren();
+    onlineRosterEl.hidden=!room||room.seat===null;
+    onlineInviteEl.hidden=!room||room.seat===null;
+    if(!room||room.seat===null){onlineInviteEl.textContent='';return}
+    onlineInviteEl.textContent='Room '+room.code+' · '+room.seats.length+'/8 players';
+    for(let seat=0;seat<8;seat++){
+      const occupied=room.seats.includes(seat);
+      const tile=document.createElement('div');
+      tile.className='roomSeat'+(occupied?' full':'')+(seat===0?' host':'');
+      const portrait=document.createElement('div');portrait.className='seatGhost';
+      if(occupied){
+        const styleId=seat===room.seat?selectedCharacter:seat;
+        const fill=seat<4?PASTELS[selectedIndex].hex:PASTELS[5].hex;
+        portrait.innerHTML=ghostPortrait({id:seat,styleId,team:seat<4?0:1},fill);
+      }else portrait.textContent='✨';
+      const title=document.createElement('span');title.className='seatTitle';
+      title.textContent=!occupied?'Bot / Open':seat===room.seat?(room.host?'You · Host':'You'):seat===0?'Host':'Player '+(seat+1);
+      tile.append(portrait,title);onlineRosterEl.appendChild(tile);
+    }
   }
   function showOnlineLobby(onlineRoom){
-    onlineStartEl.hidden=!onlineRoom?.host||!!onlineRoom.started;
+    onlineStartEl.hidden=!onlineRoom?.host||!!onlineRoom.started||onlineRoom.seat===null;
+    onlineStartEl.disabled=!onlineRoom?.ws||onlineRoom.ws.readyState!==WebSocket.OPEN;
     onlineLeaveEl.hidden=!onlineRoom;
-    onlineCopyEl.hidden=!onlineRoom;
-    onlineCreateEl.disabled=!!onlineRoom;
-    onlineJoinEl.disabled=!!onlineRoom;
+    onlineCopyEl.hidden=!onlineRoom||onlineRoom.seat===null;
+    onlineCreateEl.disabled=onlinePending||!!onlineRoom;
+    onlineJoinEl.disabled=onlinePending||!!onlineRoom;
+    renderOnlineRoster(onlineRoom);
   }
   function leaveOnline(reason='Left the online room. Solo mode is available.'){
     const old=online;
@@ -588,23 +620,52 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       document.getElementById('againBtn').textContent='👻 PLAY AGAIN';
     }
   }
-  function startOnlineConnection(makeNew){
+  async function startOnlineConnection(makeNew){
+    if(onlinePending)return;
     if(online)leaveOnline('Switching rooms…');
-    const code=makeNew?roomCode():onlineCodeEl.value.trim().toUpperCase();
-    if(!/^[A-Z2-9]{6}$/.test(code)){setOnlineStatus('Enter your friend’s six-character room code first.');return}
-    let ws;
+    onlinePending=true;showOnlineLobby(null);
+    let code=onlineCodeEl.value.trim().toUpperCase(),hostToken=null,ws;
     try{
       const server=safeWebSocketServer();
+      const endpoint='https://'+new URL(server).host;
+      if(!makeNew&&!/^[A-Z2-9]{6}$/.test(code))
+        throw Error('Enter a valid six-character room code first.');
+      setOnlineStatus(makeNew?'Creating a private room on the server…':'Checking room '+code+'…');
+      const response=await fetch(makeNew?endpoint+'/rooms':endpoint+'/rooms/'+code,{
+        method:makeNew?'POST':'GET',
+        headers:makeNew?{'Content-Type':'application/json'}:{},
+        cache:'no-store'
+      });
+      let result;try{result=await response.json()}catch{throw Error('Server reply was not valid. Check its deployment.')}
+      if(!response.ok){
+        if(response.status===404)throw Error('Room not found or expired. Ask your friend for a new code.');
+        if(response.status===409)throw Error('The room is already playing or full.');
+        throw Error(result.error||'Room server unavailable ('+response.status+').');
+      }
+      if(!makeNew&&result.started)throw Error('This match has already started.');
+      if(makeNew){
+        if(!/^[A-Z2-9]{6}$/.test(result.code)||typeof result.hostToken!=='string')
+          throw Error('Server did not return a valid private room.');
+        code=result.code;hostToken=result.hostToken;
+      }
       ws=new WebSocket(server+'/room/'+code);
       try{localStorage.setItem('ghost-duel-server-url',onlineServerEl.value.trim())}catch{}
-    }catch(error){setOnlineStatus(error.message||'Unable to open the online connection.');return}
-    const session={ws,code,seat:null,host:false,started:false,seats:[],inputs:new Map(),lastInput:0,lastSnapshot:0};
+    }catch(error){
+      onlinePending=false;showOnlineLobby(null);
+      setOnlineStatus(error.message||'Could not reach the room server.');return;
+    }
+    onlinePending=false;
+    const session={ws,code,hostToken,seat:null,host:false,started:false,seats:[],inputs:new Map(),lastInput:0,lastSnapshot:0};
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
-    setOnlineStatus('Connecting to online room '+code+'…');
+    setOnlineStatus('Room '+code+' reserved. Connecting…');
     ws.addEventListener('open',()=>{
-      if(online===session)setOnlineStatus('Connected. Assigning your Boo Crew ghost…');
+      if(online!==session)return;
+      // Only the host receives the secret token. Neither invitation nor
+      // localStorage contains this credential.
+      ws.send(JSON.stringify({type:'hello',role:hostToken?'host':'guest',...(hostToken?{token:hostToken}:{})}));
+      setOnlineStatus('Connected. Waiting for the server to assign your ghost…');
     });
     ws.addEventListener('message',event=>{
       if(online!==session)return;
@@ -613,11 +674,13 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(msg.type==='welcome'){
         session.seat=msg.seat;
         session.host=!!msg.host;
+        session.hostToken=null;
         showOnlineLobby(session);
         setOnlineStatus('Room '+code+' · You are ghost #'+(msg.seat+1)+'. '+(session.host?
           'Share this code or the invite link, then tap Start online match.':'Waiting for the host to start.'));
       }else if(msg.type==='roster'){
-        session.seats=Array.isArray(msg.seats)?msg.seats:[];
+        session.seats=Array.isArray(msg.seats)?msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8):[];
+        showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
           '/8 people joined. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
       }else if(msg.type==='start'){
@@ -643,6 +706,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         showOnlineLobby(session);
       }else if(msg.type==='closed'){
         leaveOnline(msg.reason||'The room has closed.');
+      }else if(msg.type==='error'){
+        leaveOnline(msg.reason||'The room server rejected this connection.');
       }
     });
     ws.addEventListener('error',()=>{
@@ -1134,8 +1199,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   function makeProps() {
     const out = [];
-    for (let i = 0; i < 22; i++) out.push({ kind: 'grave', x: 210 + (i % 11) * 130 + (i % 2 ? 35 : -20), y: i < 11 ? 90 + randRange(0, 90) : 900 + randRange(-40, 40), s: randRange(.9, 1.3) });
-    for (let i = 0; i < 14; i++) out.push({ kind: 'pumpkin', x: 280 + (i % 7) * 190 + randRange(-20, 20), y: i < 7 ? 365 + randRange(-20, 50) : 720 + randRange(-30, 25), s: randRange(.9, 1.25) });
+    for (let i = 0; i < 22; i++) out.push({ kind: 'grave', x: 210 + (i % 11) * 130 + (i % 2 ? 35 : -20), y: i < 11 ? 90 + randRange(0, 90) : 900 + randRange(-40, 40), s: randRange(.9, 1.3), variant:i%5, tilt:randRange(-.09,.09), moss:rand(), crack:i%3===0 });
+    for (let i = 0; i < 14; i++) out.push({ kind: 'pumpkin', x: 280 + (i % 7) * 190 + randRange(-20, 20), y: i < 7 ? 365 + randRange(-30, 25) : 720 + randRange(-30, 25), s: randRange(.9, 1.25), variant:i%3, phase:i*1.43 });
     for (let i = 0; i < 12; i++) out.push({ kind: 'lantern', x: 230 + i * 128 + randRange(-20, 20), y: i % 2 ? 285 : 815, s: randRange(.9, 1.1) });
     for (let i = 0; i < 12; i++) out.push({ kind: 'tree', x: 40 + i * 160, y: i % 2 ? 160 : 980, s: randRange(1.1, 1.5) });
     return out;
@@ -2330,6 +2395,170 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     ctx.restore();
   }
 
+
+  // Layered, curved scenery replaces the old rectangular placeholder props.
+  // Each helper draws in world coordinates at a fixed scale; gameplay walls
+  // and collision boxes are intentionally left untouched.
+  function drawGravestone(ctx,p){
+    ctx.save();ctx.rotate(p.tilt||0);
+    const v=p.variant||0,wide=v===3?19:13,top=v===2?-35:-26;
+    ctx.fillStyle='#0907186b';ctx.beginPath();ctx.ellipse(3,24,wide+9,6,0,0,Math.PI*2);ctx.fill();
+    const stone=ctx.createLinearGradient(-wide,top,wide,24);
+    stone.addColorStop(0,'#92819d');stone.addColorStop(.4,'#645776');stone.addColorStop(1,'#332940');
+    ctx.fillStyle=stone;ctx.strokeStyle='#2b233a';ctx.lineWidth=2.8;
+    ctx.beginPath();
+    if(v===2){
+      ctx.moveTo(-wide,21);ctx.lineTo(-wide,-10);ctx.lineTo(-8,-10);ctx.lineTo(-8,-23);
+      ctx.lineTo(-4,-23);ctx.lineTo(-4,top);ctx.lineTo(4,top);ctx.lineTo(4,-23);
+      ctx.lineTo(9,-23);ctx.lineTo(9,-10);ctx.lineTo(wide,-10);
+    }else if(v===4){
+      ctx.moveTo(-wide,21);ctx.lineTo(-wide,-10);ctx.lineTo(-4,-28);ctx.lineTo(2,-23);
+      ctx.lineTo(9,-31);ctx.lineTo(wide,-12);
+    }else{
+      ctx.moveTo(-wide,21);ctx.lineTo(-wide,top+11);
+      if(v===1){ctx.lineTo(-6,top+5);ctx.lineTo(0,top-5);ctx.lineTo(6,top+5);ctx.lineTo(wide,top+11)}
+      else ctx.quadraticCurveTo(0,top-12,wide,top+11);
+    }
+    ctx.lineTo(wide,21);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#d5c4e077';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-wide+4,15);ctx.lineTo(-wide+4,top+11);
+    if(v!==2)ctx.quadraticCurveTo(0,top,wide-4,top+11);ctx.stroke();
+    ctx.fillStyle='#30253e';ctx.beginPath();ctx.roundRect(-wide-4,20,wide*2+8,5,2);ctx.fill();
+    ctx.strokeStyle='#c4b4d06b';ctx.beginPath();ctx.moveTo(-wide-1,21);ctx.lineTo(wide+1,21);ctx.stroke();
+    ctx.strokeStyle='#312740b8';ctx.lineWidth=2;ctx.lineCap='round';
+    if(v===0||v===4){
+      ctx.beginPath();ctx.arc(0,-11,5,Math.PI*.22,Math.PI*1.78);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,-5);ctx.lineTo(0,9);ctx.stroke();
+    }else if(v===2){
+      ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(0,11);ctx.moveTo(-7,-1);ctx.lineTo(7,-1);ctx.stroke();
+    }else if(v===1){
+      ctx.beginPath();ctx.arc(1,-7,6,.35,Math.PI*1.65);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-4,7);ctx.lineTo(5,7);ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.moveTo(-8,-6);ctx.lineTo(8,-6);ctx.moveTo(-6,1);ctx.lineTo(6,1);ctx.stroke();
+    }
+    if(p.crack){ctx.strokeStyle='#241d3588';ctx.lineWidth=1.2;ctx.beginPath();
+      ctx.moveTo(wide-3,-12);ctx.lineTo(5,-7);ctx.lineTo(9,-2);ctx.lineTo(4,4);ctx.stroke();}
+    ctx.fillStyle='#668b71';ctx.beginPath();ctx.ellipse(-wide+3,18,4+(p.moss||0)*3,2.5,0,0,7);ctx.fill();
+    ctx.fillStyle='#739d83';ctx.beginPath();ctx.ellipse(wide-4,20,5,2,0,0,7);ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPumpkin(ctx,p){
+    ctx.save();
+    const phase=(p.phase||0),flicker=.76+.13*Math.sin(t*2.3+phase);
+    ctx.fillStyle='#120b1c99';ctx.beginPath();ctx.ellipse(3,13,22,6,0,0,Math.PI*2);ctx.fill();
+    drawGlow(0,0,26,'rgba(255,154,66,'+(.09*flicker)+')');
+    const lobeColors=['#a94e31','#c86532','#e5843a','#f29b49','#e7873b','#c15d31','#94462e'];
+    for(let i=0;i<7;i++){
+      const x=(i-3)*4.35,w=8.2+((3-Math.abs(i))*.15),height=12.8+((3-Math.abs(i))*.65);
+      ctx.fillStyle=lobeColors[i];ctx.beginPath();
+      ctx.ellipse(x,0,w,height,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#8b442b55';ctx.lineWidth=.8;ctx.stroke();
+    }
+    const shine=ctx.createRadialGradient(-5,-7,0,-2,1,25);
+    shine.addColorStop(0,'#ffd48755');shine.addColorStop(1,'#9b402400');
+    ctx.fillStyle=shine;ctx.beginPath();ctx.ellipse(0,-1,19,13,0,0,7);ctx.fill();
+    ctx.fillStyle='#526a43';ctx.strokeStyle='#2d4932';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-2,-11);ctx.bezierCurveTo(-1,-17,4,-20,6,-17);
+    ctx.bezierCurveTo(2,-16,3,-13,3,-11);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.fillStyle='#6c8d4c';ctx.beginPath();ctx.ellipse(7,-13,5,2,-.5,0,7);ctx.fill();
+    // Carved openings with smaller warm cores (not flat pasted triangles).
+    ctx.fillStyle='#432032';ctx.strokeStyle='#8e452b';ctx.lineWidth=1.2;
+    const eye=(x,sgn)=>{
+      ctx.beginPath();ctx.moveTo(x-5,-5);ctx.quadraticCurveTo(x,-9,x+4,-4);
+      ctx.lineTo(x+sgn,2);ctx.quadraticCurveTo(x-1,2,x-5,-5);ctx.closePath();
+      ctx.fill();ctx.stroke();
+    };
+    eye(-7,-1);eye(8,1);
+    ctx.beginPath();ctx.moveTo(-10,4);ctx.quadraticCurveTo(0,13,11,4);
+    ctx.quadraticCurveTo(5,14,0,12);ctx.quadraticCurveTo(-6,13,-10,4);ctx.fill();ctx.stroke();
+    ctx.fillStyle='rgba(255,217,105,'+(flicker*.9)+')';
+    ctx.beginPath();ctx.arc(-7,-2,2.1,0,7);ctx.arc(8,-2,2.1,0,7);ctx.fill();
+    ctx.beginPath();ctx.ellipse(0,8,5,1.8,0,0,7);ctx.fill();
+    if(p.variant===1){ctx.fillStyle='#ffd37d';ctx.beginPath();ctx.arc(13,-12,1,0,7);ctx.fill();}
+    if(p.variant===2){ctx.strokeStyle='#659550';ctx.beginPath();ctx.moveTo(2,-15);ctx.quadraticCurveTo(14,-23,16,-14);ctx.stroke();}
+    ctx.restore();
+  }
+
+  function drawStoneCourses(ctx,x,y,w,h,seed){
+    ctx.save();ctx.strokeStyle='#bbb0cf4c';ctx.lineWidth=1.25;
+    for(let row=1;row<5;row++){
+      const yy=y+row*h/5;ctx.beginPath();ctx.moveTo(x+3,yy);ctx.lineTo(x+w-3,yy);ctx.stroke();
+      for(let col=1;col<4;col++){
+        const xx=x+((col+(row%2)*.5)/4)*w;
+        ctx.beginPath();ctx.moveTo(xx,yy-h/5+2);ctx.lineTo(xx,yy-2);ctx.stroke();
+      }
+    }ctx.restore();
+  }
+  function drawArchedDoor(ctx,x,y,w,h){
+    ctx.save();ctx.fillStyle='#9d86a8';ctx.beginPath();
+    ctx.moveTo(x-w/2-6,y+h);ctx.lineTo(x-w/2-6,y);
+    ctx.arc(x,y,w/2+6,Math.PI,0);ctx.lineTo(x+w/2+6,y+h);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#2a1b37';ctx.beginPath();ctx.moveTo(x-w/2,y+h);
+    ctx.lineTo(x-w/2,y);ctx.arc(x,y,w/2,Math.PI,0);
+    ctx.lineTo(x+w/2,y+h);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#bba4cd';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(x,y,w/2+3,Math.PI,0);ctx.stroke();
+    const inner=ctx.createLinearGradient(x-w/2,y,x+w/2,y);
+    inner.addColorStop(0,'#110e22');inner.addColorStop(.52,'#362647');inner.addColorStop(1,'#1b1229');
+    ctx.fillStyle=inner;ctx.beginPath();ctx.moveTo(x-w/2+5,y+h);
+    ctx.lineTo(x-w/2+5,y);ctx.arc(x,y,w/2-5,Math.PI,0);
+    ctx.lineTo(x+w/2-5,y+h);ctx.fill();
+    ctx.fillStyle='#e7b779aa';ctx.beginPath();ctx.arc(x+w/2-9,y+h*.56,2.1,0,7);ctx.fill();
+    ctx.restore();
+  }
+  function drawMausoleum(ctx,wall,variant=0){
+    const {x,y,w,h}=wall;
+    ctx.save();
+    ctx.fillStyle='#100d20a0';ctx.beginPath();ctx.ellipse(x+w*.54,y+h-2,w*.52,14,0,0,7);ctx.fill();
+    const masonry=ctx.createLinearGradient(x,y,x+w,y+h);
+    masonry.addColorStop(0,'#9986ab');masonry.addColorStop(.4,'#665776');masonry.addColorStop(1,'#3f3356');
+    ctx.fillStyle=masonry;ctx.strokeStyle='#3c2e50';ctx.lineWidth=3;
+    ctx.beginPath();ctx.roundRect(x+4,y+18,w-8,h-22,5);ctx.fill();ctx.stroke();
+    drawStoneCourses(ctx,x+7,y+21,w-14,h-29,variant);
+    // Distinct pitched roof and inset pediment fit inside the existing wall.
+    ctx.fillStyle='#4d3b61';ctx.beginPath();ctx.moveTo(x+2,y+20);
+    ctx.lineTo(x+w/2,y+2);ctx.lineTo(x+w-2,y+20);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#af9abc';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle='#291d3d';ctx.beginPath();ctx.arc(x+w/2,y+15,4.5,0,7);ctx.fill();
+    ctx.fillStyle='#b4a2c2';ctx.fillRect(x+3,y+19,w-6,6);
+    const doorwayW=Math.min(48,w*.41);
+    drawArchedDoor(ctx,x+w*.5,y+h*.54,doorwayW,h*.43);
+    for(const dx of [12,w-19]){
+      const pX=x+dx;ctx.fillStyle='#857092';ctx.fillRect(pX,y+28,7,h-34);
+      ctx.fillStyle='#c6b4d0';ctx.fillRect(pX,y+28,2,h-34);
+      ctx.fillStyle='#4c3c61';ctx.fillRect(pX-3,y+28,13,5);
+    }
+    ctx.fillStyle='#514362';ctx.fillRect(x,y+h-12,w,12);
+    ctx.fillStyle='#aaa0b2';ctx.fillRect(x+3,y+h-12,w-6,2);
+    ctx.restore();
+  }
+  function drawCrypt(ctx,wall,variant=0){
+    const {x,y,w,h}=wall;ctx.save();
+    ctx.fillStyle='#0d091b88';ctx.beginPath();ctx.ellipse(x+w/2,y+h-2,w*.48,12,0,0,7);ctx.fill();
+    const grad=ctx.createLinearGradient(x,y,x+w,y+h);
+    grad.addColorStop(0,'#82728e');grad.addColorStop(.5,'#62536f');grad.addColorStop(1,'#39304f');
+    ctx.fillStyle=grad;ctx.strokeStyle='#30263f';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.roundRect(x+4,y+23,w-8,h-24,4);ctx.fill();ctx.stroke();
+    drawStoneCourses(ctx,x+8,y+25,w-16,h-27,variant);
+    // Long low vaulted roof, contrasting with the taller mausoleums.
+    ctx.fillStyle='#493856';ctx.beginPath();ctx.moveTo(x+2,y+26);
+    ctx.quadraticCurveTo(x+w/2,y-9,x+w-2,y+26);
+    ctx.lineTo(x+w-2,y+32);ctx.lineTo(x+2,y+32);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#a899ba';ctx.lineWidth=3;ctx.beginPath();
+    ctx.moveTo(x+2,y+26);ctx.quadraticCurveTo(x+w/2,y-9,x+w-2,y+26);ctx.stroke();
+    for(let i=0;i<3;i++){
+      const nx=x+47+i*(w-94)/2;
+      drawArchedDoor(ctx,nx,y+49,24,25);
+      ctx.fillStyle='#584560';ctx.fillRect(nx-2,y+44,4,13);
+    }
+    ctx.fillStyle='#a496ae';ctx.fillRect(x+2,y+30,w-4,5);
+    ctx.fillStyle='#403350';ctx.fillRect(x,y+h-9,w,9);
+    ctx.fillStyle='#c1b1ce88';ctx.fillRect(x+4,y+h-9,w-8,2);
+    ctx.restore();
+  }
+
   const booCrewBackdrop=new Image();
   booCrewBackdrop.src='assets/boo-crew-night.svg';
   function drawEnvironment() {
@@ -2356,35 +2585,29 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,243,193,.18)'; ctx.beginPath(); ctx.moveTo(160, 550); ctx.lineTo(1680, 550); ctx.stroke();
 
     for (const p of props) {
-      ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.s, p.s);
-      if (p.kind === 'grave') {
-        ctx.fillStyle = '#413952'; ctx.fillRect(-12, -8, 24, 28);
-        ctx.beginPath(); ctx.arc(0, -8, 12, Math.PI, 0); ctx.fill();
-        ctx.fillStyle = '#72627f'; ctx.fillRect(-8, -2, 16, 4); ctx.fillRect(-2, -14, 4, 12);
-      } else if (p.kind === 'pumpkin') {
-        drawGlow(0, -2, 20, 'rgba(255,132,48,.16)');
-        ctx.fillStyle = '#dd7d2d'; ctx.beginPath(); ctx.ellipse(0, 0, 13, 11, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#2d1f21'; ctx.beginPath(); ctx.moveTo(-4, -2); ctx.lineTo(-1, 1); ctx.lineTo(-7, 1); ctx.fill(); ctx.beginPath(); ctx.moveTo(4, -2); ctx.lineTo(1, 1); ctx.lineTo(7, 1); ctx.fill(); ctx.fillRect(-5, 4, 10, 2);
-        ctx.fillStyle = '#65a34e'; ctx.fillRect(-1, -14, 2, 5);
-      } else if (p.kind === 'lantern') {
-        ctx.fillStyle = '#403754'; ctx.fillRect(-4, -18, 8, 26); ctx.fillStyle = '#5c4f75'; ctx.fillRect(-6, -24, 12, 7);
-        drawGlow(0, -5, 28, 'rgba(255,211,98,.18)'); ctx.fillStyle = '#ffdd7f'; ctx.fillRect(-3, -14, 6, 12);
-      } else if (p.kind === 'tree') {
-        ctx.fillStyle = '#2d243d'; ctx.fillRect(-6, -10, 12, 44);
-        ctx.beginPath(); ctx.moveTo(-26, 10); ctx.lineTo(-2, -36); ctx.lineTo(12, 10); ctx.fillStyle = '#35294a'; ctx.fill();
-        ctx.beginPath(); ctx.moveTo(-18, -4); ctx.lineTo(8, -44); ctx.lineTo(24, -2); ctx.fillStyle = '#2f2342'; ctx.fill();
+      ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.s,p.s);
+      if(p.kind==='grave')drawGravestone(ctx,p);
+      else if(p.kind==='pumpkin')drawPumpkin(ctx,p);
+      else if(p.kind==='lantern'){
+        ctx.fillStyle='#403754';ctx.fillRect(-4,-18,8,26);ctx.fillStyle='#5c4f75';ctx.fillRect(-6,-24,12,7);
+        drawGlow(0,-5,28,'rgba(255,211,98,.18)');ctx.fillStyle='#ffdd7f';ctx.fillRect(-3,-14,6,12);
+      }else if(p.kind==='tree'){
+        ctx.fillStyle='#2d243d';ctx.fillRect(-6,-10,12,44);
+        ctx.beginPath();ctx.moveTo(-26,10);ctx.lineTo(-2,-36);ctx.lineTo(12,10);ctx.fillStyle='#35294a';ctx.fill();
+        ctx.beginPath();ctx.moveTo(-18,-4);ctx.lineTo(8,-44);ctx.lineTo(24,-2);ctx.fillStyle='#2f2342';ctx.fill();
       }
       ctx.restore();
     }
-
-    for (const wall of walls) {
-      ctx.fillStyle = 'rgba(10,8,20,.34)'; ctx.fillRect(wall.x + 8, wall.y + 12, wall.w, wall.h);
-      const grad = ctx.createLinearGradient(wall.x, wall.y, wall.x, wall.y + wall.h);
-      grad.addColorStop(0, '#5c5372'); grad.addColorStop(1, '#3d3454');
-      ctx.fillStyle = grad; ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
-      ctx.fillStyle = '#7f7494'; ctx.fillRect(wall.x + 8, wall.y + 8, wall.w - 16, 12);
-      ctx.strokeStyle = '#9d90ad'; ctx.lineWidth = 3; ctx.strokeRect(wall.x + 4, wall.y + 4, wall.w - 8, wall.h - 8);
-      if (wall.type === 'mausoleum') { ctx.fillStyle = '#2c223f'; ctx.fillRect(wall.x + wall.w / 2 - 18, wall.y + 60, 36, 100); }
+    for(const wall of walls){
+      if(wall.type==='mausoleum')drawMausoleum(ctx,wall,Math.floor(wall.x/100)%3);
+      else if(wall.type==='crypt')drawCrypt(ctx,wall,Math.floor(wall.y/100)%3);
+      else{
+        const grad=ctx.createLinearGradient(wall.x,wall.y,wall.x,wall.y+wall.h);
+        grad.addColorStop(0,'#77708c');grad.addColorStop(1,'#3d3454');
+        ctx.fillStyle=grad;ctx.fillRect(wall.x,wall.y,wall.w,wall.h);
+        ctx.strokeStyle='#a89ab4';ctx.lineWidth=3;
+        ctx.strokeRect(wall.x+4,wall.y+4,wall.w-8,wall.h-8);
+      }
     }
 
     for (const b of BASES) {

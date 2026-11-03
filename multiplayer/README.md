@@ -85,3 +85,49 @@ The leaderboard reuses the existing `GHOST_ROOMS` Durable Object binding
 with a separately named instance and storage key; no new migration is
 required. Open `/leaderboard` on the deployed Worker to verify its JSON
 response before inviting players to submit scores.
+
+## Alpha 19 — Explicit private room creation and richer graveyard art
+
+The game now draws distinct carved gravestones, curved jack-o'-lanterns,
+arched mausoleums and low vaulted crypts in Canvas. All original wall and
+collision rectangles are unchanged, so physics stays the same.
+
+Room creation is **server-owned** rather than implicit WebSocket behavior:
+
+1. The host presses **Create room**. The browser sends `POST /rooms`.
+2. The Worker generates a six-character room code and a separate, secret
+   48-character host token. It reserves the code in a Durable Object
+   (`room-<CODE>`). The host token is kept only in this page's session.
+3. The host connects to `/room/<CODE>` and sends a WebSocket
+   `hello` message with `role: host` and the private token.
+4. Guests use `GET /rooms/<CODE>` to verify the room exists, then connect
+   to the same socket with `hello` and `role: guest`, **without** a token.
+5. The room coordinator assigns the host seat 0 and guests the remaining
+   seats. A guest cannot take the host seat, start a match, or create a
+   room accidentally by guessing a code.
+6. The lobby shows a distinct 8-seat roster and shareable code. The invite
+   link contains the room code only, never the host token.
+
+New unoccupied rooms expire after one hour. Closing the host connection
+closes the guest sessions and removes the reservation. No account-specific
+Worker URL or credentials are committed in the client.
+
+Before using the feature, point the game at the **updated** deployed Worker
+in the menu's Cloudflare server field. Earlier server deployments do not
+support `POST /rooms` or `GET /rooms/<CODE>`, so the new lobby cannot
+connect until the corresponding Worker code is deployed.
+
+### Testing
+
+Automated, no-dependency Node.js regression tests:
+`node --test multiplayer/tests/*.test.mjs`
+
+The tests cover creating a code and host credential, finding/not finding
+rooms, guest seat allocation, rejecting wrong host credentials, forbidding
+guest match starts, allowing verified host starts, movement message relay,
+host shutdown, origin checks, and preservation of the Top 13 endpoint.
+GitHub Actions runs these on pull requests and production pushes.
+
+A real two-device WebSocket test is **still required** after deploying
+the server and game. This is a beta prototype with host-authoritative
+gameplay, not a cheat-resistant public matchmaking platform.
