@@ -2,15 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Boo Crew">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 22)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 23)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
+html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
+body{position:fixed;inset:0;max-height:100dvh}
+#game{position:fixed;inset:0}
+@media(max-width:540px) and (orientation:portrait){
+  #hud{gap:5px;padding:calc(env(safe-area-inset-top) + 8px) 7px 0}
+  #hud .pill{padding:7px 9px;border-radius:12px;min-width:66px;font-size:17px}
+  #carried{top:calc(env(safe-area-inset-top) + 58px);left:9px;max-width:calc(100vw - 18px);padding:7px 9px;font-size:11px;line-height:1.3}
+  #abilities{font-size:10px;line-height:1.25;max-width:320px}
+  #joystick{width:108px;height:108px}
+  #knob{width:46px;height:46px}
+  #controls{bottom:calc(env(safe-area-inset-bottom) + 6px)}
+  #hint{max-width:66vw;bottom:calc(env(safe-area-inset-bottom) + 7px);font-size:10px;line-height:1.25;padding:5px 7px}
+  #audioStatus{font-size:10px;max-width:150px;padding:4px 6px}
+  #notice{font-size:9px;bottom:calc(env(safe-area-inset-bottom) + 2px);max-width:170px}
+}
 canvas{display:block;width:100%;height:100%;touch-action:none;background:#17122d}
 button{font:inherit}
 #hud{position:absolute;inset:0 auto auto 0;width:100%;display:flex;justify-content:center;gap:12px;padding:max(12px,env(safe-area-inset-top)) 12px 0;pointer-events:none;z-index:5}
@@ -247,7 +266,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 22</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 23</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -290,6 +309,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     </div>
     <button id="startBtn">START GAME</button>
     <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
+  <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
     <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
   </div>
 </div>
@@ -605,15 +625,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function applyHumanProfiles(){
     if(!game||!online)return;
-    for(const seat of online.seats){
-      const g=game.ghosts[seat],profile=online.profiles.get(seat);
-      if(!g)continue;
-      g.human=true;
-      g.styleId=profile?.styleId??g.styleId;
-      g.playerColor=profile?.color||null; // Personal accent only; team controls uniform.
-    }
+    const styles=resolveDistinctMatchStyles(online.profiles,online.seats);
     for(const g of game.ghosts){
-      if(!online.seats.includes(g.id)){g.human=false;g.playerColor=null;}
+      const human=online.seats.includes(g.id),profile=online.profiles.get(g.id);
+      g.human=human;
+      g.styleId=styles[g.id]; // Exactly one of each Boo Crew costume per match.
+      g.playerColor=human?(profile?.color||null):null; // Personal accent only.
     }
   }
   function refreshOnlineBadge(){
@@ -808,6 +825,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         applyHumanProfiles();
         refreshOnlineBadge();
         showOnlineLobby(session);
+        const selected=session.profiles.get(session.seat)?.styleId;
+        const resolved=game.ghosts[session.seat]?.styleId;
+        if(Number.isInteger(selected)&&selected!==resolved){
+          toast(GHOST_CHARACTER_NAMES[selected]+' was already chosen. You play as '+
+            GHOST_CHARACTER_NAMES[resolved]+' in this match!');
+        }
         setOnlineStatus('👻 Multiplayer is live! '+session.seats.length+' humans, '+(8-session.seats.length)+
           ' computer ghosts. Your ghost is #'+(session.seat+1)+'.');
         if(session.host)publishOnlineSnapshot();
@@ -1331,17 +1354,22 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   function lerp(a, b, n) { return a + (b - a) * n; }
 
   function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
+    // Fit the *visible* phone viewport while browser toolbars expand or
+    // retract. Camera scale also ensures the entire canvas is filled with
+    // world scenery rather than exposing empty out-of-bounds strips.
+    W = Math.max(1,window.innerWidth);
+    H = Math.max(1,window.innerHeight);
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.floor(W * DPR);
     canvas.height = Math.floor(H * DPR);
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    scale = clamp(Math.min(W / 900, H / 560), .40, 1.18);
+    const preferred=Math.min(W/900,H/560);
+    scale=clamp(Math.max(preferred,W/WORLD.w,H/WORLD.h),.35,1.18);
   }
   window.addEventListener('resize', resize, { passive: true });
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',resize,{passive:true});
   resize();
 
   function makeProps() {
@@ -1372,6 +1400,29 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   function newGhost(id, team, position) {
     return { id, team, x: position.x, y: position.y, trail: [], trailPos: [], score: 0, cooldown: 0, invuln: 0, heading: 0, blink: randRange(.7,4), bounce: randRange(0, Math.PI * 2), target: null, targetTimer: 0, face: 'happy', reaction:'',reactionTime:0,reactionDuration:0,wiggle:0,moveAmount:0,lastX:position.x,lastY:position.y,stats:{collected:0,stolen:0,robbed:0,deposits:0,lastSecond:0,largestDeposit:0,longestChain:0,buddies:0,boostDistance:0,distance:0,nearEnemies:0} };
+  }
+
+  // Reserve every human's Boo Crew look before assigning costumes to bots.
+  // The host and guests run the same deterministic seat-order selection;
+  // the host's authoritative snapshot ultimately decides match appearance.
+  // If humans request the same style, seat order has first choice and the
+  // other player gets a distinct available character for that match.
+  function resolveDistinctMatchStyles(profiles,occupiedSeats){
+    const picked=Array(8).fill(-1),taken=new Set();
+    const valid=seat=>Number.isInteger(seat)&&seat>=0&&seat<8;
+    const take=desired=>{
+      if(Number.isInteger(desired)&&desired>=0&&desired<8&&!taken.has(desired)){
+        taken.add(desired);return desired;
+      }
+      for(let style=0;style<8;style++){
+        if(!taken.has(style)){taken.add(style);return style;}
+      }
+      return 0; // Unreachable for a roster of eight ghosts.
+    };
+    for(const seat of [...new Set(occupiedSeats)].filter(valid).sort((a,b)=>a-b))
+      picked[seat]=take(profiles.get(seat)?.styleId);
+    for(let seat=0;seat<8;seat++)if(picked[seat]<0)picked[seat]=take(seat);
+    return picked;
   }
 
   function reset() {
@@ -2838,8 +2889,11 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if (!game) return;
 
     const player = game.ghosts[localGhostId()];
-    const desiredX = clamp(player.x, W / (scale * 2), WORLD.w - W / (scale * 2));
-    const desiredY = clamp(player.y, H / (scale * 2), WORLD.h - H / (scale * 2));
+    const halfWidth=W/(scale*2),halfHeight=H/(scale*2);
+    const desiredX=halfWidth>=WORLD.w/2?WORLD.w/2:
+      clamp(player.x,halfWidth,WORLD.w-halfWidth);
+    const desiredY=halfHeight>=WORLD.h/2?WORLD.h/2:
+      clamp(player.y,halfHeight,WORLD.h-halfHeight);
     camX = lerp(camX, desiredX, .08);
     camY = lerp(camY, desiredY, .08);
 
