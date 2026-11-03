@@ -122,6 +122,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 .crewCard svg{width:56px;height:63px;filter:drop-shadow(0 4px 4px #0b092788)}
 .crewCard span{font-size:clamp(10px,2vw,13px);font-weight:700}
 .crewCard[aria-pressed="true"]{border:2px solid #ffe4aa;box-shadow:0 0 0 2px #f6c5ee77,0 0 18px #eaabec77;background:#8256a9aa}
+.crewPortrait{border-radius:12px;background:radial-gradient(ellipse at 50% 48%,var(--crew-color-glow,#b8ddc455),transparent 74%);transition:background .18s ease}
+.crewCard .ghostSkin{transition:fill .18s ease,stroke .18s ease}
+#teamPreview b{color:#fff1bd}
+.swatch:hover{transform:scale(1.08)}
 .crewCard:focus-visible{outline:3px solid #ffe4aa;outline-offset:2px}
 #crewSelection{font-size:12px;color:#ffe6ad}
 .swatches{grid-template-columns:repeat(7,minmax(0,1fr));max-width:435px}
@@ -154,7 +158,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
-<div id="teamPreview">Your color: <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
+<div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
 <div id="difficultyWrap">
   <div class="palette-label">Computer opponent difficulty</div>
   <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
@@ -342,18 +346,20 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const color=team=>teamColors[team].hex;
   const alpha=(hex,opacity)=>hex+Math.round(opacity*255).toString(16).padStart(2,'0');
   const darken=(hex,factor=.64)=>'#'+[1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*factor).toString(16).padStart(2,'0')).join('');
+  function selectBooCrewColor(index){
+    if(!PASTELS[index])return;
+    selectedIndex=index;
+    selectedNameEl.textContent=PASTELS[index].name;
+    [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)));
+    // The selected color is independent of costume. All eight ghosts must
+    // immediately preview the same named pastel-goth skin, not their match team.
+    refreshCrewCards();
+  }
   PASTELS.forEach((entry,index)=>{
     const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=entry.hex;
-    b.setAttribute('aria-label',entry.name+' '+entry.hex);
+    b.setAttribute('aria-label','Preview the Boo Crew in '+entry.name);
     b.setAttribute('aria-pressed',String(index===selectedIndex));
-    b.addEventListener('click',()=>{
-      selectedIndex=index;
-      selectedNameEl.textContent=entry.name;
-      [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)));
-      // Recolor all eight Boo Crew portraits immediately; the chosen skin also
-      // becomes the player's team color when the next match starts.
-      refreshCrewCards();
-    });
+    b.addEventListener('click',()=>selectBooCrewColor(index));
     palettePicker.appendChild(b);
   });
 
@@ -1201,7 +1207,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       +'<circle cx="40" cy="48" r="39" fill="'+accent+'" opacity=".16"/>'
       +'<ellipse cx="40" cy="92" rx="28" ry="6" fill="#0b092b88"/>'
       +behind
-      +'<path d="M12 76V44Q12 17 40 17Q68 17 68 44V76Q62 63 53 79Q46 68 40 82Q32 65 24 80Q16 64 12 76Z" fill="'+fill+'" stroke="'+edge+'" stroke-width="3.5"/>'
+      +'<path class="ghostSkin" d="M12 76V44Q12 17 40 17Q68 17 68 44V76Q62 63 53 79Q46 68 40 82Q32 65 24 80Q16 64 12 76Z" fill="'+fill+'" stroke="'+edge+'" stroke-width="3.5"/>'
       +'<ellipse cx="24" cy="35" rx="10" ry="5" fill="#ffffff70" transform="rotate(-20 24 35)"/>'
       +'<ellipse cx="28" cy="45" rx="4" ry="'+(styleId===3?8:6)+'" fill="'+ink+'"/><ellipse cx="52" cy="45" rx="4" ry="'+(g.id===3?8:6)+'" fill="'+ink+'"/>'
       +'<circle cx="27" cy="42" r="1.6" fill="#fff"/><circle cx="51" cy="42" r="1.6" fill="#fff"/>'
@@ -1216,7 +1222,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
       button.setAttribute('aria-label','Choose '+GHOST_CHARACTER_NAMES[id]+' in '+swatch.name);
-      button.querySelector('.crewPortrait').innerHTML=ghostPortrait({id,styleId:id,team:0},swatch.hex);
+      const portrait=button.querySelector('.crewPortrait');
+      portrait.style.setProperty('--crew-color-glow',swatch.hex+'66');
+      portrait.innerHTML=ghostPortrait({id,styleId:id,team:0},swatch.hex);
+      button.dataset.colorway=swatch.name;
     });
   }
   GHOST_CHARACTER_NAMES.forEach((name,id)=>{
