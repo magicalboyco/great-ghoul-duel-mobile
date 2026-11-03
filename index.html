@@ -428,6 +428,46 @@ html,body{
   #menu{align-items:stretch}
   #menu>.panel{margin:auto;max-height:calc(100dvh - 16px)}
 }
+
+/* Alpha 29 — responsive viewport recovery.
+   Safari may inflate text if the page is unusually wider than the phone
+   viewport; text-size-adjust prevents this without disabling pinch zoom. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+#menu{position:fixed;width:100%;min-width:0;max-width:100%;overflow:hidden;}
+#menu>.panel{box-sizing:border-box;flex:0 1 780px;min-width:0;max-width:min(780px,100%);width:100%;contain:inline-size;}
+#menu .title{overflow-wrap:anywhere;word-break:normal;}
+#menu .panel,#menu .playerIdentity,#menu #onlinePanel,
+#menu .swatches,#menu #booCrewGrid,#menu .crewCard,
+#menu .modeCard,#menu #onlineRoster{min-width:0;max-width:100%;}
+#menu .playerIdentity{margin:12px auto 9px;padding:10px 12px;border-radius:14px;
+  background:#b7dcdf0e;border:1px solid #e7c7ed77;text-align:left;max-width:460px;}
+.playerIdentity label{display:block;font-size:13px;font-weight:850;color:#ffe5b5;margin-bottom:7px;}
+.playerIdentity label span{font-size:11px;color:#e4d2f1;font-weight:500;}
+.playerIdentity input{display:block;width:100%;min-width:0;max-width:100%;border-radius:11px;
+  border:1.5px solid #d8afe7;background:#1e1835;color:#fff8df;padding:11px 12px;
+  font-family:inherit;font-size:16px;line-height:1.4;letter-spacing:.01em;}
+.playerIdentity input:focus-visible{outline:3px solid #a8ead0;outline-offset:2px;}
+#playerNameHint{font-size:11px;color:#e9dafa;line-height:1.4;padding-top:6px;}
+#zoomNotice{color:#ffe5a5;background:#2d1b3deb;border:1px solid #e8c48db8;
+  padding:8px;border-radius:12px;margin:5px 0;font-size:12px;line-height:1.4;}
+#zoomNotice[hidden]{display:none;}
+/* An explicit phone layout is also activated if Safari reports an oversized
+   desktop-style layout viewport despite a narrow physical phone screen. */
+#menu.phoneView{inset:auto;top:0;left:0;right:auto;bottom:auto;
+  width:var(--phone-menu-width,100%);height:100dvh;padding:9px;align-items:center;}
+#menu.phoneView>.panel{width:100%;max-width:100%;max-height:calc(100dvh - 18px);
+  overflow-y:auto;overflow-x:hidden;padding:12px 10px;}
+#menu.phoneView .title{font-size:clamp(25px,7.8vw,38px);line-height:1.02;}
+#menu.phoneView #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#menu.phoneView .crewCard span{font-size:12px;overflow-wrap:anywhere;}
+#menu.phoneView #onlineRoster{grid-template-columns:repeat(2,minmax(0,1fr));}
+#menu.phoneView .swatches{grid-template-columns:repeat(7,minmax(0,1fr));}
+@media(max-width:520px){
+  #menu>.panel{max-width:100%;contain:inline-size;}
+  #menu .title{font-size:clamp(25px,7.8vw,38px);letter-spacing:0;line-height:1.02;}
+  #menu .playerIdentity{padding:9px 10px;}
+  #menu #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
 </style>
 </head>
 <body>
@@ -449,7 +489,7 @@ html,body{
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 29</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 29</div><div id="zoomNotice" hidden role="status">Safari is zoomed in. Pinch to zoom out, or set Safari Page Zoom to 100% for the full menu.</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -627,6 +667,30 @@ html,body{
   const ctx = canvas.getContext('2d', { alpha: false });
   const hud = document.getElementById('hud');
   const menu = document.getElementById('menu');
+  const zoomNoticeEl=document.getElementById('zoomNotice');
+  function fitPhoneMenu(){
+    // CSS viewport media queries can be misleading in Safari's desktop
+    // viewport mode. Use screen points as a fallback, not UA sniffing.
+    const screenEdge=Math.min(window.screen?.width||9999,window.screen?.height||9999);
+    const isPhone=screenEdge>=240&&screenEdge<=540;
+    const portrait=window.matchMedia('(orientation: portrait)').matches;
+    const layoutWidth=document.documentElement.clientWidth||window.innerWidth;
+    const desktopViewportOnPhone=isPhone&&portrait&&layoutWidth>screenEdge*1.25;
+    menu.classList.toggle('phoneView',desktopViewportOnPhone);
+    if(desktopViewportOnPhone)
+      menu.style.setProperty('--phone-menu-width',Math.round(screenEdge)+'px');
+    else menu.style.removeProperty('--phone-menu-width');
+    // User-controlled zoom should remain accessible. Explain rather than
+    // programmatically overriding a deliberate Safari pinch-to-zoom.
+    const zoomed=window.visualViewport?.scale>1.28;
+    zoomNoticeEl.hidden=!zoomed;
+  }
+  window.addEventListener('resize',fitPhoneMenu,{passive:true});
+  window.addEventListener('orientationchange',fitPhoneMenu,{passive:true});
+  if(window.visualViewport)
+    window.visualViewport.addEventListener('resize',fitPhoneMenu,{passive:true});
+  fitPhoneMenu();
+
   const difficultyButtons=document.getElementById('difficultyButtons');
   const difficultyDescription=document.getElementById('difficultyDescription');
   const difficultyHud=document.getElementById('difficultyHud');
