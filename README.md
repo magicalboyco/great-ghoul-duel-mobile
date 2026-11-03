@@ -1,5 +1,7 @@
 # Great Ghoul Duel Mobile
 
+**Game studio: Joy Haus** · *Ghost Duel* is the independent playable fan recreation in this repository.
+
 An independent **preservation and recreation project** studying the gameplay of Google's *The Great Ghoul Duel* (Halloween 2018), with the goal of a playable browser game and eventually iOS and Android apps.
 
 > **Current state:** Project repository initialized. **Not yet playable from this repository.** Do not mistake older standalone HTML demos or the Lovable preview for a working build.
