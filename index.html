@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 24)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 25)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -266,7 +266,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 24</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 25</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -2907,6 +2907,131 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   const booCrewBackdrop=new Image();
   booCrewBackdrop.src='assets/boo-crew-night.svg';
+  let graveyardPathLayer=null;
+
+  // Alpha 25: cache the illustrated graveyard path ONCE, not every frame.
+  // The path is scenery only. It does not modify walls, collision, or scoring.
+  function buildGraveyardPathLayer(){
+    const layer=document.createElement('canvas');
+    layer.width=WORLD.w;layer.height=176;
+    const p=layer.getContext('2d');
+    if(!p)return layer;
+    let state=0x4a4f5948;
+    const next=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296};
+    const top=x=>32+Math.sin(x*.018)*3.4+Math.sin(x*.047)*1.9;
+    const bottom=x=>144+Math.sin(x*.016+.8)*3.8+Math.sin(x*.043)*1.7;
+    p.save();
+    // Uneven soil edges in muted purple-brown: no flat runway stripe.
+    const soil=p.createLinearGradient(0,20,0,157);
+    soil.addColorStop(0,'#382a43');
+    soil.addColorStop(.25,'#5f475c');
+    soil.addColorStop(.56,'#594254');
+    soil.addColorStop(.84,'#49364a');
+    soil.addColorStop(1,'#30253c');
+    p.fillStyle=soil;p.beginPath();p.moveTo(0,top(0));
+    for(let x=24;x<=WORLD.w;x+=24)p.lineTo(x,top(x));
+    for(let x=WORLD.w;x>=0;x-=24)p.lineTo(x,bottom(x));
+    p.closePath();p.fill();
+    p.save();p.clip();
+    // Repeated but irregular hand-shaped, worn stones. All randomness is
+    // local and seeded, so clients see identical scenery without touching
+    // gameplay's random stream or generating per-frame textures.
+    const fills=['#8f748b','#756176','#95778d','#67566e','#80677e','#a08394'];
+    for(let row=0;row<5;row++){
+      let x=-35+(row%2)*23;
+      while(x<WORLD.w+35){
+        const w=33+next()*28,h=13+next()*5;
+        const y=43+row*19+(next()-.5)*6;
+        const skew=(next()-.5)*6;
+        p.fillStyle='#241a31aa';p.beginPath();
+        p.moveTo(x+3,y+3);
+        p.quadraticCurveTo(x+w*.48,y-1,x+w-2,y+2);
+        p.lineTo(x+w+skew,y+h+4);
+        p.quadraticCurveTo(x+w*.45,y+h+7,x+3,y+h+3);
+        p.closePath();p.fill();
+        p.fillStyle=fills[Math.floor(next()*fills.length)];
+        p.strokeStyle='#49334d';p.lineWidth=1.5;
+        p.beginPath();p.moveTo(x+5,y);
+        p.quadraticCurveTo(x+w*.48,y-5,x+w-5,y);
+        p.quadraticCurveTo(x+w+skew,y+h*.48,x+w-3,y+h-2);
+        p.quadraticCurveTo(x+w*.53,y+h+3,x+4,y+h-1);
+        p.quadraticCurveTo(x-1,y+h*.43,x+5,y);
+        p.closePath();p.fill();p.stroke();
+        p.strokeStyle='#d4b4c055';p.lineWidth=1.15;
+        p.beginPath();p.moveTo(x+7,y+3);
+        p.quadraticCurveTo(x+w*.5,y,x+w-9,y+3);
+        p.stroke();
+        if(next()>.75){
+          p.strokeStyle='#48354e77';p.lineWidth=.8;
+          p.beginPath();p.moveTo(x+w*.6,y+5);
+          p.lineTo(x+w*.54,y+8);p.lineTo(x+w*.67,y+12);p.stroke();
+        }
+        x+=w+5+next()*8;
+      }
+    }
+    // Tiny soft pebbles settle between larger cobbles.
+    for(let i=0;i<185;i++){
+      const x=next()*WORLD.w,y=37+next()*103;
+      p.fillStyle=next()>.5?'#b29eaa88':'#34283c9c';
+      p.beginPath();p.ellipse(x,y,1+next()*2.7,.7+next()*1.4,next()*.6,0,Math.PI*2);p.fill();
+    }
+    p.restore();
+    // Grass is concentrated along the edge, with leaves and moss patches.
+    for(let i=0;i<74;i++){
+      const x=next()*WORLD.w;
+      const upper=i%2===0,edge=upper?top(x):bottom(x);
+      const y=edge+(upper?2:-2),lean=(next()-.5)*6;
+      p.strokeStyle=i%3===0?'#85956a':'#627b61';
+      p.lineCap='round';p.lineWidth=1.4+next()*1.2;
+      p.beginPath();
+      p.moveTo(x-8,y);p.quadraticCurveTo(x-6+lean,y+(upper?-9:9),x-2,y+(upper?-8:8));
+      p.moveTo(x,y);p.quadraticCurveTo(x+lean,y+(upper?-14:14),x+2,y+(upper?-10:10));
+      p.moveTo(x+7,y);p.quadraticCurveTo(x+9+lean,y+(upper?-8:8),x+11,y+(upper?-7:7));
+      p.stroke();
+      p.fillStyle='#4e634e88';p.beginPath();p.ellipse(x,y,9,2.2,0,0,Math.PI*2);p.fill();
+      if(i%5===0){
+        p.fillStyle='#aa755c';p.beginPath();
+        p.ellipse(x+14,y+(upper?-5:5),5.1,2.4,next()-.5,0,Math.PI*2);p.fill();
+      }
+    }
+    p.restore();
+    return layer;
+  }
+
+  function drawBaseNameplate(ctx,base,team){
+    const ownTeam=game.online?game.ghosts[localGhostId()].team:0;
+    const subtitle=game.online?(team===ownTeam?'YOUR BASE':'OTHER TEAM BASE'):'BOO CREW BASE';
+    const title=teamColors[team].name.toUpperCase();
+    const x=base.x,y=base.y+67,width=262,height=57;
+    ctx.save();
+    ctx.shadowColor='#110b20bf';ctx.shadowBlur=12;ctx.shadowOffsetY=4;
+    ctx.fillStyle='#20152ff0';ctx.strokeStyle='#100c22';ctx.lineWidth=5;
+    ctx.beginPath();ctx.roundRect(x-width/2,y-height/2,width,height,17);
+    ctx.fill();ctx.stroke();
+    ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    ctx.strokeStyle=color(team);ctx.lineWidth=3;
+    ctx.beginPath();ctx.roundRect(x-width/2+3,y-height/2+3,width-6,height-6,14);ctx.stroke();
+    ctx.strokeStyle='#fff1c277';ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.moveTo(x-width/2+14,y-height/2+11);
+    ctx.lineTo(x-width/2+28,y-height/2+11);
+    ctx.moveTo(x+width/2-28,y-height/2+11);
+    ctx.lineTo(x+width/2-14,y-height/2+11);ctx.stroke();
+    // Cream lettering and a dark outline remain readable on every team
+    // color, including Spectral Cotton White and Lifeless Lavender.
+    let fontSize=17;
+    ctx.font='900 '+fontSize+'px system-ui,-apple-system,sans-serif';
+    while(ctx.measureText(title).width>width-36&&fontSize>11){
+      fontSize--;ctx.font='900 '+fontSize+'px system-ui,-apple-system,sans-serif';
+    }
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+    ctx.lineWidth=3.3;ctx.strokeStyle='#120e24';
+    ctx.strokeText(title,x,y-9);ctx.fillStyle='#fff4d6';ctx.fillText(title,x,y-9);
+    ctx.font='850 11px system-ui,-apple-system,sans-serif';
+    ctx.lineWidth=2.5;ctx.strokeStyle='#120e24';ctx.strokeText(subtitle,x,y+13);
+    ctx.fillStyle=color(team);ctx.fillText(subtitle,x,y+13);
+    ctx.restore();
+  }
+
   function drawEnvironment() {
     const sky = ctx.createLinearGradient(0, 0, 0, WORLD.h);
     sky.addColorStop(0, '#1d1534'); sky.addColorStop(.6, '#1f1930'); sky.addColorStop(1, '#20182c');
@@ -2925,10 +3050,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     // Moon belongs to the illustrated scene; fallback if not loaded.
     if(!booCrewBackdrop.complete||!booCrewBackdrop.naturalWidth){drawGlow(1530,135,120,'rgba(252,247,255,.14)');ctx.fillStyle='#f4f0ff';ctx.beginPath();ctx.arc(1530,135,38,0,Math.PI*2);ctx.fill();}
 
-    // paths
-    ctx.strokeStyle = 'rgba(174,155,113,.18)'; ctx.lineWidth = 74; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(160, 550); ctx.lineTo(515, 550); ctx.lineTo(920, 550); ctx.lineTo(1680, 550); ctx.stroke();
-    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,243,193,.18)'; ctx.beginPath(); ctx.moveTo(160, 550); ctx.lineTo(1680, 550); ctx.stroke();
+    // One cached, illustrated cobblestone-and-grass walkway, beneath
+    // scenery, ghosts, spirit flames and scoring zones.
+    if(!graveyardPathLayer)graveyardPathLayer=buildGraveyardPathLayer();
+    ctx.drawImage(graveyardPathLayer,0,550-88);
 
     for (const p of props) {
       ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.s,p.s);
@@ -2958,10 +3083,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       drawGlow(b.x, b.y, b.r + 74, alpha(color(team),.16));
       ctx.lineWidth = 9; ctx.strokeStyle = color(team); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
       ctx.strokeStyle = alpha(color(team),.45); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 18, 0, Math.PI * 2); ctx.stroke();
-      const myTeam=game.online?game.ghosts[localGhostId()].team:0;
-      ctx.fillStyle = color(team); ctx.textAlign = 'center'; ctx.font = 'bold 19px system-ui';
-      ctx.fillText(game.online?(team===myTeam?'YOUR BASE':'OTHER TEAM BASE'):
-        teamColors[team].name.toUpperCase()+' BASE',b.x,b.y+62);
+      drawBaseNameplate(ctx,b,team);
     }
 
     // drifting fog
