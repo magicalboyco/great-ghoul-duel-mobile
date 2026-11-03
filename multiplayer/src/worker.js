@@ -24,7 +24,8 @@ const validNickname=name=>typeof name==='string'&&
 // anti-cheat authoritative simulation. Upgrade to server-side physics later.
 const CLASSIC_SEATS=[0,4,1,5,2,6,3,7];
 const COOP_SEATS=[0,1,2,3];
-const ROOM_MODES=new Set(['classic','coop']);
+const FOURWAY_SEATS=[0,2,4,6,1,3,5,7];
+const ROOM_MODES=new Set(['classic','coop','fourway']);
 const validMode=value=>ROOM_MODES.has(value)?value:'classic';
 const ok = (value) => JSON.stringify(value);
 const validCode = (code) => /^[A-Z2-9]{6}$/.test(code);
@@ -52,7 +53,7 @@ export default {
     // Health checks are requested directly by GitHub Pages, so they need
     // the same cross-origin response headers as room creation.
     if (url.pathname === "/health") return Response.json(
-      {ok:true,service:"ghost-duel-alpha27",modes:['classic','coop']},
+      {ok:true,service:"ghost-duel-alpha34",modes:['classic','coop','fourway']},
       {headers:roomHeaders}
     );
     if (url.pathname === '/rooms' && request.method==='OPTIONS')
@@ -274,7 +275,7 @@ export class GhostRoom {
         }
         seat=0;
       }else if(msg.role==='guest'){
-        const seatOrder=this.mode==='coop'?COOP_SEATS:CLASSIC_SEATS;
+        const seatOrder=this.mode==='coop'?COOP_SEATS:this.mode==='fourway'?FOURWAY_SEATS:CLASSIC_SEATS;
         seat=seatOrder.find(s=>s!==0&&!this.players.has(s));
         if(seat===undefined){
           this.send(ws,{type:'error',reason:'Room is full'});
