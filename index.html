@@ -646,16 +646,22 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const modeNotice=document.getElementById('modeNotice');
   let selectedOnlineMode='classic';
   const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op'};
-  function selectOnlineMode(mode){
-    if(!MODE_NAMES[mode]||online||onlinePending)return;
+  function displayOnlineMode(mode){
+    if(!MODE_NAMES[mode])return;
     selectedOnlineMode=mode;
     for(const button of modeChooser.querySelectorAll('[data-mode]')){
       button.setAttribute('aria-checked',String(button.dataset.mode===mode));
+      button.disabled=!!online||onlinePending;
     }
     modeNotice.textContent=mode==='coop'
       ?'Boo Crew Co-op · Four friendly seats (1–4 humans) against four rival bots.'
       :'Classic Duel · Up to eight humans on opposing teams.';
   }
+  function selectOnlineMode(mode){
+    if(!MODE_NAMES[mode]||online||onlinePending)return;
+    displayOnlineMode(mode);
+  }
+  const roomCapacity=mode=>mode==='coop'?4:8;
   modeChooser.addEventListener('click',e=>{
     const button=e.target.closest('[data-mode]');
     if(button)selectOnlineMode(button.dataset.mode);
@@ -745,7 +751,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     onlineRosterEl.hidden=!room||room.seat===null;
     onlineInviteEl.hidden=!room||room.seat===null;
     if(!room||room.seat===null){onlineInviteEl.textContent='';return}
-    onlineInviteEl.textContent='Room '+room.code+' · '+room.seats.length+'/8 players';
+    onlineInviteEl.textContent=MODE_NAMES[room.mode]+' · Room '+room.code+' · '+
+      room.seats.length+'/'+roomCapacity(room.mode)+' humans';
     for(let seat=0;seat<8;seat++){
       const occupied=room.seats.includes(seat);
       const tile=document.createElement('div');
@@ -763,6 +770,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
   }
   function showOnlineLobby(onlineRoom){
+    if(onlineRoom?.mode&&MODE_NAMES[onlineRoom.mode])displayOnlineMode(onlineRoom.mode);
+    for(const button of modeChooser.querySelectorAll('[data-mode]')){
+      button.disabled=!!onlineRoom||onlinePending;
+    }
     const seated=Number.isInteger(onlineRoom?.seat);
     const host=seated&&onlineRoom.host&&onlineRoom.seat===0;
     const inLobby=seated&&!onlineRoom.started;
@@ -775,8 +786,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     onlineRoleEl.hidden=!inLobby;
     onlineRoleEl.className=host?'host':'guest';
     onlineRoleEl.textContent=!inLobby?'':
-      host?'👑 YOU ARE THE HOST · Only your screen can start the match.':
-      '👻 YOU ARE A GUEST · The host controls when the match starts.';
+      host?'👑 HOST · '+MODE_NAMES[onlineRoom.mode]+' · You start the match.':
+      '👻 GUEST · '+MODE_NAMES[onlineRoom.mode]+' · Waiting for the host.';
     onlineWaitingEl.hidden=!inLobby||host;
     onlineWaitingEl.textContent=!inLobby||host?'':onlineRoom.preparing?
       '⏳ Host is starting the match. Getting all players ready…':
@@ -784,7 +795,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     // Never present solo Start as the main CTA in an online lobby.
     startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
-    startBtn.textContent='START SOLO GAME';
+    startBtn.textContent='👻 PLAY SOLO';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom;
@@ -820,9 +831,19 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(!makeNew&&!/^[A-Z2-9]{6}$/.test(code))
         throw Error('Enter a valid six-character room code first.');
       setOnlineStatus(makeNew?'Creating a private room on the server…':'Checking room '+code+'…');
+      // Co-op needs the mode-aware Worker (Alpha 27). If the old Worker is
+      // still deployed, fail clearly instead of silently placing friends
+      // on opposing teams or giving a fifth person a co-op seat.
+      if(makeNew&&selectedOnlineMode==='coop'){
+        const health=await fetch(endpoint+'/health',{cache:'no-store'});
+        const service=health.ok?await health.json().catch(()=>null):null;
+        if(!Array.isArray(service?.modes)||!service.modes.includes('coop'))
+          throw Error('Boo Crew Co-op needs the updated multiplayer server. Classic Duel still works while that update is deployed.');
+      }
       const response=await fetch(makeNew?endpoint+'/rooms':endpoint+'/rooms/'+code,{
         method:makeNew?'POST':'GET',
         headers:makeNew?{'Content-Type':'application/json'}:{},
+        body:makeNew?JSON.stringify({mode:selectedOnlineMode}):undefined,
         cache:'no-store'
       });
       let result;try{result=await response.json()}catch{throw Error('Server reply was not valid. Check its deployment.')}
@@ -832,10 +853,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         throw Error(result.error||'Room server unavailable ('+response.status+').');
       }
       if(!makeNew&&result.started)throw Error('This match has already started.');
+      const roomMode=MODE_NAMES[result.mode]?result.mode:'classic';
       if(makeNew){
         if(!/^[A-Z2-9]{6}$/.test(result.code)||typeof result.hostToken!=='string')
           throw Error('Server did not return a valid private room.');
+        if(roomMode!==selectedOnlineMode)
+          throw Error('The server does not support the selected mode yet. Classic Duel is still available.');
         code=result.code;hostToken=result.hostToken;
+      }else{
+        displayOnlineMode(roomMode);
       }
       ws=new WebSocket(server+'/room/'+code);
       try{localStorage.setItem('ghost-duel-server-url',onlineServerEl.value.trim())}catch{}
@@ -845,7 +871,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
     onlinePending=false;
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
-      seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
+      mode:selectedOnlineMode,seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
       lastFullSnapshot:-Infinity,inputSeq:0,receivedSeq:-1,teamColors:null};
     online=session;
     onlineCodeEl.value=code;
@@ -864,6 +890,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       let msg;
       try{msg=JSON.parse(event.data)}catch{return}
       if(msg.type==='welcome'){
+        if(MODE_NAMES[msg.mode])session.mode=msg.mode;
         session.seat=msg.seat;
         session.host=!!msg.host;
         session.hostToken=null;
@@ -871,17 +898,18 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         setOnlineStatus('Room '+code+' · You are ghost #'+(msg.seat+1)+'. '+(session.host?
           'Share this code or the invite link, then tap Start online match.':'Waiting for the host to start.'));
       }else if(msg.type==='roster'){
+        if(MODE_NAMES[msg.mode])session.mode=msg.mode;
         session.seats=Array.isArray(msg.seats)?msg.seats.filter(n=>Number.isInteger(n)&&n>=0&&n<8):[];
         session.profiles=new Map((Array.isArray(msg.profiles)?msg.profiles:[])
           .filter(p=>Number.isInteger(p.seat)&&session.seats.includes(p.seat))
           .map(p=>[p.seat,{styleId:p.styleId,color:p.color}]));
         if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
-        if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
-          '/8 real people connected. '+(session.host?
-            'You are the host. Tap the big green START MATCH FOR EVERYONE button above the player cards.':
-            'You are a guest. The host must start the match from their own device.'));
+        if(!session.started)setOnlineStatus(MODE_NAMES[session.mode]+' · Room '+code+' · '+
+          session.seats.length+'/'+roomCapacity(session.mode)+' humans connected. '+
+          (session.host?'Tap START MATCH FOR EVERYONE when ready.':'Waiting for the host to start.'));
       }else if(msg.type==='prepare'){
+        if(MODE_NAMES[msg.mode])session.mode=msg.mode;
         if(Array.isArray(msg.profiles)){
           session.profiles=new Map(msg.profiles
             .filter(p=>Number.isInteger(p.seat)&&p.seat>=0&&p.seat<8)
@@ -903,6 +931,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
           setOnlineStatus('Preparing online match: '+ready+'/'+total+' players ready…');
         }
       }else if(msg.type==='start'){
+        if(MODE_NAMES[msg.mode])session.mode=msg.mode;
         if(session.started)return;
         if(!session.preparing||msg.roundId!==session.roundId){
           // Only accept the confirmed round that this browser prepared.
@@ -925,8 +954,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
             GHOST_CHARACTER_NAMES[resolved]+' in this match!');
         }
         const myTeam=game.ghosts[session.seat].team;
-        setOnlineStatus('👻 Multiplayer live! '+session.seats.length+' humans, '+(8-session.seats.length)+
-          ' computer ghosts. You are on the '+teamColors[myTeam].name+' team.');
+        setOnlineStatus('👻 '+MODE_NAMES[session.mode]+' live! '+session.seats.length+' humans, '+
+          (8-session.seats.length)+' computer ghosts. You are on the '+teamColors[myTeam].name+' team.');
         if(session.host)publishOnlineSnapshot();
       }else if(msg.type==='input'&&session.host&&session.started){
         if(session.seats.includes(msg.seat)&&msg.seat!==0){
