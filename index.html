@@ -346,8 +346,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=entry.hex;
     b.setAttribute('aria-label',entry.name+' '+entry.hex);
     b.setAttribute('aria-pressed',String(index===selectedIndex));
-    b.addEventListener('click',()=>{selectedIndex=index;selectedNameEl.textContent=entry.name;
-      [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)))});
+    b.addEventListener('click',()=>{
+      selectedIndex=index;
+      selectedNameEl.textContent=entry.name;
+      [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)));
+      // Recolor all eight Boo Crew portraits immediately; the chosen skin also
+      // becomes the player's team color when the next match starts.
+      refreshCrewCards();
+    });
     palettePicker.appendChild(b);
   });
 
@@ -1161,9 +1167,11 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
 
   // Small illustrated portrait using the exact same signature accessory as in the arena.
-  function ghostPortrait(g){
+  function ghostPortrait(g,previewColor=null){
     const styleId=g.styleId??g.id;
-    const fill=color(g.team),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
+    // Menu previews use the live color swatch, whereas results portraits
+    // always reflect the actual team's match color.
+    const fill=previewColor??color(g.team),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
     const ink='#272038';
     const faces=[
       '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
@@ -1204,9 +1212,11 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const booCrewGrid=document.getElementById('booCrewGrid');
   const chosenCharacter=document.getElementById('chosenCharacter');
   function refreshCrewCards(){
+    const swatch=PASTELS[selectedIndex];
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
-      button.querySelector('.crewPortrait').innerHTML=ghostPortrait({id,styleId:id,team:0});
+      button.setAttribute('aria-label','Choose '+GHOST_CHARACTER_NAMES[id]+' in '+swatch.name);
+      button.querySelector('.crewPortrait').innerHTML=ghostPortrait({id,styleId:id,team:0},swatch.hex);
     });
   }
   GHOST_CHARACTER_NAMES.forEach((name,id)=>{
@@ -1221,7 +1231,6 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     booCrewGrid.appendChild(button);
   });
   refreshCrewCards();
-  palettePicker.addEventListener('click',refreshCrewCards);
 
   function drawGhost(g) {
     const carried=levelFor(g);
