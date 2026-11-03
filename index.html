@@ -857,6 +857,30 @@ html,body{
   let online=null,onlinePending=false;
   const localGhostId=()=>Number.isInteger(online?.seat)?online.seat:0;
   const neutralDirection=()=>({x:0,y:0,mag:0});
+  const playerDisplayNameEl=document.getElementById('playerDisplayName');
+  // Only this optional nickname is shared in room profiles. Room names are
+  // never submitted to the public high-score list automatically.
+  function sanitizePlayerName(value){
+    const name=typeof value==='string'?value.trim().replace(/\s+/g,' '):'';
+    return name.length<=16&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
+      (!name||/[\p{L}\p{N}]/u.test(name))?name:'';
+  }
+  try{
+    const saved=localStorage.getItem('boo-crew-player-name')||
+      localStorage.getItem('boo-crew-score-name')||'';
+    playerDisplayNameEl.value=sanitizePlayerName(saved);
+  }catch{}
+  playerDisplayNameEl.addEventListener('input',()=>{
+    const next=playerDisplayNameEl.value
+      .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,16);
+    if(next!==playerDisplayNameEl.value)playerDisplayNameEl.value=next;
+    try{localStorage.setItem('boo-crew-player-name',
+      sanitizePlayerName(playerDisplayNameEl.value))}catch{}
+    if(online&&online.seat!==null&&!online.started&&
+      online.ws.readyState===WebSocket.OPEN){
+      sendOnline({type:'profile',...lobbyPlayerProfile()});
+    }
+  });
   // Connected human seats are never taken over by computer AI if inputs
   // pause or arrive late. The last movement expires to neutral instead.
   function humanSeatDirection(room,seat,now){
@@ -866,7 +890,8 @@ html,body{
     return last;
   }
   function lobbyPlayerProfile(){
-    return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex};
+    return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex,
+      name:sanitizePlayerName(playerDisplayNameEl.value)};
   }
   // First connected human on each team chooses the team body color.
   // The guest's chosen color takes effect for the second team.
@@ -1784,7 +1809,9 @@ html,body{
       const team = i < 4 ? 0 : 1;
       const base = BASES[team];
       const ghost=newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) });
-      ghost.styleId=roster[i]; ghosts.push(ghost);
+      ghost.styleId=roster[i];
+      ghost.playerName=i===0?sanitizePlayerName(playerDisplayNameEl.value):'';
+      ghosts.push(ghost);
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
     game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
@@ -2858,7 +2885,7 @@ html,body{
       ctx.strokeStyle=mine?'#134d35':'#f0d2ff';
       ctx.lineWidth=1.6;ctx.beginPath();ctx.roundRect(x-width/2,y-64,width,21,9);
       ctx.fill();ctx.stroke();
-      ctx.fillStyle=mine?'#1d4232':'#fff4ff';ctx.fillText(text,x,y-49);
+      ctx.fillStyle=mine?'#1d4232':'#fff4ff';ctx.fillText(text,x,y-49,width-12);
       ctx.restore();
     }
     if(celebrating||stealing||g.reaction==='collect'){
