@@ -422,3 +422,45 @@ all eight ghosts are accessible without horizontal scroll, then
 create or join a room and verify distinct nicknames on both screens.
 Automated tests cover source invariants and room-name validation, but
 physical browser layout should still be confirmed visually.
+
+## Alpha 29 — iPhone menu display and player-chosen names
+
+A player can now enter an **optional ghost name, up to 16 characters**
+directly in the setup menu, independent of the public Top 13 score
+nickname. Each human chooses their own nickname on their device before
+creating/joining a private room. Short Unicode letter/number names
+plus spaces, dots, apostrophes, hyphens and underscores are accepted.
+Unsupported markup/control characters are filtered by the client and
+rejected by the Worker. A blank name uses the old generic seat labels.
+
+The room's existing profile WebSocket messages now relay each person's
+sanitized `name`. The lobby renders names using `textContent`, and
+gameplay name tags draw with `canvas.fillText()`; **player-entered
+names are never interpolated into HTML markup**. Nicknames are
+transmitted in the host's existing full snapshots, and shown on
+post-match award tiles. The name is saved only to the player's
+local browser and their private room's ephemeral in-memory profile.
+No new Durable Object table, migration, login or account is required.
+
+On iPhone, Apple Safari may inflate text sizes even when a responsive
+viewport tag is present. The stylesheet explicitly uses
+`-webkit-text-size-adjust:100%` without disabling user pinch-to-zoom.
+The menu retains compact two-column ghost portraits, safe-area
+padding, and vertical scrolling at narrow widths. Layout fixes affect
+only setup screens, not game-world physics or camera.
+
+**Visual verification is still needed on a physical iPhone.**
+After the production GitHub Pages and Cloudflare deployments, open the
+game with `?build=alpha29` appended to its URL to fetch the fresh page.
+Confirm the upper menu badge reads Alpha 29, both rows of ghost cards
+fit in portrait without horizontal cropping, and each invited person
+can choose a name that appears in the lobby, above their ghost, and
+on the award screen. Test also on Android, desktop and phone landscape.
+If the menu is still magnified with Alpha 29 visible, check the Safari
+website-specific Page Zoom setting and whether Request Desktop Website
+is enabled; the game does not forcibly disable user-chosen zoom.
+
+The existing Classic Duel, Boo Crew Co-op, Solo modes, difficulty levels,
+team colors, eight distinct ghosts and power thresholds are preserved.
+Automated tests cover mobile text sizing, optional names, their
+cross-client synchronization and sanitization.
