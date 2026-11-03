@@ -1121,6 +1121,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         room.mode==='coop'?(team===0?'Friendly Bot':'Rival Bot'):'Bot / Open';
       const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
       teamLabel.textContent='✦ TEAM '+['ONE','TWO','THREE','FOUR'][team];
+      teamLabel.style.color=colors[team].hex;
       tile.append(portrait,title,teamLabel);onlineRosterEl.appendChild(tile);
     }
   }
@@ -1465,6 +1466,13 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 
   const stars = Array.from({ length: 110 }, () => ({ x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, r: Math.random() * 1.7 + 0.2, twinkle: Math.random() * 7 }));
   const props = makeProps();
+  // The larger four-team cemetery has additional layered scenery on its
+  // eastern and southern grounds. Classic mode keeps its original props.
+  const fourwayProps=[
+    ...props,
+    ...props.map(p=>({...p,x:Math.min(2320,p.x+520),y:Math.min(1410,p.y+340),
+      phase:(p.phase||0)+1.7,variant:(p.variant||0)+1}))
+  ];
   const ambientMotes = Array.from({ length: 65 }, () => ({ x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, r: Math.random() * 2 + .6, s: Math.random() * .6 + .2, p: Math.random() * 6.28 }));
 
   function status(msg) { audioStatus.textContent = 'Audio: ' + msg; }
@@ -3565,7 +3573,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       ctx.drawImage(graveyardPathLayer,0,1080-88);
     }else ctx.drawImage(graveyardPathLayer,0,550-88);
 
-    for (const p of props) {
+    for (const p of (isFourWay()?fourwayProps:props)) {
       ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.s,p.s);
       if(p.kind==='grave')drawGravestone(ctx,p);
       else if(p.kind==='pumpkin')drawPumpkin(ctx,p);
