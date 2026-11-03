@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 18)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 21)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -77,6 +77,16 @@ button{font:inherit}
 .roomSeat .seatTitle{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e2ff}
 #onlineInvite{font-size:12px;color:#f9dfaa;font-weight:800;margin:10px 0;min-height:16px}
 #onlineInvite[hidden]{display:none}
+#onlineRoleCard{padding:13px 12px;margin:12px auto;border-radius:15px;border:2px solid #ffd39baa;max-width:390px;background:#fbe0ab17;text-align:center;color:#fff4d0;font-weight:900;font-size:14px;line-height:1.4}
+#onlineRoleCard.host{border-color:#9beec5;background:#9beec41c;color:#d9ffec}
+#onlineRoleCard.guest{border-color:#c8b4f1;background:#c8b4f11a;color:#f0e5ff}
+#onlineRoleCard[hidden]{display:none}
+#onlinePanel #onlineStart{display:block;width:100%;max-width:390px;min-height:62px;margin:11px auto 4px;border:2px solid #e2ffe4;border-radius:17px;background:linear-gradient(#d9ffe6,#78dfa7);color:#183928;font-size:18px;font-weight:1000;box-shadow:0 9px 17px #050b2055;letter-spacing:0}
+#onlinePanel #onlineStart:disabled{opacity:.72}
+#onlinePanel #onlineStart[hidden]{display:none}
+#onlineWaiting{max-width:390px;margin:11px auto;padding:12px;border:1px dashed #d6c0ee;border-radius:13px;color:#f7e2ff;background:#f2dcff0c;text-align:center;font-weight:750;font-size:13px;line-height:1.5}
+#onlineWaiting[hidden]{display:none}
+#startBtn[hidden]{display:none}
 
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
 #notice{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));font-size:11px;color:#c8bde7;background:rgba(17,14,38,.72);padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.06);z-index:5;pointer-events:none}
@@ -237,7 +247,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 18</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 21</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -263,10 +273,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
   <div id="onlineStatus" role="status" aria-live="polite">Online play uses our Ghost Duel Cloudflare server. The host must keep their game open.</div>
   <div id="onlineInvite" hidden></div>
+  <div id="onlineRoleCard" role="status" aria-live="polite" hidden></div>
+  <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 START MATCH FOR EVERYONE</button>
+  <div id="onlineWaiting" role="status" aria-live="polite" hidden></div>
   <div id="onlineRoster" hidden aria-label="Eight room seats"></div>
   <div class="onlineControls">
     <button type="button" id="onlineCopy" hidden>🔗 Copy invite link</button>
-    <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 Start online match</button>
     <button type="button" id="onlineLeave" hidden>Leave room</button>
   </div>
 </div>
@@ -571,6 +583,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const onlineStatusEl=document.getElementById('onlineStatus');
   const onlineRosterEl=document.getElementById('onlineRoster');
   const onlineInviteEl=document.getElementById('onlineInvite');
+  const onlineRoleEl=document.getElementById('onlineRoleCard');
+  const onlineWaitingEl=document.getElementById('onlineWaiting');
   let online=null,onlinePending=false;
   const localGhostId=()=>Number.isInteger(online?.seat)?online.seat:0;
   const neutralDirection=()=>({x:0,y:0,mag:0});
@@ -638,13 +652,30 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
   }
   function showOnlineLobby(onlineRoom){
-    onlineStartEl.hidden=!onlineRoom?.host||!!onlineRoom.started||onlineRoom.seat===null;
-    onlineStartEl.disabled=!onlineRoom?.ws||onlineRoom.ws.readyState!==WebSocket.OPEN||!!onlineRoom.preparing;
-    onlineStartEl.textContent=onlineRoom?.preparing?'⏳ Waiting for all players…':'🎮 Start online match';
+    const seated=Number.isInteger(onlineRoom?.seat);
+    const host=seated&&onlineRoom.host&&onlineRoom.seat===0;
+    const inLobby=seated&&!onlineRoom.started;
+    const canStart=host&&inLobby&&!onlineRoom.preparing&&
+      onlineRoom.ws?.readyState===WebSocket.OPEN;
+    onlineStartEl.hidden=!host||!inLobby;
+    onlineStartEl.disabled=!canStart;
+    onlineStartEl.textContent=onlineRoom?.preparing?'⏳ Starting everyone…':
+      '🎮 START MATCH FOR EVERYONE';
+    onlineRoleEl.hidden=!inLobby;
+    onlineRoleEl.className=host?'host':'guest';
+    onlineRoleEl.textContent=!inLobby?'':
+      host?'👑 YOU ARE THE HOST · Only your screen can start the match.':
+      '👻 YOU ARE A GUEST · The host controls when the match starts.';
+    onlineWaitingEl.hidden=!inLobby||host;
+    onlineWaitingEl.textContent=!inLobby||host?'':onlineRoom.preparing?
+      '⏳ Host is starting the match. Getting all players ready…':
+      '⏳ Waiting for the HOST to press “START MATCH FOR EVERYONE” on their device.';
+    // Never present solo Start as the main CTA in an online lobby.
+    startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
-    startBtn.textContent=onlineRoom?'LEAVE ROOM TO PLAY SOLO':'START GAME';
+    startBtn.textContent='START SOLO GAME';
     onlineLeaveEl.hidden=!onlineRoom;
-    onlineCopyEl.hidden=!onlineRoom||onlineRoom.seat===null;
+    onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom;
     onlineJoinEl.disabled=onlinePending||!!onlineRoom;
     renderOnlineRoster(onlineRoom);
@@ -736,7 +767,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         if(game?.online){applyHumanProfiles();refreshOnlineBadge();}
         showOnlineLobby(session);
         if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
-          '/8 real people connected. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
+          '/8 real people connected. '+(session.host?
+            'You are the host. Tap the big green START MATCH FOR EVERYONE button above the player cards.':
+            'You are a guest. The host must start the match from their own device.'));
       }else if(msg.type==='prepare'){
         if(Array.isArray(msg.profiles)){
           session.profiles=new Map(msg.profiles
@@ -880,7 +913,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(online?.host&&!online.started&&!online.preparing&&online.seat===0&&
        online.ws.readyState===WebSocket.OPEN){
       onlineStartEl.disabled=true;
-      setOnlineStatus('Starting online match for everyone…');
+      onlineStartEl.textContent='⏳ Asking everyone to get ready…';
+      setOnlineStatus('Match start requested · Waiting for all connected players to confirm…');
       sendOnline({type:'start'});
     }
   });
