@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 27)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 28)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -256,6 +256,107 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 .swatch{width:35px;height:35px;justify-self:center}
 .bullets{margin:11px 0;gap:7px}.bullets div{padding:7px 9px;font-size:12px}
 @media(max-width:480px){.panel{padding:13px}.title{font-size:clamp(32px,9.6vw,47px)}.crewCard svg{width:46px;height:53px}.crewCard span{font-size:10px}.swatch{width:30px;height:30px}.bullets{display:none}.sub{font-size:12px;line-height:1.35}}
+
+/* Alpha 28 — Adaptive menu layout.
+   Fix the flex child's intrinsic min-content width: a long title or ghost
+   name must never force the full menu wider than the phone viewport.
+   These rules apply to overlay screens, not the gameplay canvas or camera. */
+#menu,#results,#hallOfFame,#credits{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+}
+#menu{
+  padding:
+    max(10px,env(safe-area-inset-top))
+    max(10px,env(safe-area-inset-right))
+    max(10px,env(safe-area-inset-bottom))
+    max(10px,env(safe-area-inset-left));
+}
+#menu>.panel{
+  flex:0 1 780px;
+  width:100%;
+  max-width:780px;
+  min-width:0;
+  min-height:0;
+  max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+#menu>.panel *,
+#results>.resultsPanel *,
+#credits>.creditsPanel *{
+  max-width:100%;
+}
+#menu .title{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  text-wrap:balance;
+}
+#menu .sub,#menu .palette-label,#menu #crewLore,#menu #teamPreview{
+  overflow-wrap:anywhere;
+}
+#booCrewGrid{width:100%;min-width:0;}
+.crewCard{width:100%;min-width:0;overflow:visible;}
+.crewCard span{
+  display:block;
+  width:100%;
+  max-width:100%;
+  line-height:1.16;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+#onlinePanel,#modeChooser,#onlineRoster,#difficultyWrap,.difficultyButtons{
+  width:100%;
+  min-width:0;
+}
+.modeCard{max-width:100%;min-width:0;}
+.modeCard>span:last-child{flex:1 1 0%;min-width:0;overflow-wrap:anywhere;}
+#onlinePanel input{max-width:100%;font-size:16px;}
+.resultsPanel,.hallPanel,.creditsPanel{min-width:0;max-width:100%;}
+
+/* Small phones: roomy two-column crew cards rather than four tiny,
+   overflowing cards. The menu scrolls vertically to reach room actions. */
+@media (max-width:520px){
+  #menu{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right));}
+  #menu>.panel{padding:14px 12px 18px;border-radius:18px;}
+  #menu .title{font-size:clamp(26px,8.2vw,40px);line-height:1.04;margin:8px 0 4px;}
+  #menu .sub{font-size:13px;line-height:1.4;}
+  #menu .palette-label{font-size:11px;letter-spacing:.06em;line-height:1.35;}
+  #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+  .crewCard{min-height:105px;gap:5px;padding:9px 5px;border-radius:15px;}
+  .crewCard svg{width:min(66px,65%);height:69px;}
+  .crewPortrait{min-height:69px;}
+  .crewCard span{font-size:12px;min-height:15px;}
+  #crewLore{padding:10px;margin:8px auto;}
+  .swatches{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;}
+  .swatch{width:min(34px,100%);height:auto;aspect-ratio:1;}
+  #onlinePanel{padding:11px 9px;}
+  #onlineRoster{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .roomSeat .seatTitle{white-space:normal;overflow-wrap:anywhere;}
+  .modeCard{padding:10px 8px;gap:8px;}
+  .modeCard .modeIcon{width:29px;font-size:22px;}
+  .modeCard b{font-size:14px;}
+  .modeCard small{font-size:11px;}
+  .bullets{display:none;}
+  .resultsPanel,.hallPanel,.creditsPanel{max-height:calc(100dvh - 20px);overflow-y:auto;}
+}
+/* Compact tablets and phones in wider portrait orientation. */
+@media (min-width:521px) and (max-width:679px){
+  #booCrewGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;}
+  #menu .title{font-size:clamp(38px,7vw,48px);}
+  .crewCard span{font-size:12px;}
+}
+/* Short landscape screens: scroll the setup overlay, not the arena. */
+@media (max-height:520px) and (orientation:landscape){
+  #menu,#results,#hallOfFame,#credits{align-items:stretch;}
+  #menu>.panel{max-height:calc(100dvh - 16px);margin:auto;}
+  .resultsPanel,.hallPanel,.creditsPanel{max-height:calc(100dvh - 16px);}
+}
 </style>
 </head>
 <body>
@@ -277,7 +378,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 27</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 28</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
