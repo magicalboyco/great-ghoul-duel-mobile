@@ -31,7 +31,8 @@ const runtime=new Function('Response','Request','WebSocketPair','crypto','TextEn
   );
 
 function mockRequest(url,method='GET',headers={},payload=null){
-  return {url,method,headers:{get:key=>headers[key]??null},text:async()=>JSON.stringify(payload)};
+  return {url,method,headers:{get:key=>headers[key]??null},
+    text:async()=>JSON.stringify(payload),json:async()=>payload};
 }
 function harness(){
   const instances=new Map();
@@ -454,4 +455,115 @@ test('Alpha 26: power-up spirit requirements stay fixed across difficulty modes'
       name+' power threshold stays unchanged');
   }
   assert.match(html,/function levelFor\(g\)\{return g\.trail\.length\}/);
+});
+
+
+test('Alpha 27: Boo Crew Co-op room securely seats four humans together and blocks a fifth',async()=>{
+  const {env,instances}=harness();
+  const created=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms','POST',
+    {Origin:'https://magicalboyco.github.io'},{mode:'coop'}),env);
+  assert.equal(created.status,201);
+  const {code,hostToken,mode}=await created.json();
+  assert.equal(mode,'coop');
+  const status=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms/'+code),env);
+  assert.deepEqual((({mode,maxPlayers,started})=>({mode,maxPlayers,started}))(await status.json()),
+    {mode:'coop',maxPlayers:4,started:false});
+  const room=instances.get('room-'+code).room;
+  const sockets=instances.get('room-'+code).sockets;
+  async function enter(role,profile={}){
+    const response=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(response.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({
+      type:'hello',role,...profile,
+      ...(role==='host'?{token:hostToken}:{})
+    }));
+    return socket;
+  }
+  const host=await enter('host',{styleId:0,color:'#B8DDC4'});
+  const guests=[];
+  for(let i=0;i<3;i++){
+    const guest=await enter('guest',{styleId:i+1,color:'#F2DF9D'});
+    guests.push(guest);
+    assert.equal(guest.deserializeAttachment().seat,i+1);
+    assert.equal(guest.sent[0].mode,'coop');
+  }
+  assert.deepEqual([...room.players.keys()].sort(),[0,1,2,3],
+    'All human players are in the first team; seats 4–7 remain rival bots');
+  assert.equal(room.mode,'coop');
+  const roster=guests[2].sent.findLast(message=>message.type==='roster');
+  assert.equal(roster.mode,'coop');
+  assert.deepEqual(roster.seats,[0,1,2,3]);
+  const fifth=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+  assert.equal(fifth.status,409,'A fifth human cannot join a four-human co-op room');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  const prepare=host.sent.find(message=>message.type==='prepare');
+  assert.equal(prepare.mode,'coop');
+  for(const socket of [host,...guests]){
+    await room.webSocketMessage(socket,JSON.stringify({type:'ready',roundId:prepare.roundId}));
+  }
+  assert.equal(room.preparing,false);
+  assert.ok(guests.every(g=>g.sent.some(m=>m.type==='start'&&m.mode==='coop')));
+  await room.webSocketMessage(guests[0],JSON.stringify({type:'input',seq:1,x:.5,y:0}));
+  assert.ok(host.sent.some(m=>m.type==='input'&&m.seat===1&&m.seq===1),
+    'Co-op guest controls reach the host physics, not the bot AI');
+});
+
+test('Alpha 27: Classic Duel keeps alternating teams and eight-person capacity',async()=>{
+  const {env,instances}=harness();
+  const created=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms','POST',
+    {Origin:'https://magicalboyco.github.io'},{mode:'classic'}),env);
+  assert.equal(created.status,201);
+  const {code,hostToken,mode}=await created.json();
+  assert.equal(mode,'classic');
+  const room=instances.get('room-'+code).room;
+  const sockets=instances.get('room-'+code).sockets;
+  async function enter(role){
+    const response=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(response.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({
+      type:'hello',role,styleId:0,color:'#A7D3EA',
+      ...(role==='host'?{token:hostToken}:{})
+    }));
+    return socket;
+  }
+  const host=await enter('host');
+  const others=[];
+  for(let i=0;i<7;i++)others.push(await enter('guest'));
+  assert.deepEqual([host,...others].map(socket=>socket.deserializeAttachment().seat),
+    [0,4,1,5,2,6,3,7]);
+  assert.equal(room.mode,'classic');
+  assert.equal(room.players.size,8);
+  const ninth=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+  assert.equal(ninth.status,409);
+  const status=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms/'+code),env);
+  assert.equal((await status.json()).maxPlayers,8);
+});
+
+test('Alpha 27: new modes and old Worker fallback remain explicit and safe',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/data-mode="coop"/);
+  assert.match(html,/data-mode="classic"/);
+  assert.match(html,/Four-Way Haunt/);
+  assert.match(html,/aria-disabled="true"/);
+  assert.match(html,/function selectOnlineMode\(mode\)/);
+  assert.match(html,/roomCapacity=mode=>mode==='coop'\?4:8/);
+  assert.match(html,/mode:selectedOnlineMode/);
+  assert.match(html,/JSON\.stringify\(\{mode:selectedOnlineMode\}\)/);
+  assert.match(html,/includes\('coop'\)/);
+  assert.match(html,/The server does not support the selected mode yet/);
+  assert.match(html,/if\(MODE_NAMES\[msg\.mode\]\)session\.mode=msg\.mode/);
+  assert.match(html,/room\.mode==='coop'\?\(team===0\?'Friendly Bot':'Rival Bot'\)/);
+  assert.match(html,/mode==='coop'\?'BOO CREW CO-OP':'CLASSIC DUEL'/);
+  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
+  assert.match(html,/humanInput\?\?botDirection\(g,dt\)/);
 });
