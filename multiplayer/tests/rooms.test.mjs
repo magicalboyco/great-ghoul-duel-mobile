@@ -164,7 +164,8 @@ test('Connected human ghosts keep control even when movement packets arrive late
   const start=html.indexOf('  const neutralDirection=()=>');
   const end=html.indexOf('  function lobbyPlayerProfile()',start);
   assert.ok(start>0&&end>start,'Movement ownership helper exists in game source');
-  const helpers=html.slice(start,end);
+  const humanStart=html.indexOf('  function humanSeatDirection(',start);
+  const helpers=html.slice(start,html.indexOf('\n',start)+1)+html.slice(humanStart,end);
   const humanSeatDirection=new Function(helpers+';return humanSeatDirection;')();
   const room={seats:[0,4],inputs:new Map()};
   // Connected human ghost 4 must remain still, not be handed to botDirection.
@@ -653,7 +654,7 @@ test('Alpha 29: selected name is visible in setup, lobby, arena and results',()=
   assert.match(html,/id="playerDisplayName"/);
   assert.match(html,/maxlength="16"/);
   assert.match(html,/autocomplete="nickname"/);
-  assert.match(html,/localStorage\.setItem\('boo-crew-player-name',cleaned\)/);
+  assert.match(html,/localStorage\.setItem\('boo-crew-player-name',[\s\S]*?sanitizePlayerName\(playerDisplayNameEl\.value\)\)/);
   assert.match(html,/return \{styleId:selectedCharacter,color:PASTELS\[selectedIndex\]\.hex,name:playerName\(\)\}/);
   assert.match(html,/g\.playerName=human\?sanitizePlayerName\(profile\?\.name\):''/);
   assert.match(html,/const displayName=sanitizePlayerName\(profile\?\.name\)/);
