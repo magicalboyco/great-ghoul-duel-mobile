@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 09</title>
+<title>Ghost Duel — Alpha 10</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -48,6 +48,30 @@ button{font:inherit}
 #startBtn:active{transform:translateY(1px)}
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
 #notice{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));font-size:11px;color:#c8bde7;background:rgba(17,14,38,.72);padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.06);z-index:5;pointer-events:none}
+
+#results{display:none;position:absolute;inset:0;z-index:15;padding:12px;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 12%,#553c77c9,#0c091bea 78%)}
+#results.open{display:flex}
+.resultsPanel{width:min(100%,650px);max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y;overscroll-behavior:contain;border:1px solid #e6cfff70;border-radius:24px;padding:18px;background:linear-gradient(160deg,#332747,#1a162f);box-shadow:0 25px 80px #04030bbb;text-align:center}
+.resultsPanel h2{font-size:clamp(26px,7vw,43px);margin:10px 0 4px}
+.resultsScore{font-size:28px;font-weight:900;margin:3px 0 10px}
+.myAward{background:#ffffff10;border:1px solid #ffffff2b;border-radius:18px;padding:14px;margin:8px 0 11px}
+.myAward .trophy{font-size:42px;display:block;animation:trophyBob 1.5s ease-in-out infinite alternate}
+.myAward .awardName{font-size:clamp(21px,5vw,30px);font-weight:900;color:#ffefc3}
+.myAward .awardReason{font-size:13px;color:#eadcff}
+#myStats{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+#myStats span{font-size:11px;padding:7px 9px;background:#ffffff13;border-radius:9px}
+.awardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.awardTile{min-width:0;display:flex;gap:8px;align-items:center;border-radius:12px;padding:9px;text-align:left;background:#ffffff0b;border:1px solid #ffffff1b;animation:tileAppear .35s both}
+.awardTile.player{border-color:#fff2ae8c;background:#fff4b91d}
+.awardTile .portrait{width:34px;height:34px;flex:0 0 34px;border-radius:50%;display:grid;place-items:center;background:var(--team);font-size:20px}
+.awardTile .who{font-weight:900;font-size:12px}
+.awardTile .what{font-size:11px;color:#f7e3ff}
+.awardTile .why{font-size:10px;color:#c7b8d9}
+.resultsActions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding-top:10px}
+.resultsActions button{border-radius:13px;border:0;padding:12px 15px;font-weight:900;touch-action:manipulation}
+#againBtn{background:#aaf4c4;color:#173826}#colorBtn{background:#6c547e;color:white;border:1px solid #ffffff4a}
+@keyframes trophyBob{to{transform:translateY(-5px) rotate(5deg)}}@keyframes tileAppear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:480px){.resultsPanel{padding:12px}.awardGrid{gap:6px}.awardTile{padding:6px;gap:5px}.awardTile .portrait{width:26px;height:26px;flex-basis:26px;font-size:16px}.awardTile .who{font-size:11px}.awardTile .what{font-size:10px}.awardTile .why{font-size:9px}}
 @media (max-width:680px){.bullets{grid-template-columns:1fr}.title{font-size:50px}.panel{padding:18px}.sub{font-size:14px}}
 </style>
 </head>
@@ -70,7 +94,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 09</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 10</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -78,14 +102,26 @@ button{font:inherit}
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
 <div class="bullets">
-      <div><b>New this build</b><br>Now the little spirit flames blink, drift, shimmer, and dance in fluid pastel trails. Ghost reactions and game rules stay intact.</div>
-      <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
+      <div><b>New this build</b><br>Every match now awards funny ghostly titles based on actual performance.</div>
+      <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
     <button id="startBtn">START GAME</button>
   </div>
 </div>
+<div id="results" role="dialog" aria-modal="true" aria-labelledby="resultHeading">
+<div class="resultsPanel">
+<div class="eyebrow">THE GHOSTLY SUPERLATIVES</div>
+<h2 id="resultHeading">MATCH OVER!</h2><div id="resultScore" class="resultsScore"></div>
+<div class="myAward"><span class="trophy" id="myAwardEmoji">🏅</span>
+<div class="eyebrow">YOUR GHOSTLY TITLE</div><div class="awardName" id="myAwardName"></div>
+<div class="awardReason" id="myAwardReason"></div></div>
+<div id="myStats"></div>
+<div class="eyebrow" style="margin-top:15px">ALL EIGHT GHOSTS</div>
+<div id="awardGrid" class="awardGrid"></div>
+<div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button></div>
+</div></div>
 <div id="hint">Tip: Stay near teammates for a little bonus. Bring your chain home to score.</div>
 <div id="notice">Unofficial study · original placeholder art & generated audio</div>
 <script>
@@ -94,6 +130,14 @@ button{font:inherit}
   const ctx = canvas.getContext('2d', { alpha: false });
   const hud = document.getElementById('hud');
   const menu = document.getElementById('menu');
+  const results=document.getElementById('results');
+  const resultHeading=document.getElementById('resultHeading');
+  const resultScore=document.getElementById('resultScore');
+  const myAwardEmoji=document.getElementById('myAwardEmoji');
+  const myAwardName=document.getElementById('myAwardName');
+  const myAwardReason=document.getElementById('myAwardReason');
+  const myStats=document.getElementById('myStats');
+  const awardGrid=document.getElementById('awardGrid');
   const startBtn = document.getElementById('startBtn');
   const menuText = document.getElementById('menuText');
   const greenScoreEl = document.getElementById('greenScore');
@@ -427,7 +471,7 @@ button{font:inherit}
   }
 
   function newGhost(id, team, position) {
-    return { id, team, x: position.x, y: position.y, trail: [], trailPos: [], score: 0, cooldown: 0, invuln: 0, heading: 0, blink: randRange(.7,4), bounce: randRange(0, Math.PI * 2), target: null, targetTimer: 0, face: 'happy', reaction:'',reactionTime:0,reactionDuration:0,wiggle:0,moveAmount:0,lastX:position.x,lastY:position.y };
+    return { id, team, x: position.x, y: position.y, trail: [], trailPos: [], score: 0, cooldown: 0, invuln: 0, heading: 0, blink: randRange(.7,4), bounce: randRange(0, Math.PI * 2), target: null, targetTimer: 0, face: 'happy', reaction:'',reactionTime:0,reactionDuration:0,wiggle:0,moveAmount:0,lastX:position.x,lastY:position.y,stats:{collected:0,stolen:0,robbed:0,deposits:0,lastSecond:0,largestDeposit:0,longestChain:0,buddies:0,boostDistance:0,distance:0,nearEnemies:0} };
   }
 
   function reset() {
@@ -445,6 +489,7 @@ button{font:inherit}
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
     game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], lastWarningSecond:16, toast: 'You are '+teamColors[0].name+'! Rivals are '+teamColors[1].name+'!', toastLeft: 5, phase: 'playing' };
     warningEl.classList.remove('visible');
+    results.classList.remove('open');
     clockEl.style.color='#fff5cb';
     hud.hidden = false;
     carried.hidden = false;
@@ -523,6 +568,7 @@ button{font:inherit}
     const score=levelFor(g);
     const speed=172*(score>=8?1.48:1);
     const phaseMove=score>=113;
+    const beforeX=g.x,beforeY=g.y;
     let nx = g.x + dir.x * speed * dt;
     let ny = g.y + dir.y * speed * dt;
     if (phaseMove) {
@@ -532,6 +578,9 @@ button{font:inherit}
       if (!collides(nx, g.y, 18)) g.x = nx;
       if (!collides(g.x, ny, 18)) g.y = ny;
     }
+    const distanceMoved=Math.hypot(g.x-beforeX,g.y-beforeY);
+    g.stats.distance+=distanceMoved;
+    if(score>=8)g.stats.boostDistance+=distanceMoved;
     if (Math.hypot(dir.x, dir.y) > .08) g.heading = Math.atan2(dir.y, dir.x);
     let prev = { x: g.x, y: g.y };
     for (let i = 0; i < g.trail.length; i++) {
@@ -574,6 +623,8 @@ button{font:inherit}
         if (distance(flame, g) < pickup) {
           g.trail.push(1);
           g.trailPos.push({ x: flame.x, y: flame.y });
+          g.stats.collected++;
+          g.stats.longestChain=Math.max(g.stats.longestChain,g.trail.length);
           // A quick delighted bounce when a flame is collected.
           react(g,'collect',.43);
           game.flames.splice(i, 1);
@@ -591,6 +642,9 @@ button{font:inherit}
       const base = BASES[g.team];
       if (distance(g, base) < base.r - 12 && g.trail.length) {
         const total = g.trail.length;
+        g.stats.deposits++;
+        g.stats.largestDeposit=Math.max(g.stats.largestDeposit,total);
+        if(game.remaining<=15)g.stats.lastSecond+=total;
         // Celebrate a deposit even though all temporary upgrades reset.
         react(g,'celebrate',1.35);
         g.trail = [];
@@ -616,6 +670,8 @@ button{font:inherit}
         if (a.cooldown > 0 || b.cooldown > 0) continue;
         if (distance(a, b) < 42 && distance(a, BASES[a.team]) > 190) {
           a.trail.push(1, 1); a.trailPos.push({ x: a.x, y: a.y }, { x: a.x, y: a.y });
+          a.stats.buddies+=2;
+          a.stats.longestChain=Math.max(a.stats.longestChain,a.trail.length);
           a.cooldown = b.cooldown = 5;
           emitBurst((a.x + b.x) / 2, (a.y + b.y) / 2, color(a.team), 10);
           if (a.id === 0 || b.id === 0) toast('Buddy bonus! +2 spirit flames');
@@ -630,6 +686,9 @@ button{font:inherit}
     const pos = victim.trailPos.splice(index);
     attacker.trail.push(...moved);
     attacker.trailPos.push(...pos);
+    attacker.stats.stolen+=moved.length;
+    attacker.stats.longestChain=Math.max(attacker.stats.longestChain,attacker.trail.length);
+    victim.stats.robbed+=moved.length;
     react(attacker,'steal',.95);
     react(victim,'robbed',1.1);
     attacker.invuln = victim.invuln = .7;
@@ -687,6 +746,7 @@ button{font:inherit}
       const oldX=g.x,oldY=g.y;
       moveGhost(g, input, dt);
       g.moveAmount=Math.min(1,Math.hypot(g.x-oldX,g.y-oldY)/(dt*170));
+      if(g.trail.length&&game.ghosts.some(enemy=>enemy.team!==g.team&&distance(enemy,g)<115))g.stats.nearEnemies+=dt;
       g.face=g.trail.length>=12?'panicked':g.trail.length>=7?'excited':g.moveAmount>.1?'happy':'calm';
     });
 
@@ -726,16 +786,67 @@ button{font:inherit}
     clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
   }
 
+  const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
+  const AWARD_TYPES=[
+    {emoji:'⏰',name:'Last-Second Hero',value:g=>g.stats.lastSecond,min:1,desc:n=>n+' points banked in final 15s'},
+    {emoji:'🦇',name:'Spirit Snatcher',value:g=>g.stats.stolen,min:1,desc:n=>n+' spirits stolen'},
+    {emoji:'⚡',name:'Speedy Specter',value:g=>g.stats.boostDistance,min:35,desc:n=>Math.round(n)+' units at boost speed'},
+    {emoji:'🛡️',name:'Bravest Ghost',value:g=>g.stats.nearEnemies,min:2,desc:n=>Math.round(n)+' seconds near enemies with a trail'},
+    {emoji:'🪄',name:'Chain Conjurer',value:g=>g.stats.longestChain,min:8,desc:n=>'Longest chain: '+n},
+    {emoji:'🏦',name:'Spirit Banker',value:g=>g.score,min:1,desc:n=>n+' points banked'},
+    {emoji:'🤝',name:'Buddy Booster',value:g=>g.stats.buddies,min:2,desc:n=>n+' buddy bonus spirits'},
+    {emoji:'🌙',name:'Moonlit Wanderer',value:g=>g.stats.distance,min:0,desc:n=>Math.round(n)+' units explored'}
+  ];
+  function assignAwards(ghosts){
+    const awards=new Map(),available=new Set(ghosts.map(g=>g.id));
+    for(const type of AWARD_TYPES){
+      const options=ghosts.filter(g=>available.has(g.id)&&type.value(g)>=type.min)
+        .sort((a,b)=>type.value(b)-type.value(a)||a.id-b.id);
+      if(!options.length)continue;
+      const g=options[0],amount=type.value(g);
+      awards.set(g.id,{emoji:type.emoji,title:type.name,reason:type.desc(amount)});
+      available.delete(g.id);
+    }
+    for(const g of ghosts)if(!awards.has(g.id))awards.set(g.id,
+      g.stats.robbed>0?{emoji:'💧',title:'Still Haunting',reason:g.stats.robbed+' spirits stolen from them'}:
+      {emoji:'🌙',title:'Moonlit Wanderer',reason:Math.round(g.stats.distance)+' units explored'});
+    return awards;
+  }
+  function buildResults(){
+    const [a,b]=game.scores;
+    resultHeading.textContent=a>b?'YOUR TEAM WINS!':a<b?'THE RIVALS WIN!':'A SPOOKY DRAW!';
+    resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
+    const awardMap=assignAwards(game.ghosts),you=game.ghosts[0],mine=awardMap.get(0);
+    myAwardEmoji.textContent=mine.emoji;
+    myAwardName.textContent=mine.title;
+    myAwardReason.textContent=mine.reason;
+    myStats.replaceChildren();
+    for(const [name,value] of [['Banked',you.score],['Collected',you.stats.collected],['Stolen',you.stats.stolen],['Longest chain',you.stats.longestChain],['Final 15s',you.stats.lastSecond]]){
+      const el=document.createElement('span');el.textContent=name+': '+value;myStats.appendChild(el);
+    }
+    awardGrid.replaceChildren();
+    const roster=[...game.ghosts].sort((a,b)=>a.team-b.team||b.score-a.score||a.id-b.id);
+    roster.forEach((ghost,i)=>{
+      const award=awardMap.get(ghost.id),tile=document.createElement('div');
+      tile.className='awardTile'+(ghost.id===0?' player':'');
+      tile.style.animationDelay=i*.06+'s';
+      const avatar=document.createElement('div');avatar.className='portrait';
+      avatar.style.setProperty('--team',color(ghost.team));avatar.textContent='👻';
+      const content=document.createElement('div');
+      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts';
+      const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
+      const why=document.createElement('div');why.className='why';why.textContent=award.reason;
+      content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
+    });
+    results.classList.add('open');
+    results.querySelector('.resultsPanel').scrollTop=0;
+  }
   function finish() {
-    game.phase = 'finished';
+    game.phase='finished';
     warningEl.classList.remove('visible');
     GhostAudio.endRound(game.scores[0]>=game.scores[1]);
-    const g = game.scores[0], p = game.scores[1];
-    menuText.innerHTML = (g > p ? teamColors[0].name.toUpperCase()+' TEAM WINS!' : g < p ? teamColors[1].name.toUpperCase()+' TEAM WINS!' : 'IT’S A TIE!') + '<br><br><span style="color:'+color(0)+'">' + g + '</span> — <span style="color:'+color(1)+'">' + p + '</span><br><br>Choose a color and play again.';
-    startBtn.textContent = 'PLAY AGAIN';
-    menu.classList.remove('hidden');
-    carried.hidden = true;
-    hud.hidden = true;
+    hud.hidden=true;carried.hidden=true;hint.classList.add('hidden');
+    buildResults();
   }
 
   function drawGlow(x, y, r, color) {
@@ -1171,6 +1282,13 @@ button{font:inherit}
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
   startBtn.addEventListener('click', () => reset());
+  document.getElementById('againBtn').addEventListener('click',()=>reset());
+  document.getElementById('colorBtn').addEventListener('click',()=>{
+    results.classList.remove('open');
+    menu.classList.remove('hidden');
+    menuText.textContent='Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
+    startBtn.textContent='START GAME';
+  });
 })();
 </script>
 </body>
