@@ -246,7 +246,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       <div class="creditSection">
         <h3>🎶 To the musicians and sound explorers</h3>
         <p>To composers, performers, sound designers, and the keepers of musical history: your creativity makes games feel alive. Thank you especially to artists who make music available in the public domain or through Creative Commons.</p>
-        <p><strong>What's actually in this version:</strong> <em>Moonlit Mischief</em>, an original synthesized soundtrack and sound effects programmed with the browser's Web Audio API. No third-party music recording or public-domain / Creative Commons track is bundled in this build.</p>
+        <p><strong>What's actually in this version:</strong> <em>Moonlit Mischief</em>, an original synthesized soundtrack and spooky effects made with the browser's Web Audio API. The optional “It's alive!” phrase uses the browser's speech synthesizer where supported; it is not a sampled movie recording. No third-party music recording or public-domain / Creative Commons track is bundled.</p>
         <p class="creditSmall">Specific licensed tracks, creators, source links, and licenses will be listed here if any are added. See the repository's ATTRIBUTIONS.md for the current provenance record.</p>
       </div>
       <div class="creditSection">
@@ -473,6 +473,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     // Render a musical arrangement directly into a sample buffer: stable, gapless looping.
     // Notes are placed by event rather than evaluating all instruments per audio sample.
     function renderCue(kind){
+      // The final 15 seconds use the already-composed faster 164 BPM hurry cue.
       const fast=kind==='hurry',bpm=fast?164:120;
       const stepSeconds=60/bpm/2;
       const notes=fast?HURRY:MAIN;
@@ -576,6 +577,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
     function init(){
       wantsMusic=true;
+      // Clear between matches: every new milestone deserves its own sound.
+      Object.keys(lastCue).forEach(key=>delete lastCue[key]);
       if(muted)return;
       if(!setup())return;
       playCue('main');resume();
@@ -584,6 +587,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     function endRound(win){
       if(!setup())return;
       wantsMusic=false;
+      if('speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
       if(active){
         const now=ctx.currentTime;
         active.gain.gain.cancelScheduledValues(now);
@@ -608,6 +612,116 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         gain.gain.exponentialRampToValueAtTime(.001,now+duration);
         osc.connect(gain);gain.connect(fxBus);osc.start(now);osc.stop(now+duration+.03);
       }catch(e){status('effect failed: '+e.message)}
+    }
+
+    // A palette of original Web Audio effects: no recorded samples or movie audio.
+    // Each sound is short and triggered by gameplay events, not every frame.
+    const lastCue=Object.create(null);
+    function canCue(key,interval=.8){
+      if(muted||!ctx||ctx.state!=='running')return false;
+      const now=ctx.currentTime;
+      if(now-(lastCue[key]??-1000)<interval)return false;
+      lastCue[key]=now;return true;
+    }
+    function spectralNoise(duration=.7,volume=.12,frequency=680){
+      if(muted||!ctx||ctx.state!=='running')return;
+      const sr=ctx.sampleRate,frames=Math.ceil(duration*sr);
+      const buffer=ctx.createBuffer(1,frames,sr),data=buffer.getChannelData(0);
+      let rolling=0;
+      for(let i=0;i<frames;i++){
+        const p=i/frames,white=Math.random()*2-1;
+        rolling=rolling*.87+white*.13;
+        const envelope=Math.pow(Math.sin(Math.PI*p),.7)*Math.exp(-p*.5);
+        data[i]=(rolling*.75+white*.25)*envelope;
+      }
+      const source=ctx.createBufferSource();
+      const filter=ctx.createBiquadFilter();
+      filter.type='lowpass';filter.frequency.value=frequency;filter.Q.value=.8;
+      const gain=ctx.createGain();
+      gain.gain.value=volume;
+      source.buffer=buffer;source.connect(filter);filter.connect(gain);gain.connect(fxBus);
+      source.start();source.stop(ctx.currentTime+duration+.015);
+    }
+    function ghostVoice(points,volume=.14,type='sine',startDelay=0){
+      if(muted||!ctx||ctx.state!=='running')return;
+      const begin=ctx.currentTime+startDelay,osc=ctx.createOscillator(),gain=ctx.createGain();
+      const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=1800;
+      osc.type=type;
+      points.forEach(([sec,freq],i)=>{
+        const at=begin+sec;
+        if(i===0)osc.frequency.setValueAtTime(freq,at);
+        else osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq),at);
+      });
+      const length=points[points.length-1][0]+.045;
+      gain.gain.setValueAtTime(.001,begin);
+      gain.gain.linearRampToValueAtTime(volume,begin+Math.min(.10,length/4));
+      gain.gain.exponentialRampToValueAtTime(.001,begin+length);
+      osc.connect(filter);filter.connect(gain);gain.connect(fxBus);
+      osc.start(begin);osc.stop(begin+length+.03);
+    }
+    function windRush(){
+      if(!canCue('wind',3))return;
+      spectralNoise(.9,.18,550);
+      ghostVoice([[0,240],[.25,390],[.6,165],[.87,100]],.11,'sine');
+    }
+    function catMeow(){
+      if(!canCue('cat',6))return;
+      ghostVoice([[0,450],[.11,730],[.27,540],[.47,285]],.16,'sawtooth');
+      ghostVoice([[0,270],[.2,420],[.48,230]],.09,'sine');
+      tone(1046,.13,'sine',.16,.33,.85);
+    }
+    function ghostMoan(){
+      if(!canCue('ghost',2))return;
+      spectralNoise(.8,.11,390);
+      ghostVoice([[0,300],[.25,405],[.55,230],[.78,145]],.14,'sine');
+    }
+    function witchCackle(){
+      if(!canCue('witch',2.5))return;
+      // Tiny rising-and-falling voiced laughs, deliberately cartoonish.
+      for(let i=0;i<4;i++){
+        const at=i*.145;
+        ghostVoice([[0,390+i*32],[.055,650+i*35],[.12,410+i*12]],.11,'triangle',at);
+      }
+      spectralNoise(.34,.07,1500);
+    }
+    function wolfHowl(){
+      if(!canCue('wolf',9))return;
+      ghostVoice([[0,180],[.19,285],[.48,335],[.91,290],[1.33,205]],.22,'sine');
+      ghostVoice([[0,92],[.39,150],[.95,135],[1.32,87]],.07,'triangle');
+      spectralNoise(1.3,.055,440);
+    }
+    function reanimate(){
+      if(!canCue('reanimate',12))return;
+      spectralNoise(.37,.17,2500);
+      tone(165,.15,'sawtooth',.16,0,2.3);
+      tone(310,.19,'square',.14,.14,1.65);
+      tone(750,.29,'sine',.21,.28,1.4);
+      // The spoken catchphrase is browser-generated, not a movie recording.
+      // If a browser blocks speech during gameplay, electrical effects and the
+      // visible on-screen "IT'S ALIVE!" message still provide feedback.
+      if('speechSynthesis' in window&&'SpeechSynthesisUtterance' in window){
+        try{
+          const utterance=new SpeechSynthesisUtterance("It's alive!");
+          utterance.rate=.84;utterance.pitch=.63;utterance.volume=.57;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+        }catch(e){}
+      }
+    }
+    function hauntedAir(){
+      if(!canCue('ambient',18))return;
+      spectralNoise(1.65,.045,310);
+      ghostVoice([[0,130],[.55,170],[1.18,110],[1.6,85]],.038,'sine');
+    }
+    function finalRush(){
+      if(!canCue('rush',12))return;
+      spectralNoise(.9,.12,550);
+      tone(196,.55,'triangle',.22,0,.65);
+      tone(392,.36,'sine',.19,.13,.85);
+    }
+    function clockTick(){
+      if(!canCue('tick',.55))return;
+      tone(860,.07,'square',.12,0,.8);
     }
     function thunder(){
       // A short original, synthesized thunderclap. No external audio files.
@@ -643,12 +757,26 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
     function effect(name){
       switch(name){
-        case'collect':tone(680,.12,'sine',.46,0,1.5);break;
-        case'deposit':tone(392,.18,'triangle',.36);tone(523,.22,'triangle',.36,.1);tone(784,.30,'sine',.34,.22);break;
-        case'steal':tone(300,.20,'sawtooth',.28,0,.66);tone(500,.18,'triangle',.28,.08,1.45);break;
-        case'loss':tone(420,.22,'triangle',.28,0,.65);break;
+        case'collect':tone(680,.10,'sine',.27,0,1.37);break;
+        case'deposit':
+          tone(392,.18,'triangle',.28);
+          tone(523,.22,'triangle',.29,.10);
+          tone(784,.30,'sine',.29,.22);break;
+        case'steal':
+          witchCackle();tone(430,.18,'triangle',.21,.03,1.45);break;
+        case'loss':
+          ghostMoan();tone(420,.18,'triangle',.18,0,.66);break;
+        case'buddy':
+          if(canCue('buddy',4)){tone(630,.12,'triangle',.24);tone(825,.14,'sine',.21,.10);};break;
+        case'speed':windRush();break;
+        case'glow':catMeow();break;
+        case'magnet':reanimate();break;
+        case'phase':wolfHowl();break;
+        case'finalRush':finalRush();break;
+        case'countdown':clockTick();break;
+        case'ambient':hauntedAir();break;
         case'finish':tone(392,.18,'triangle',.28);tone(523,.24,'triangle',.28,.14);break;
-        case'upgrade':tone(520,.14,'sine',.38);tone(780,.18,'sine',.40,.12);break;
+        case'upgrade':tone(520,.14,'sine',.29);tone(780,.18,'sine',.29,.12);break;
       }
     }
     function toggle(){
@@ -659,6 +787,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         resume();
       }
       if(master&&ctx)master.gain.setTargetAtTime(muted?0:.7,ctx.currentTime,.02);
+      if(muted&&'speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
       status(muted?'muted':'music on');return !muted;
     }
     function test(){
@@ -668,7 +797,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if(master&&ctx)master.gain.setTargetAtTime(.7,ctx.currentTime,.02);
       resume().then(()=>{tone(523.25,.3,'sine',.6);tone(783.99,.3,'triangle',.5,.15)});
     }
-    function pause(){if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{})}
+    function pause(){
+      if('speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
+      if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});
+    }
     function onVisible(){if(!muted&&wantsMusic)resume()}
     return {init,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
   })();
@@ -738,7 +870,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       ghost.styleId=roster[i]; ghosts.push(ghost);
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing' };
+    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing' };
     difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
     difficultyHud.hidden=false;
     warningEl.classList.remove('visible');
@@ -947,7 +1079,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
           a.stats.longestChain=Math.max(a.stats.longestChain,a.trail.length);
           a.cooldown = b.cooldown = 5;
           emitBurst((a.x + b.x) / 2, (a.y + b.y) / 2, color(a.team), 10);
-          if (a.id === 0 || b.id === 0) toast('Buddy bonus! +2 spirit flames');
+          if (a.id === 0 || b.id === 0) {GhostAudio.effect('buddy');toast('Buddy bonus! +2 spirit flames');}
         }
       }
     }
@@ -996,14 +1128,20 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const wholeSeconds=Math.ceil(game.remaining);
     if(wholeSeconds<=15&&game.lastWarningSecond>15){
       warningEl.classList.add('visible');
-      toast('15 SECONDS LEFT — BANK YOUR SPIRITS!');
+      toast('THE FINAL HAUNT! 15 SECONDS — BANK YOUR SPIRITS!');
       GhostAudio.hurry();
+      GhostAudio.effect('finalRush');
     }
     if(wholeSeconds<=15&&wholeSeconds!==game.lastWarningSecond){
-      if(wholeSeconds<=5&&wholeSeconds>=1)GhostAudio.effect('collect');
+      if(wholeSeconds<=5&&wholeSeconds>=1)GhostAudio.effect('countdown');
       game.lastWarningSecond=wholeSeconds;
     }
     if(wholeSeconds<=0)warningEl.classList.remove('visible');
+    // Occasional low-level wind in the graveyard, only before the final rush.
+    if(game.remaining>15&&game.remaining<=game.nextAmbientAt){
+      GhostAudio.effect('ambient');
+      game.nextAmbientAt-=25;
+    }
     game.toastLeft = Math.max(0, game.toastLeft - dt);
     if (game.remaining <= 0) return finish();
 
@@ -1030,8 +1168,18 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     for(const g of game.ghosts){
       const tier=POWER_STEPS.filter(n=>levelFor(g)>=n).length,previousTier=g.previousTier||0;
       if(g.id===0&&tier>previousTier){
-        GhostAudio.effect('upgrade');emitBurst(g.x,g.y,color(g.team),25);
-        toast('POWER UP! '+upgradeLabel(levelFor(g)));
+        // Most recently achieved threshold wins if a large pickup crosses two.
+        const milestone=POWER_STEPS[tier-1];
+        const cue={8:'speed',23:'glow',53:'magnet',113:'phase'}[milestone];
+        GhostAudio.effect(cue);
+        emitBurst(g.x,g.y,color(g.team),25);
+        const message={
+          8:'WHOOSH! WIND SPEED UNLOCKED!',
+          23:'MEOW! GHOSTLY GLOW UNLOCKED!',
+          53:"IT'S ALIVE! MAGNET ACTIVE!",
+          113:'AWOOOO! PHASE POWER UNLOCKED!'
+        }[milestone];
+        toast(message||('POWER UP! '+upgradeLabel(levelFor(g))));
       }
       g.previousTier=tier;
     }
