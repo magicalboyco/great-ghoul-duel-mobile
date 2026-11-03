@@ -499,7 +499,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 }
 #zoomNotice[hidden]{display:none}
 /* Isolated pre-release demo: bots only, no rooms until Worker is deployed. */
-#onlinePanel{display:none!important}
+#previewModeNotice{margin:10px auto;padding:10px 12px;max-width:480px;border:1px solid #ffe7ad88;border-radius:12px;background:#433155;color:#fff4cc;font-size:13px;line-height:1.4}
+#previewGameActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+#previewClassicSolo{padding:14px 18px;border-radius:16px;border:1px solid #e9caff;background:#4b3566;color:#fff4ff;font-weight:900}
 </style>
 </head>
 <body>
@@ -523,7 +525,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   <div class="panel">
     <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 34 PREVIEW</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
-    <p class="sub" id="menuText">✨ FOUR-WAY HAUNT PREVIEW: Four teams, four bases, eight ghosts, and a larger cemetery. This test is against bots; online rooms are not enabled in this preview.</p>
+    <p class="sub" id="menuText">✨ FOUR-WAY HAUNT PREVIEW: Try four teams and a larger cemetery against bots, or play the existing Classic Duel and Boo Crew Co-op modes online below.</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
@@ -543,6 +545,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
 </div>
 <div id="onlinePanel">
+  <p id="previewModeNotice" role="status">Classic Duel and Boo Crew Co-op rooms are available. Four-Way Haunt is playable against bots; four-way online rooms are not available yet.</p>
   <div class="palette-label">👻 CHOOSE YOUR HAUNT!</div>
   <p class="onlineIntro">Choose how you want to play. The host chooses a mode when creating a room; friends join with the six-character code.</p>
   <div id="modeChooser" role="radiogroup" aria-label="Multiplayer game mode">
@@ -552,8 +555,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="true" aria-label="Classic Duel, two opposing teams and up to eight players">
       <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
     </button>
-    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="false" aria-label="Four-Way Haunt, four teams of two ghosts">
-      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · two ghosts per team · larger cemetery</small></span>
+    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="false" aria-label="Four-Way Haunt, four teams of two ghosts, bots preview only">
+      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play with bots below (online coming soon)</small></span>
     </button>
   </div>
   <div id="modeNotice" class="onlineIntro" aria-live="polite">Classic Duel selected · Friends compete on opposing teams.</div>
@@ -584,7 +587,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
-    <button id="startBtn">✨ PLAY FOUR-WAY (BOTS)</button>
+    <div id="previewGameActions"><button id="startBtn">✨ PLAY FOUR-WAY (BOTS)</button><button type="button" id="previewClassicSolo">👻 PLAY CLASSIC SOLO</button></div>
     <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
   <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
     <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
@@ -960,6 +963,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   const modeChooser=document.getElementById('modeChooser');
   const modeNotice=document.getElementById('modeNotice');
   let selectedOnlineMode='classic';
+  let previewSoloMode='fourway';
   const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op',fourway:'Four-Way Haunt'};
   function displayOnlineMode(mode){
     if(!MODE_NAMES[mode])return;
@@ -968,6 +972,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       button.setAttribute('aria-checked',String(button.dataset.mode===mode));
       button.disabled=!!online||onlinePending;
     }
+    if(!online&&!onlinePending&&onlineCreateEl)
+      onlineCreateEl.disabled=mode==='fourway';
     modeNotice.textContent=mode==='coop'
       ?'Boo Crew Co-op · Four friendly seats (1–4 humans) against four rival bots.'
       :mode==='fourway'?'Four-Way Haunt · Four competing teams, two ghosts each, eight seats total.'
@@ -1153,10 +1159,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     // Never present solo Start as the main CTA in an online lobby.
     startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
+    document.getElementById('previewClassicSolo').hidden=!!onlineRoom||onlinePending;
     startBtn.textContent='✨ PLAY FOUR-WAY (BOTS)';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
-    onlineCreateEl.disabled=onlinePending||!!onlineRoom;
+    onlineCreateEl.disabled=onlinePending||!!onlineRoom||selectedOnlineMode==='fourway';
     onlineJoinEl.disabled=onlinePending||!!onlineRoom;
     renderOnlineRoster(onlineRoom);
   }
@@ -1174,7 +1181,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       difficultyHud.hidden=true;hud.hidden=true;carried.hidden=true;hint.classList.add('hidden');
       results.classList.remove('open');
       menu.classList.remove('hidden');
-      startBtn.textContent='START GAME';
+      startBtn.textContent='✨ PLAY FOUR-WAY (BOTS)';
       document.getElementById('againBtn').textContent='👻 PLAY AGAIN';
     }
   }
@@ -1953,7 +1960,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
 
   function reset() {
-    const matchMode=online?.started?online.mode:'fourway';
+    const matchMode=online?.started?online.mode:previewSoloMode;
     configureArena(matchMode);
     seed = 7321;
     const choices=PASTELS.filter((_,i)=>i!==selectedIndex);
@@ -3747,6 +3754,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
+  document.getElementById('previewClassicSolo').addEventListener('click',()=>{
+    if(online||onlinePending)return;
+    previewSoloMode='classic';
+    reset();GhostAudio.thunder();
+  });
   startBtn.addEventListener('click', () => {
     // Do not silently disconnect from a shared game when the solo button
     // is clicked. Only the room host can start a multiplayer round.
@@ -3754,6 +3766,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       setOnlineStatus('You are in an online room. The host must press Start online match, or choose Leave room for solo play.');
       return;
     }
+    previewSoloMode='fourway';
     reset();GhostAudio.thunder();
   });
   document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
