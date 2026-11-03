@@ -337,3 +337,50 @@ test('Alpha 24: official Worker is prefilled; private host token stays out of in
   assert.match(html,/only needs this link/);
   assert.doesNotMatch(html,/hostToken[^;\n]*localStorage/);
 });
+
+test('Alpha 25: every team gets a readable engraved nameplate, including pale colors',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  function drawBaseNameplate(ctx,base,team){');
+  const end=html.indexOf('  function drawEnvironment() {',start);
+  assert.ok(start>0&&end>start,'Illustrated base nameplate exists');
+  const segment=html.slice(start,end);
+  assert.match(segment,/const title=teamColors\[team\]\.name\.toUpperCase\(\)/);
+  assert.match(segment,/team===ownTeam\?'YOUR BASE':'OTHER TEAM BASE'/);
+  assert.match(segment,/ctx\.fillStyle='#20152ff0'/,'Opaque dark plaque supports light team colors');
+  assert.match(segment,/ctx\.strokeStyle=color\(team\)/,'Accent outline identifies team');
+  assert.match(segment,/ctx\.fillStyle='#fff4d6'/,'Cream text contrasts with plaque');
+  assert.match(segment,/ctx\.strokeText\(title,x,y-9\)/,'Outline prevents lettering from disappearing');
+  assert.match(segment,/ctx\.measureText\(title\)\.width>width-36/,'Long colorway labels auto-fit');
+  assert.match(segment,/ctx\.save\(\)/);
+  assert.match(segment,/ctx\.restore\(\)/);
+  assert.doesNotMatch(html,/ctx\.fillText\(game\.online\?\(team===myTeam/,
+    'Plain same-color base lettering is no longer used');
+});
+
+test('Alpha 25: illustrated cobblestones are cached, seeded and rendered below spirits',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  function buildGraveyardPathLayer(){');
+  const end=html.indexOf('  function drawBaseNameplate(ctx,base,team){',start);
+  assert.ok(start>0&&end>start);
+  const path=html.slice(start,end);
+  assert.match(path,/document\.createElement\('canvas'\)/);
+  assert.match(path,/let state=0x4a4f5948/,'Procedural art uses local repeatable seed');
+  assert.match(path,/Math\.imul\(state,1664525\)/);
+  assert.match(path,/const fills=\[/);
+  assert.match(path,/p\.quadraticCurveTo/,'Stones have hand-shaped rounded edges');
+  assert.match(path,/p\.fillStyle='#4e634e88'/,'Grass vegetation is drawn at path edges');
+  assert.match(html,/let graveyardPathLayer=null/);
+  assert.match(html,/if\(!graveyardPathLayer\)graveyardPathLayer=buildGraveyardPathLayer\(\)/);
+  const envStart=html.indexOf('  function drawEnvironment() {');
+  const envEnd=html.indexOf('  function drawParticles() {',envStart);
+  const env=html.slice(envStart,envEnd);
+  const pathDraw=env.indexOf('ctx.drawImage(graveyardPathLayer,0,550-88)');
+  const propsDraw=env.indexOf('for (const p of props)');
+  const baseDraw=env.indexOf('drawBaseNameplate(ctx,b,team)');
+  assert.ok(pathDraw>=0&&propsDraw>pathDraw&&baseDraw>propsDraw,
+    'Cached path sits underneath scenery and the base plaques');
+  assert.doesNotMatch(env,/ctx\.lineWidth = 74; ctx\.lineCap = 'round'/,
+    'Old flat runway stripe is removed');
+  assert.match(html,/function collides\(x, y, r = 19\)/,
+    'Existing gameplay collision function is untouched');
+});
