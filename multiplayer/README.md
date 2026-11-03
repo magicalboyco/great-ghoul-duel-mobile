@@ -47,3 +47,41 @@ pick up the current `multiplayer` directory from the configured production
 branch. Look for a **new build ID** in Cloudflare's Deployments list rather
 than the old error screen. If none appears, verify Git integration triggers
 and the build API token in Settings → Builds.
+
+## Alpha 18 — Top 13 Hall of Fame
+
+The game now offers a **Top 13 High Scores** screen in the start menu and
+after a match. A winning human player can submit their own *banked spirit
+flames* (not the combined team score), with a 1–13-character nickname,
+a manually chosen country flag, and the Boo Crew costume and color worn
+in that match. The portrait is drawn from the game's own SVG artwork:
+players do not upload photographs.
+
+The existing `ghost-duel-rooms` Worker exposes:
+- `GET /leaderboard`: top 13 public entries, descending by score
+- `POST /leaderboard`: validated JSON fields `name`, `country` (ISO alpha-2),
+  `styleId` (0–7), `color` (from the game's palette), and `score` (positive
+  integer up to 99,999)
+- `OPTIONS /leaderboard`: cross-origin browser preflight
+
+Only nickname, chosen flag, in-game character and color, numeric score,
+server timestamp and random row ID are stored in the Durable Object.
+The implementation does not collect account identifiers, precise location,
+contact details, or photos. Names and flags are self-reported.
+
+**Leaderboard integrity:** This is a *casual*, player-submitted leaderboard,
+not a server-authoritative competitive ranking. Match results can be
+fabricated by modified game clients. Do not use it for prizes until the
+game simulation and score submission are authenticated on the server.
+Moderation, abuse throttling and report/remove controls should be added
+before actively promoting a public worldwide leaderboard.
+
+**Offline fallback:** Without a configured Worker URL, or if the Worker is
+unavailable, scores appear in a clearly labeled device-only Top 13 stored
+in browser localStorage. These are *not* shared or automatically synced.
+
+**Deploy:** Commit and deploy both the updated HTML game and Worker source.
+The leaderboard reuses the existing `GHOST_ROOMS` Durable Object binding
+with a separately named instance and storage key; no new migration is
+required. Open `/leaderboard` on the deployed Worker to verify its JSON
+response before inviting players to submit scores.
