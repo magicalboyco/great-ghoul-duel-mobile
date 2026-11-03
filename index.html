@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 16)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -123,7 +123,33 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 .crewCard span{font-size:clamp(10px,2vw,13px);font-weight:700}
 .crewCard[aria-pressed="true"]{border:2px solid #ffe4aa;box-shadow:0 0 0 2px #f6c5ee77,0 0 18px #eaabec77;background:#8256a9aa}
 .crewPortrait{border-radius:12px;background:radial-gradient(ellipse at 50% 48%,var(--crew-color-glow,#b8ddc455),transparent 74%);transition:background .18s ease}
-.crewCard .ghostSkin{transition:fill .18s ease,stroke .18s ease}
+.crewCard .ghostSkin{
+  /* Live skin colors are CSS properties on each character card, not team-color
+     values captured when its SVG was first drawn. Presentation attributes on
+     SVG paths cannot override these author styles. */
+  fill:var(--boo-skin,#B8DDC4)!important;
+  stroke:var(--boo-skin-edge,#648C76)!important;
+  transition:fill .2s ease,stroke .2s ease
+}
+.crewPortrait{display:flex;align-items:center;justify-content:center;overflow:visible;min-height:63px;isolation:isolate}
+.crewPortrait svg{position:relative;transform-origin:50% 54%;will-change:transform}
+.crewCard:nth-child(1) .crewPortrait svg{animation:boo-bowtie 2.7s ease-in-out -.5s infinite}
+.crewCard:nth-child(2) .crewPortrait svg{animation:boo-gusty 3.35s ease-in-out -2s infinite}
+.crewCard:nth-child(3) .crewPortrait svg{animation:boo-magic 2.9s ease-in-out -1.3s infinite}
+.crewCard:nth-child(4) .crewPortrait svg{animation:boo-star 2.4s ease-in-out -.9s infinite}
+.crewCard:nth-child(5) .crewPortrait svg{animation:boo-shady 4.1s ease-in-out -2.7s infinite}
+.crewCard:nth-child(6) .crewPortrait svg{animation:boo-batty 1.95s ease-in-out -1.1s infinite}
+.crewCard:nth-child(7) .crewPortrait svg{animation:boo-royal 3.7s ease-in-out -3s infinite}
+.crewCard:nth-child(8) .crewPortrait svg{animation:boo-flurry 3.05s ease-in-out -1.8s infinite}
+@keyframes boo-bowtie{0%,100%{transform:translate(0,2px) rotate(-3deg)}50%{transform:translate(2px,-7px) rotate(4deg)}}
+@keyframes boo-gusty{0%,100%{transform:translate(-4px,1px) rotate(-6deg)}50%{transform:translate(5px,-6px) rotate(6deg)}}
+@keyframes boo-magic{0%,100%{transform:translate(0,2px) rotate(-4deg)}35%{transform:translate(0,-8px) rotate(4deg)}70%{transform:translate(2px,-3px) rotate(-2deg)}}
+@keyframes boo-star{0%,100%{transform:translate(0,3px) rotate(0)}35%{transform:translate(0,-8px) rotate(-6deg)}65%{transform:translate(1px,-4px) rotate(5deg)}}
+@keyframes boo-shady{0%,100%{transform:translate(-1px,0) rotate(-2deg)}50%{transform:translate(2px,-5px) rotate(2deg)}}
+@keyframes boo-batty{0%,100%{transform:translate(-3px,1px) rotate(-7deg)}40%{transform:translate(4px,-9px) rotate(9deg)}70%{transform:translate(-2px,-4px) rotate(-4deg)}}
+@keyframes boo-royal{0%,100%{transform:translate(0,1px) rotate(-1deg)}50%{transform:translate(0,-8px) rotate(2deg)}}
+@keyframes boo-flurry{0%,100%{transform:translate(-3px,1px) rotate(-4deg)}33%{transform:translate(3px,-7px) rotate(5deg)}66%{transform:translate(-2px,-4px) rotate(-2deg)}}
+@media(prefers-reduced-motion:reduce){.crewPortrait svg{animation:none!important;will-change:auto}.crewCard .ghostSkin{transition:none}}
 #teamPreview b{color:#fff1bd}
 .swatch:hover{transform:scale(1.08)}
 .crewCard:focus-visible{outline:3px solid #ffe4aa;outline-offset:2px}
@@ -153,7 +179,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 15</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 16</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -1219,13 +1245,20 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const chosenCharacter=document.getElementById('chosenCharacter');
   function refreshCrewCards(){
     const swatch=PASTELS[selectedIndex];
+    const skinEdge=darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
       button.setAttribute('aria-label','Choose '+GHOST_CHARACTER_NAMES[id]+' in '+swatch.name);
+      button.style.setProperty('--boo-skin',swatch.hex);
+      button.style.setProperty('--boo-skin-edge',skinEdge);
+      button.dataset.colorway=swatch.name;
       const portrait=button.querySelector('.crewPortrait');
       portrait.style.setProperty('--crew-color-glow',swatch.hex+'66');
-      portrait.innerHTML=ghostPortrait({id,styleId:id,team:0},swatch.hex);
-      button.dataset.colorway=swatch.name;
+      // Only construct the SVG once. Changing CSS skin variables does not
+      // interrupt individual floating animations or reset their timing.
+      if(!portrait.firstElementChild){
+        portrait.innerHTML=ghostPortrait({id,styleId:id,team:0},swatch.hex);
+      }
     });
   }
   GHOST_CHARACTER_NAMES.forEach((name,id)=>{
