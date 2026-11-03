@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 07</title>
+<title>Ghost Duel — Alpha 08</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -70,7 +70,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 07</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 08</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -78,7 +78,7 @@ button{font:inherit}
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
 <div class="bullets">
-      <div><b>New this build</b><br>Fog layers, lanterns, pumpkins, graveyard scenery, expressive ghosts, and polished particles.</div>
+      <div><b>New this build</b><br>Animated ghost personalities: blinking, squash-and-stretch, curious eyes, panic, celebrations, stealing reactions and floating sparkles.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -427,7 +427,7 @@ button{font:inherit}
   }
 
   function newGhost(id, team, position) {
-    return { id, team, x: position.x, y: position.y, trail: [], trailPos: [], score: 0, cooldown: 0, invuln: 0, heading: 0, blink: randRange(0, 4), bounce: randRange(0, Math.PI * 2), target: null, targetTimer: 0, face: 'happy' };
+    return { id, team, x: position.x, y: position.y, trail: [], trailPos: [], score: 0, cooldown: 0, invuln: 0, heading: 0, blink: randRange(.7,4), bounce: randRange(0, Math.PI * 2), target: null, targetTimer: 0, face: 'happy', reaction:'',reactionTime:0,reactionDuration:0,wiggle:0,moveAmount:0,lastX:position.x,lastY:position.y };
   }
 
   function reset() {
@@ -574,6 +574,8 @@ button{font:inherit}
         if (distance(flame, g) < pickup) {
           g.trail.push(1);
           g.trailPos.push({ x: flame.x, y: flame.y });
+          // A quick delighted bounce when a flame is collected.
+          react(g,'collect',.43);
           game.flames.splice(i, 1);
           game.flames.push({ ...randomPoint(), phase: randRange(0, Math.PI * 2) });
           emitBurst(flame.x, flame.y, color(g.team), 9);
@@ -589,6 +591,8 @@ button{font:inherit}
       const base = BASES[g.team];
       if (distance(g, base) < base.r - 12 && g.trail.length) {
         const total = g.trail.length;
+        // Celebrate a deposit even though all temporary upgrades reset.
+        react(g,'celebrate',1.35);
         g.trail = [];
         g.trailPos = [];
         game.scores[g.team] += total;
@@ -626,6 +630,8 @@ button{font:inherit}
     const pos = victim.trailPos.splice(index);
     attacker.trail.push(...moved);
     attacker.trailPos.push(...pos);
+    react(attacker,'steal',.95);
+    react(victim,'robbed',1.1);
     attacker.invuln = victim.invuln = .7;
     emitBurst(pos[0].x, pos[0].y, color(attacker.team), 12);
     if (attacker.id === 0) { GhostAudio.effect('steal'); toast('You stole ' + moved.length + ' spirit flames!'); }
@@ -641,6 +647,15 @@ button{font:inherit}
         }
       }
     }
+  }
+
+  function react(ghost,kind,duration){
+    // Big reactions have priority over picking up the next nearby flame.
+    if(kind==='collect'&&ghost.reactionTime>.12&&ghost.reaction!=='collect')return;
+    ghost.reaction=kind;
+    ghost.reactionTime=duration;
+    ghost.reactionDuration=duration;
+    ghost.wiggle=0;
   }
 
   function update(dt) {
@@ -664,10 +679,15 @@ button{font:inherit}
       g.cooldown = Math.max(0, g.cooldown - dt);
       g.invuln = Math.max(0, g.invuln - dt);
       g.blink -= dt;
-      if (g.blink < -0.15) g.blink = randRange(2.5, 5.5);
+      if (g.blink < -.14) g.blink = randRange(2.5, 5.5);
+      g.reactionTime=Math.max(0,g.reactionTime-dt);
+      if(g.reactionTime===0)g.reaction='';
+      g.wiggle+=dt;
       const input = i === 0 ? inputDirection() : botDirection(g, dt);
-      g.face = g.trail.length >= 7 ? 'excited' : input.mag > .1 ? 'happy' : 'calm';
+      const oldX=g.x,oldY=g.y;
       moveGhost(g, input, dt);
+      g.moveAmount=Math.min(1,Math.hypot(g.x-oldX,g.y-oldY)/(dt*170));
+      g.face=g.trail.length>=12?'panicked':g.trail.length>=7?'excited':g.moveAmount>.1?'happy':'calm';
     });
 
     collectFlames();
@@ -725,56 +745,142 @@ button{font:inherit}
   }
 
   function drawGhost(g) {
-    const bob = Math.sin(t * 4 + g.bounce) * 3;
-    const x = g.x, y = g.y + bob;
-    const teamPoints=levelFor(g);
-    if(teamPoints>=23){
+    const carried=levelFor(g);
+    const progress=g.reactionTime>0?1-g.reactionTime/Math.max(.001,g.reactionDuration):1;
+    const reaction=g.reaction;
+    const celebrating=reaction==='celebrate';
+    const stolen=reaction==='robbed';
+    const stealing=reaction==='steal';
+    const happy=reaction==='collect'||celebrating;
+    const panic=stolen||g.face==='panicked';
+    const moving=g.moveAmount>.1;
+    const motion=t*4+g.bounce;
+    const bouncy=celebrating?Math.sin(progress*Math.PI*6)*6:
+      happy?Math.sin(progress*Math.PI*5)*4:Math.sin(motion)*3;
+    const x=g.x,y=g.y+bouncy;
+    const pulse=celebrating?(Math.sin(progress*Math.PI*4)*.12):0;
+    const squash=happy?Math.sin(progress*Math.PI*3)*.13:
+      stealing?Math.sin(progress*Math.PI*5)*.07:
+      panic?Math.sin(t*12+g.id)*.075:Math.sin(motion)*.025;
+    const tilt=celebrating?Math.sin(progress*Math.PI*5)*.18:
+      stolen?Math.sin(progress*Math.PI*12)*.18:
+      moving?Math.sin(g.heading)*.085:Math.sin(motion)*.035;
+    const baseColor=color(g.team),edge=darken(baseColor,.56);
+    if(carried>=23){
       const halo=88+Math.sin(t*5+g.bounce)*7;
-      drawGlow(x,y-3,halo,alpha(color(g.team),.63));
+      drawGlow(x,y-3,halo,alpha(baseColor,.59));
       ctx.beginPath();ctx.arc(x,y-4,halo*.63,0,Math.PI*2);
-      ctx.strokeStyle=alpha(color(g.team),.30);ctx.lineWidth=3;ctx.stroke();
-    }else drawGlow(x,y-3,48,alpha(color(g.team),.35));
-    if(teamPoints>=113){
+      ctx.strokeStyle=alpha(baseColor,.36);ctx.lineWidth=3;ctx.stroke();
+    }else drawGlow(x,y-3,48,alpha(baseColor,.35));
+    if(carried>=113){
       ctx.beginPath();ctx.arc(x,y,37,0,Math.PI*2);
       ctx.strokeStyle='#ffffffbb';ctx.setLineDash([5,7]);ctx.lineWidth=3;ctx.stroke();ctx.setLineDash([]);
     }
-    if(teamPoints>=53){
+    if(carried>=53){
       ctx.beginPath();ctx.arc(x,y,60+Math.sin(t*4)*3,0,Math.PI*2);
-      ctx.strokeStyle=alpha(color(g.team),.5);ctx.lineWidth=2;ctx.stroke();
+      ctx.strokeStyle=alpha(baseColor,.5);ctx.lineWidth=2;ctx.stroke();
     }
-    ctx.fillStyle = 'rgba(7,6,18,.34)';
-    ctx.beginPath(); ctx.ellipse(x, y + 22, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Ground shadow anchors the character while its body floats.
+    ctx.fillStyle='rgba(7,6,18,.34)';
+    ctx.beginPath();ctx.ellipse(g.x,g.y+23,22+(moving?3:0),8,0,0,Math.PI*2);ctx.fill();
 
     ctx.save();
-    ctx.translate(x, y);
-    const hue = [color(g.team),color(g.team),darken(color(g.team),.58)];
-    ctx.fillStyle = hue[0];
-    ctx.strokeStyle = hue[2];
-    ctx.lineWidth = 2.5;
+    ctx.translate(x,y);
+    ctx.rotate(tilt);
+    ctx.scale(1+squash+pulse,1-squash+pulse);
+    // Natural trailing shape has three soft waving tails, rather than a rigid bottom.
+    const flutter=Math.sin(t*6+g.bounce)*3,flutter2=Math.cos(t*7+g.bounce)*3;
+    ctx.fillStyle=baseColor;ctx.strokeStyle=edge;ctx.lineWidth=2.6;
     ctx.beginPath();
-    ctx.moveTo(-24, 12);
-    ctx.lineTo(-24, -2);
-    ctx.bezierCurveTo(-24, -34, 24, -34, 24, -2);
-    ctx.lineTo(24, 14);
-    ctx.quadraticCurveTo(17, 8, 10, 18);
-    ctx.quadraticCurveTo(3, 9, -2, 18);
-    ctx.quadraticCurveTo(-9, 8, -16, 18);
-    ctx.quadraticCurveTo(-22, 9, -24, 12);
-    ctx.fill();
-    ctx.stroke();
+    ctx.moveTo(-24,12);
+    ctx.lineTo(-24,-2);
+    ctx.bezierCurveTo(-24,-38,24,-38,24,-2);
+    ctx.lineTo(24,12);
+    ctx.quadraticCurveTo(18+flutter2*.4,7,10,18+flutter);
+    ctx.quadraticCurveTo(3,9,-3,18-flutter2);
+    ctx.quadraticCurveTo(-11,8,-17,18+flutter*.5);
+    ctx.quadraticCurveTo(-22,9,-24,12);
+    ctx.closePath();ctx.fill();ctx.stroke();
 
-    const blink = g.blink < 0 ? 1.2 : 7;
-    ctx.fillStyle = '#2d2542';
-    ctx.beginPath(); ctx.ellipse(-8, -6, 3.5, blink, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(8, -6, 3.5, blink, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#2d2542';
-    ctx.lineWidth = 2.4;
+    // Highlighting gives the pastel ghosts a translucent, soft cartoon finish.
+    ctx.fillStyle='rgba(255,255,255,.26)';
+    ctx.beginPath();ctx.ellipse(-10,-17,9,5,-.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(13,9,5,2,-.3,0,Math.PI*2);ctx.fill();
+
+    // Expressive little arms; a victory throws them upward.
+    const armWave=celebrating?Math.sin(progress*Math.PI*8)*7:
+      stealing?Math.sin(progress*Math.PI*10)*5:
+      moving?Math.sin(t*9+g.bounce)*4:Math.sin(t*3+g.bounce)*2;
+    ctx.strokeStyle=edge;ctx.lineWidth=3.5;ctx.lineCap='round';
     ctx.beginPath();
-    if (g.face === 'excited') ctx.arc(0, 4, 8, 0, Math.PI, false);
-    else if (g.face === 'calm') { ctx.moveTo(-5, 6); ctx.lineTo(5, 6); }
-    else { ctx.arc(0, 7, 6, 0, Math.PI, false); }
-    ctx.stroke();
+    ctx.moveTo(-22,2);ctx.quadraticCurveTo(-31,-2-armWave,-29,-5-(celebrating?9:0));ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(22,2);ctx.quadraticCurveTo(31,-2+armWave,29,-5-(celebrating?9:0));ctx.stroke();
+
+    // Pupils glance in the direction of travel.
+    const eyeX=Math.cos(g.heading)*1.3,eyeY=Math.sin(g.heading)*1.2;
+    const blink=g.blink<0&&!panic&&!celebrating;
+    if(celebrating||happy||stealing){
+      ctx.strokeStyle='#332946';ctx.lineWidth=2.7;ctx.lineCap='round';
+      ctx.beginPath();ctx.arc(-8,-6,4.6,Math.PI*1.1,Math.PI*1.9);ctx.stroke();
+      ctx.beginPath();ctx.arc(8,-6,4.6,Math.PI*1.1,Math.PI*1.9);ctx.stroke();
+    }else if(blink){
+      ctx.strokeStyle='#332946';ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(-12,-6);ctx.lineTo(-4,-6);ctx.moveTo(4,-6);ctx.lineTo(12,-6);ctx.stroke();
+    }else{
+      const eyeH=panic?8.5:6.5,eyeW=panic?4.5:3.5;
+      ctx.fillStyle='#332946';
+      ctx.beginPath();ctx.ellipse(-8+eyeX,-6+eyeY,eyeW,eyeH,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(8+eyeX,-6+eyeY,eyeW,eyeH,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.85)';
+      ctx.beginPath();ctx.ellipse(-9+eyeX,-9+eyeY,1.5,2,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(7+eyeX,-9+eyeY,1.5,2,0,0,Math.PI*2);ctx.fill();
+    }
+
+    // Cheeks become rosy when pleased or when surrounded by a huge trail.
+    if(happy||g.face==='excited'||celebrating){
+      ctx.fillStyle='#ed91b168';
+      ctx.beginPath();ctx.ellipse(-16,3,4,2.8,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(16,3,4,2.8,0,0,Math.PI*2);ctx.fill();
+    }
+
+    ctx.strokeStyle='#332946';ctx.fillStyle='#332946';ctx.lineWidth=2.5;
+    ctx.beginPath();
+    if(stolen||panic){
+      ctx.ellipse(0,8,4.3,6.8,0,0,Math.PI*2);ctx.fill();
+    }else if(celebrating||happy||stealing||g.face==='excited'){
+      ctx.arc(0,5,7.4,0,Math.PI);ctx.stroke();
+      if(celebrating){ctx.fillStyle='#e986a8';ctx.beginPath();ctx.ellipse(0,10,3.5,2,0,0,Math.PI*2);ctx.fill();}
+    }else if(g.face==='calm'){
+      ctx.moveTo(-4,6);ctx.quadraticCurveTo(0,8,4,6);ctx.stroke();
+    }else{
+      ctx.arc(0,5,5,0,Math.PI);ctx.stroke();
+    }
+
+    // Tears when robbed; mischievous twinkle when stealing.
+    if(stolen){
+      const tearY=((1-progress)*13)%13;
+      ctx.fillStyle='#76b8f8';
+      ctx.beginPath();ctx.ellipse(16,tearY+3,2.2,4,0,0,Math.PI*2);ctx.fill();
+    }
     ctx.restore();
+
+    if(celebrating||stealing||g.reaction==='collect'){
+      const n=celebrating?7:3;
+      ctx.save();
+      for(let k=0;k<n;k++){
+        const theta=k*Math.PI*2/n+t*(celebrating?1.5:.8);
+        const reach=30+(celebrating?progress*25:8);
+        const sx=x+Math.cos(theta)*reach,sy=y-3+Math.sin(theta)*reach*.74;
+        const size=celebrating?4.5:3;
+        ctx.globalAlpha=Math.max(0,Math.min(1,g.reactionTime/.3));
+        ctx.strokeStyle=k%2?'#fff2ae':baseColor;ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(sx-size,sy);ctx.lineTo(sx+size,sy);
+        ctx.moveTo(sx,sy-size);ctx.lineTo(sx,sy+size);ctx.stroke();
+      }
+      ctx.restore();
+    }
   }
 
   function drawFlame(x, y, team, phase = 0) {
