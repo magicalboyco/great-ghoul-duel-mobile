@@ -60,15 +60,53 @@
 <path d="M320 906v-61a22 22 0 0 1 44 0v61z"/><path d="M1180 906v-57a24 24 0 0 1 48 0v57z"/>
 <path d="M372 920v-39a16 16 0 0 1 32 0v39z"/><path d="M1257 914v-42a18 18 0 0 1 36 0v42z"/>
 </g>
+<defs>
+  <radialGradient id="pumpkinBody" cx=".39" cy=".27" r=".77">
+    <stop stop-color="#ffd082"/><stop offset=".28" stop-color="#ed934a"/>
+    <stop offset=".7" stop-color="#bd5837"/><stop offset="1" stop-color="#71364b"/>
+  </radialGradient>
+  <linearGradient id="pumpkinRib" x1="0" y1="0" x2="1" y2=".7">
+    <stop stop-color="#fac076"/><stop offset=".6" stop-color="#d8753b"/><stop offset="1" stop-color="#a44a37"/>
+  </linearGradient>
+  <radialGradient id="pumpkinCandle"><stop stop-color="#fff5bf"/>
+    <stop offset=".48" stop-color="#ffcb72"/><stop offset="1" stop-color="#ff8e47"/>
+  </radialGradient>
+</defs>
+<!-- Large backdrop jack-o'-lanterns: curved segments, carved warm faces,
+     luminous rims. These are decorative scenery, not gameplay obstacles. -->
 <g transform="translate(122 908)">
-<ellipse rx="60" ry="53" fill="#eb883a"/><ellipse cx="-29" rx="24" ry="46" fill="#c75f36" opacity=".42"/><ellipse cx="29" rx="24" ry="46" fill="#ffac56" opacity=".38"/>
-<path d="M-8-51q-5-15 7-21l11 7-4 17z" fill="#436348"/>
-<path d="M-33-12l-16 21h31zM26-12l-10 21h30zM-27 23q27 20 56 0l-8 21h-41z" fill="#ffe59a"/>
+  <ellipse cy="50" rx="66" ry="12" fill="#140d20" opacity=".52"/>
+  <ellipse rx="58" ry="50" fill="#864333"/>
+  <ellipse cx="-31" cy="0" rx="24" ry="46" fill="#a75135"/>
+  <ellipse cx="31" cy="0" rx="24" ry="46" fill="#a84b35"/>
+  <ellipse cx="-17" cy="-2" rx="26" ry="49" fill="url(#pumpkinRib)"/>
+  <ellipse cx="17" cy="-2" rx="26" ry="49" fill="url(#pumpkinRib)"/>
+  <ellipse cy="-3" rx="26" ry="51" fill="url(#pumpkinBody)"/>
+  <path d="M-4-49Q-15-70 0-76Q16-74 10-66Q2-65 6-50Z" fill="#52714c" stroke="#354e42" stroke-width="3"/>
+  <path d="M7-60Q20-69 30-61Q17-56 7-60Z" fill="#78975a"/>
+  <path d="M-39-15Q-28-36-13-10Q-16 0-36-4Z" fill="#75372e" stroke="#a34d2e" stroke-width="4"/>
+  <path d="M13-10Q28-36 39-15L36-4Q16 0 13-10Z" fill="#75372e" stroke="#a34d2e" stroke-width="4"/>
+  <path d="M-35 11Q-13 24 0 15Q20 23 37 11Q29 37 12 38L7 32L0 40L-8 31L-15 37Q-31 32-35 11Z" fill="#67332e" stroke="#a94d31" stroke-width="4"/>
+  <path d="M-30-14L-23-20L-17-11L-30-8Z M19-11L27-20L34-11L24-7Z" fill="url(#pumpkinCandle)"/>
+  <path d="M-26 20Q-4 32 0 28Q10 35 28 19L19 32L10 29L0 37L-9 29L-19 31Z" fill="url(#pumpkinCandle)" opacity=".94"/>
+  <path d="M-34-32Q-21-40-6-37" stroke="#ffe7a2" opacity=".4" stroke-width="4" fill="none" stroke-linecap="round"/>
 </g>
-<g transform="translate(1473 909)">
-<ellipse rx="60" ry="53" fill="#e68040"/><ellipse cx="-29" rx="24" ry="46" fill="#c65c37" opacity=".4"/><ellipse cx="29" rx="24" ry="46" fill="#ffa85c" opacity=".36"/>
-<path d="M-8-51q-5-15 7-21l11 7-4 17z" fill="#436348"/>
-<path d="M-33-12l-16 21h31zM26-12l-10 21h30zM-27 23q27 20 56 0l-8 21h-41z" fill="#ffe59a"/>
+<g transform="translate(1473 909) rotate(-5)">
+  <ellipse cy="49" rx="64" ry="11" fill="#140d20" opacity=".56"/>
+  <ellipse rx="57" ry="49" fill="#853c31"/>
+  <ellipse cx="-30" cy="0" rx="24" ry="46" fill="#ad5236"/>
+  <ellipse cx="30" cy="0" rx="24" ry="46" fill="#a14c36"/>
+  <ellipse cx="-16" cy="-2" rx="27" ry="49" fill="url(#pumpkinRib)"/>
+  <ellipse cx="16" cy="-2" rx="27" ry="49" fill="url(#pumpkinRib)"/>
+  <ellipse cy="-4" rx="25" ry="50" fill="url(#pumpkinBody)"/>
+  <path d="M-4-48Q-12-65-3-76Q9-79 12-70Q2-65 5-48Z" fill="#52714c" stroke="#354e42" stroke-width="3"/>
+  <path d="M0-62Q-17-74-29-63Q-14-56 0-62Z" fill="#6a9654"/>
+  <path d="M-42-14Q-27-34-10-13L-14-2Q-29 1-42-14Z" fill="#74352f" stroke="#9f4b31" stroke-width="4"/>
+  <path d="M12-11Q29-31 39-11Q29 3 15-2Z" fill="#74352f" stroke="#9f4b31" stroke-width="4"/>
+  <path d="M-36 12Q-4 28 0 20Q19 23 35 12Q30 35 16 38L6 30L0 39L-9 30L-17 35Q-31 32-36 12Z" fill="#67332e" stroke="#a85037" stroke-width="4"/>
+  <path d="M-33-13L-25-19L-16-10L-27-6Z M17-9L27-18L33-9L23-6Z" fill="url(#pumpkinCandle)"/>
+  <path d="M-28 20L-15 29L-9 25L0 34L8 26L16 30L29 20Q18 39 0 39Q-19 38-28 20Z" fill="url(#pumpkinCandle)" opacity=".91"/>
+  <path d="M-29-34Q-15-39-5-37" fill="none" stroke="#ffe8ab" opacity=".34" stroke-width="4" stroke-linecap="round"/>
 </g>
 <path d="M0 676Q206 626 425 686T842 661T1237 683T1600 656V789Q1290 732 1030 776T492 758T0 798Z" fill="url(#fog)"/>
 <path d="M0 883Q301 830 625 872T1204 866T1600 875V968Q1300 923 1080 945T498 937T0 963Z" fill="#9872ba" opacity=".16"/>

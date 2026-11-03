@@ -203,3 +203,62 @@ test('Every match ghost uses team uniform, not its personal pastel',()=>{
   assert.match(html,/ctx\.fillStyle=g\.playerColor;ctx\.fill\(\);/,
     'Personal color is still available as a small accessory');
 });
+
+test('Alpha 23: distinct Boo Crew costume per seat, humans take priority over bots',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  function resolveDistinctMatchStyles(');
+  const end=html.indexOf('  function reset() {',start);
+  assert.ok(start>0&&end>start,'Pure roster resolver must exist');
+  const source=html.slice(start,end);
+  const resolve=new Function(source+';return resolveDistinctMatchStyles;')();
+  const run=(profiles,seats)=>{
+    const styles=resolve(new Map(profiles),seats);
+    assert.equal(styles.length,8);
+    assert.equal(new Set(styles).size,8,'Every ghost has a distinct costume');
+    assert.ok(styles.every(id=>Number.isInteger(id)&&id>=0&&id<8));
+    return styles;
+  };
+  const normal=run([[0,{styleId:5}],[4,{styleId:2}]],[0,4]);
+  assert.equal(normal[0],5,'Host keeps Batty Boo');
+  assert.equal(normal[4],2,'Guest keeps Abra-ca-dabra');
+  assert.equal(normal.filter(id=>id===5).length,1,'No bot duplicates Batty Boo');
+  const conflicting=run([[0,{styleId:5}],[4,{styleId:5}]],[4,0]);
+  assert.equal(conflicting[0],5,'First occupied seat retains selected character');
+  assert.notEqual(conflicting[4],5,'Second human gets an available character');
+  const full=run(Array.from({length:8},(_,id)=>[id,{styleId:5}]),
+    Array.from({length:8},(_,i)=>i));
+  assert.equal(new Set(full).size,8,'Eight human players all receive distinct costumes');
+  const botOnly=run([],[]);
+  assert.equal(new Set(botOnly).size,8);
+  assert.match(html,/applyHumanProfiles\(\);/);
+  assert.match(html,/g\.styleId=styles\[g\.id\]/);
+});
+
+test('Alpha 23: illustrated pillar and pumpkins replace placeholder scenery',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const backdrop=readFileSync(new URL('../../assets/boo-crew-night.svg',import.meta.url),'utf8');
+  assert.match(html,/function drawGothicPillar\(ctx,wall\)/);
+  assert.match(html,/wall\.type==='pillar'\)drawGothicPillar/);
+  assert.match(html,/function drawPumpkin\(ctx,p\)/);
+  assert.match(backdrop,/id="pumpkinBody"/);
+  assert.match(backdrop,/id="pumpkinCandle"/);
+  assert.doesNotMatch(backdrop,/<ellipse rx="60" ry="53" fill="#eb883a"/);
+  assert.equal((backdrop.match(/<g[\s>]/g)||[]).length,
+    (backdrop.match(/<\/g>/g)||[]).length,'SVG groups are balanced');
+  assert.match(html,/function collides\(x, y, r = 19\)/,
+    'Art changes must not replace collision boxes');
+});
+
+test('Alpha 23: portrait layout respects safe areas and app-like installation',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const manifest=JSON.parse(readFileSync(new URL('../../manifest.webmanifest',import.meta.url),'utf8'));
+  const icon=readFileSync(new URL('../../assets/boo-crew-icon.svg',import.meta.url),'utf8');
+  assert.match(html,/height:100dvh/);
+  assert.match(html,/safe-area-inset-bottom/);
+  assert.match(html,/visualViewport\.addEventListener\('resize',resize/);
+  assert.match(html,/W\/WORLD\.w,H\/WORLD\.h/,'Camera zoom keeps scenery edge-to-edge');
+  assert.match(html,/halfHeight>=WORLD\.h\/2/,'Portrait camera can center oversized world view');
+  assert.equal(manifest.display,'standalone');
+  assert.ok(manifest.icons.some(entry=>entry.src==='assets/boo-crew-icon.svg'));
+  assert.match(icon,/<svg[^>]*viewBox="0 0 192 192"/);
+});

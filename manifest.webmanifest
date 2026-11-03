@@ -1,0 +1,19 @@
+{
+  "name": "Spooktacular Showdown — The Boo Crew",
+  "short_name": "Boo Crew",
+  "description": "A colorful, spooky multiplayer ghost game by Joy Haus.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#100d1f",
+  "theme_color": "#141127",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/boo-crew-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

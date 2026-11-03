@@ -169,3 +169,38 @@ the same shared score and timer, and real-player indicators. The guest
 should steer one ghost on the host's display.
 
 The game remains host-authoritative, experimental multiplayer.
+
+## Alpha 23 — Unique cast, better props, and phone layout
+
+The full Boo Crew ensemble now has exactly **one of each of the eight
+character costumes** per online round. Human selections are resolved
+before computer-controlled seats. If two humans request the same character,
+the lower-numbered seat keeps their choice and the other is assigned the
+first available costume, with an in-game explanation. Only the **costume**
+changes: colors are still team-uniform colors, player control/seat/team
+are unchanged, and every player keeps a personal pastel accent.
+
+The old gray collision pillars were still being drawn as rectangular
+placeholders. Alpha 23 introduces `drawGothicPillar()` with a carved arch,
+tapered top, and a mossy base, *inside the original collision rectangle*.
+The two large pumpkins at the edges of `assets/boo-crew-night.svg`
+have separate curved lobes, carved glowing faces, stems, and shading.
+No physical walls or scoring rules were changed.
+
+On mobile, the canvas adapts to the changing visible viewport height,
+with a portrait-specific camera scale that avoids showing empty world
+outside the scene, and smaller phone HUD/joystick. The original browser
+address bars are owned by Safari, not by the game. Players can select
+**Share → Add to Home Screen** to launch the game in standalone mode.
+`manifest.webmanifest` and `assets/boo-crew-icon.svg` support
+that option. Browser-based play remains available.
+
+Run `node --test multiplayer/tests/*.test.mjs` to verify the costume
+resolver, curved environment props, unchanged collision rules,
+viewport settings, and existing online networking.
+
+Live acceptance check: two humans choosing the **same** Boo Crew character
+should spawn as two *different* characters; no bot duplicates either,
+and the player's label/joystick still map to the original seat.
+On an iPhone portrait screen, safe-area controls must remain tappable
+and arena artwork must cover the full available game viewport.
