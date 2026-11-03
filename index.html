@@ -2024,7 +2024,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function botDifficultyConfig(g){
     // In Four-Way Haunt every team's bots need equal AI strength.
-    if(isFourWay())return DIFFICULTIES[game.difficulty]||DIFFICULTIES.normal;
+    if(game?.mode==='fourway')return DIFFICULTIES[game.difficulty]||DIFFICULTIES.normal;
     return g.team===0?FRIENDLY_BOT_CONFIG:
       DIFFICULTIES[game.difficulty]||DIFFICULTIES.normal;
   }
@@ -2033,7 +2033,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function botDirection(g, dt) {
     // Bot decisions use explicit AI profiles; human controls never do.
-    const mode=isFourWay()||g.team!==0?game.difficulty:'normal';
+    const mode=game?.mode==='fourway'||g.team!==0?game.difficulty:'normal';
     const config=botDifficultyConfig(g);
     g.targetTimer-=dt;
     const home=BASES[g.team];
