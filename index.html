@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 05</title>
+<title>Ghost Duel — Alpha 06</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -58,7 +58,7 @@ button{font:inherit}
   <div id="clock" class="pill">2:00</div>
   <div id="purpleScore" class="pill">0</div>
 </div>
-<div id="carried" hidden>✨ Spirit flames carried: <b id="carryValue">0</b><span id="upgrade">No upgrade yet</span><div id="abilities">Team powers: ⚡ 8 · ✨ 23 · 🧲 53 · 👻 113</div></div>
+<div id="carried" hidden>✨ Spirit flames carried: <b id="carryValue">0</b><span id="upgrade">No upgrade yet</span><div id="abilities">Trail powers: ⚡ 8 · ✨ 23 · 🧲 53 · 👻 113</div></div>
 <div id="last15" role="alert" aria-live="off">⏰ FINAL 15 SECONDS!</div>
 <div id="controls">
   <div id="joystick"><div id="knob"></div></div>
@@ -70,7 +70,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 05</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 06</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -80,7 +80,7 @@ button{font:inherit}
 <div class="bullets">
       <div><b>New this build</b><br>Fog layers, lanterns, pumpkins, graveyard scenery, expressive ghosts, and polished particles.</div>
       <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, awards screen, and licensed soundtrack.</div>
-      <div><b>Upgrades</b><br>Team score unlocks visible powers: Speed at 8 (48% faster), Glow at 23, Magnet at 53 (attracts flames), Phase at 113 (walk through walls).</div>
+      <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
     <button id="startBtn">START GAME</button>
@@ -328,12 +328,11 @@ button{font:inherit}
     GhostAudio.init();
   }
 
-  // Team score is the number actually displayed above the arena. Power-ups
-  // unlock for every teammate at these milestones, avoiding a hidden personal score.
+  // Temporary powers are based on currently carried spirits, not total score.
   const POWER_STEPS=[8,23,53,113];
-  function levelFor(team){return game ? game.scores[team] : 0}
-  function powerProgress(team){
-    const points=levelFor(team);
+  function levelFor(g){return g.trail.length}
+  function powerProgress(g){
+    const points=levelFor(g);
     return [
       {name:'⚡ Speed',at:8,on:points>=8},
       {name:'✨ Glow',at:23,on:points>=23},
@@ -396,7 +395,7 @@ button{font:inherit}
   }
 
   function moveGhost(g, dir, dt) {
-    const score=levelFor(g.team);
+    const score=levelFor(g);
     const speed=172*(score>=8?1.48:1);
     const phaseMove=score>=113;
     let nx = g.x + dir.x * speed * dt;
@@ -437,7 +436,7 @@ button{font:inherit}
       const flame = game.flames[i];
       for (const g of game.ghosts) {
         // Magnet actively draws distant flames toward upgraded ghosts.
-        const upgraded=levelFor(g.team)>=53;
+        const upgraded=levelFor(g)>=53;
         if(upgraded){
           const pullDistance=145,d=distance(flame,g);
           if(d<pullDistance&&d>1){
@@ -465,7 +464,6 @@ button{font:inherit}
       const base = BASES[g.team];
       if (distance(g, base) < base.r - 12 && g.trail.length) {
         const total = g.trail.length;
-        const previousScore=game.scores[g.team];
         g.trail = [];
         g.trailPos = [];
         game.scores[g.team] += total;
@@ -475,11 +473,7 @@ button{font:inherit}
         if (g.id === 0) {
           GhostAudio.effect('deposit');
           toast('Scored ' + total + ' spirit flames!');
-          if(POWER_STEPS.some(n=>previousScore<n&&game.scores[g.team]>=n)){
-            GhostAudio.effect('upgrade');
-            toast('TEAM UPGRADE! '+upgradeLabel(game.scores[0]));
-            emitBurst(g.x,g.y,color(g.team),35);
-          }
+          toast('Powers reset! Build another chain.');
         }
       }
     }
@@ -555,6 +549,14 @@ button{font:inherit}
     teammateBonus();
     stealTrails();
     scoreAtBases();
+    for(const g of game.ghosts){
+      const tier=POWER_STEPS.filter(n=>levelFor(g)>=n).length,previousTier=g.previousTier||0;
+      if(g.id===0&&tier>previousTier){
+        GhostAudio.effect('upgrade');emitBurst(g.x,g.y,color(g.team),25);
+        toast('POWER UP! '+upgradeLabel(levelFor(g)));
+      }
+      g.previousTier=tier;
+    }
 
     for (let i = game.particles.length - 1; i >= 0; i--) {
       const p = game.particles[i];
@@ -572,10 +574,10 @@ button{font:inherit}
     const sec = Math.ceil(game.remaining);
     clockEl.textContent = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2);
     carryValue.textContent = game.ghosts[0].trail.length;
-    upgradeEl.textContent=upgradeLabel(game.scores[0]);
-    abilitiesEl.innerHTML=powerProgress(0).map(p=>p.on?
+    upgradeEl.textContent=upgradeLabel(levelFor(game.ghosts[0]));
+    abilitiesEl.innerHTML=powerProgress(game.ghosts[0]).map(p=>p.on?
       '<b style="color:#b7ffd7">'+p.name+' ✓</b>':
-      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-game.scores[0])+' to go</span>').join(' · ');
+      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-levelFor(game.ghosts[0]))+' to go</span>').join(' · ');
     clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
   }
 
@@ -600,7 +602,7 @@ button{font:inherit}
   function drawGhost(g) {
     const bob = Math.sin(t * 4 + g.bounce) * 3;
     const x = g.x, y = g.y + bob;
-    const teamPoints=levelFor(g.team);
+    const teamPoints=levelFor(g);
     if(teamPoints>=23){
       const halo=88+Math.sin(t*5+g.bounce)*7;
       drawGlow(x,y-3,halo,alpha(color(g.team),.63));
