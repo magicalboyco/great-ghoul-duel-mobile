@@ -1032,13 +1032,13 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   // First connected human on each team chooses the team body color.
   // The guest's chosen color takes effect for the second team.
-  function resolveOnlineTeamColors(profiles,seats,defaultHex){
+  function resolveOnlineTeamColors(profiles,seats,defaultHex,mode='classic'){
     const pick=(team)=>{
-      const pref=seats.filter(seat=>teamForSeat(seat,online?.mode)===team).sort((a,b)=>a-b)
+      const pref=seats.filter(seat=>(mode==='fourway'?Math.floor(seat/2):seat<4?0:1)===team).sort((a,b)=>a-b)
         .map(seat=>profiles.get(seat)?.color).find(hex=>PASTELS.some(p=>p.hex===hex));
       return PASTELS.find(p=>p.hex===(pref||defaultHex))||PASTELS[3];
     };
-    if(online?.mode==='fourway'){
+    if(mode==='fourway'){
       const used=new Set();
       return Array.from({length:4},(_,team)=>{
         const wished=pick(team);
@@ -1055,14 +1055,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function syncOnlineTeamColors(){
     if(!online||!game)return;
-    if(!online.host&&online.teamColors?.length===2){
+    if(!online.host&&online.teamColors?.length===(online.mode==='fourway'?4:2)){
       teamColors=online.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||FOUR_WAY_COLORS[i]);
     }else{
       // The PREPARE packet already contains everybody's chosen color.
       // Guests can show their true team color on the very first frame,
       // rather than briefly rendering the host's team with their own pastel.
       const hostColor=online.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
-      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,hostColor);
+      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,hostColor,online.mode);
       if(online.host)online.teamColors=teamColors.map(p=>p.hex);
     }
     syncScoreColors();
@@ -1103,7 +1103,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     onlineInviteEl.textContent=MODE_NAMES[room.mode]+' · Room '+room.code+' · '+
       room.seats.length+'/'+roomCapacity(room.mode)+' humans';
     const hostColor=room.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
-    const colors=resolveOnlineTeamColors(room.profiles,room.seats,hostColor);
+    const colors=resolveOnlineTeamColors(room.profiles,room.seats,hostColor,room.mode);
     for(let seat=0;seat<8;seat++){
       const occupied=room.seats.includes(seat),team=teamForSeat(seat,room.mode);
       const tile=document.createElement('div');
