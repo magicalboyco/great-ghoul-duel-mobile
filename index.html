@@ -871,7 +871,12 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       try{localStorage.setItem('ghost-duel-server-url',onlineServerEl.value.trim())}catch{}
     }catch(error){
       onlinePending=false;showOnlineLobby(null);
-      setOnlineStatus(error.message||'Could not reach the room server.');return;
+      // Safari reports failed cross-origin requests as the unhelpful
+      // "Load failed". Point players to the Worker connection instead.
+      const message=error instanceof TypeError||/^(Load failed|Failed to fetch|NetworkError)/i.test(error?.message||'')
+        ?'Could not contact the multiplayer server. Check your connection and the Worker deployment, then try again.'
+        :(error?.message||'Could not reach the room server.');
+      setOnlineStatus(message);return;
     }
     onlinePending=false;
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,

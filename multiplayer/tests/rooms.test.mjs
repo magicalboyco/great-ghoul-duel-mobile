@@ -17,7 +17,7 @@ class Socket {
 }
 class Pair {constructor(){this[0]=new Socket();this[1]=new Socket()}}
 class Reply {
-  constructor(body='',opts={}){this.body=body;this.status=opts.status??200;this.ok=this.status>=200&&this.status<300;this.webSocket=opts.webSocket}
+  constructor(body='',opts={}){this.body=body;this.status=opts.status??200;this.ok=this.status>=200&&this.status<300;this.webSocket=opts.webSocket;this.headers=opts.headers??{}}
   static json(value,opts){return new Reply(JSON.stringify(value),opts)}
   async json(){return JSON.parse(this.body)}
 }
@@ -566,4 +566,19 @@ test('Alpha 27: new modes and old Worker fallback remain explicit and safe',()=>
   assert.match(html,/mode==='coop'\?'BOO CREW CO-OP':'CLASSIC DUEL'/);
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
   assert.match(html,/humanInput\?\?botDirection\(g,dt\)/);
+});
+
+test('Alpha 27 hotfix: health handshake allows GitHub Pages cross-origin Co-op requests',async()=>{
+  const {env}=harness();
+  const health=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/health','GET',{Origin:'https://magicalboyco.github.io'}),env);
+  assert.equal(health.status,200);
+  assert.equal(health.headers['Access-Control-Allow-Origin'],'*',
+    'Health CORS must match /rooms so Safari can read the mode list');
+  assert.deepEqual((await health.json()).modes,['classic','coop']);
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/const health=await fetch\(endpoint\+'\/health'/,
+    'Co-op verifies the deployed Worker has the selected mode');
+  assert.match(html,/Check your connection and the Worker deployment/,
+    'Safari Load failed errors explain the actionable connection issue');
 });
