@@ -269,8 +269,8 @@ button{font:inherit}
     if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1'].includes(url.hostname)))throw Error('Enter an HTTPS Cloudflare Worker URL.');
     if(url.username||url.password||url.search||url.hash)throw Error('Use the Worker root URL without credentials or parameters.');
     url.protocol=url.protocol==='https:'?'wss:':'ws:';
-    url.pathname=url.pathname.replace(/\\/$/,'');
-    return url.toString().replace(/\\/$/,'');
+    url.pathname=url.pathname.replace(/\/$/,'');
+    return url.toString().replace(/\/$/,'');
   }
   function makeRoomCode(){
     const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
