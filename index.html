@@ -2222,6 +2222,11 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const crewLore=document.getElementById('crewLore');
   function refreshCrewCards(){
     crewLore.textContent=GHOST_CHARACTER_LORE[selectedCharacter];
+    // A player can change their costume or color in the lobby without
+    // becoming a bot or changing the other team's competition color.
+    if(online&&online.seat!==null&&!online.started&&online.ws.readyState===WebSocket.OPEN){
+      sendOnline({type:'profile',...lobbyPlayerProfile()});
+    }
     const swatch=PASTELS[selectedIndex];
     const skinEdge=darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
