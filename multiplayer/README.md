@@ -131,3 +131,41 @@ GitHub Actions runs these on pull requests and production pushes.
 A real two-device WebSocket test is **still required** after deploying
 the server and game. This is a beta prototype with host-authoritative
 gameplay, not a cheat-resistant public matchmaking platform.
+
+## Alpha 20 — Real human-controlled ghosts
+
+Online rooms have the same eight ghost seats as solo play. Only occupied
+seats should receive human joystick input; vacant seats use computer AI.
+
+Before this fix, the host could fall back to computer control for a **still
+connected** friend when input updates arrived late. That made multiplayer
+look as though everyone was playing separate single-player games.
+
+The corrected client and Worker now:
+
+- Mark connected human seats explicitly and never run bot AI for them.
+  Stale input instead gives a neutral/no-motion direction.
+- Relay movement updates with monotonically increasing sequence numbers;
+  the host acknowledges accepted controls and the guest displays connection
+  health.
+- Show a clear in-game room indicator listing code, host/guest role,
+  real-player count, bot count, and guest control connection status.
+- Label real ghosts in the shared arena with visible YOU / PLAYER tags.
+- Relay each person's selected Boo Crew costume and pastel color in the
+  lobby, and preserve that identity in shared state snapshots.
+- Permit character and color selection updates before the host starts,
+  without altering the other team's score or collision physics.
+
+Test command: `node --test multiplayer/tests/*.test.mjs`. Regression
+coverage now includes human-versus-bot seat ownership, delayed joystick
+input, per-seat profiles, input delivery to the authoritative host, and
+return acknowledgments.
+
+**Important:** passing automated tests alone does not confirm end-to-end
+networking between real browsers. The Cloudflare Worker and GitHub Pages
+game need to deploy the same revision, followed by a real two-device
+check in the SAME room code. Both screens must show the same room code,
+the same shared score and timer, and real-player indicators. The guest
+should steer one ghost on the host's display.
+
+The game remains host-authoritative, experimental multiplayer.
