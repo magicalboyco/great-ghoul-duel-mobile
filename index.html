@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 16)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 17)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -206,7 +206,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="onlinePanel">
   <div class="palette-label">🌐 PLAY ONLINE WITH FRIENDS · TEST VERSION</div>
-  <p class="onlineIntro">Create a private room and share its six-character code. Up to eight people can join; computers fill any empty spots. Solo Play still works!</p>
+  <p class="onlineIntro">Create a private room and share its six-character code. Everyone must enter the same Cloudflare server address once on their device. Up to eight people can join; bots fill empty spots.</p>
   <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Cloudflare server address (paste once per device)</label>
   <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://your-worker.workers.dev" aria-label="Your Cloudflare Worker URL">
   <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
@@ -220,7 +220,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   </div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>A four-way post-match menu and a heartfelt, scrollable With Gratitude credits page. Easy, Normal and Hard bots remain available.</div>
+      <div><b>New this build</b><br>Private online rooms join our existing soundscape, Boo Crew portraits, and gratitude credits. Solo Easy, Normal and Hard bots remain.</div>
       <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -618,7 +618,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
     const link=location.origin+location.pathname+'?room='+online.code;
-    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite link copied! Send it to a friend. Room '+online.code);}
+    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend also needs the same server address. Room '+online.code);}
     catch{setOnlineStatus('Share this game address and room code: '+online.code);}
   });
 
