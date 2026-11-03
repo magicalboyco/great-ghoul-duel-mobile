@@ -240,3 +240,29 @@ gesture-triggered audio initialization, compact snapshot volume, full-state
 periodicity, default server, and preservation of invitation secrecy.
 A live iPhone/Safari guest test is still necessary, especially for audio
 interruption and connection quality.
+
+## Alpha 25 — readable base plaques and textured graveyard path
+
+Two exclusively **visual** refinements to the canvas arena:
+
+- `drawBaseNameplate(ctx,base,team)` places a dark amethyst plaque
+  over each base's outer ring. A border follows the team color while
+  cream, dark-outlined text remains readable for lavender, green,
+  yellow and all other team colors. A second line displays
+  `YOUR BASE` or `OTHER TEAM BASE` from the *local player's* team
+  perspective in online games. Long colorway names fit automatically.
+- `buildGraveyardPathLayer()` generates one deterministic, offscreen
+  Canvas strip containing worn cobbles, earth, grass tufts, pebbles
+  and leaves. `drawEnvironment()` reuses that cached layer at the
+  existing center walkway. The path is drawn beneath interactive
+  scenery and characters; it is decorative, not a physics change.
+
+The original base centers/radii, wall rectangles, WebSocket messages,
+scoring rules and leaderboard are preserved. Regression checks cover
+contrast treatments, long-label fitting, path caching, ordering and
+removal of the flat stripe. Run the existing test command:
+`node --test multiplayer/tests/*.test.mjs`.
+
+Live visual check: confirm both base names read clearly in very light
+colorways and at iPhone portrait scale, and confirm the walkway remains
+subtle enough to distinguish ghosts and spirit flames during play.
