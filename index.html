@@ -57,6 +57,16 @@ button{font:inherit}
 #difficultyHud[hidden]{display:none}
 #startBtn{padding:14px 22px;border-radius:16px;border:none;font-weight:900;letter-spacing:.03em;background:linear-gradient(180deg,#c4ffda,#68d49f);color:#13241c;box-shadow:0 12px 24px rgba(89,221,156,.28)}
 #startBtn:active{transform:translateY(1px)}
+#onlinePanel{max-width:480px;margin:14px auto;padding:15px;border-radius:18px;background:#b5a9ff14;border:1px solid #e8c5f35a;text-align:center}
+#onlinePanel .onlineIntro{font-size:12px;line-height:1.5;color:#e9dafa;margin:5px 0 11px}
+#onlinePanel .onlineControls{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+#onlinePanel button{min-height:39px;border-radius:12px;border:1px solid #eacafa65;background:#645082;color:#fff3ff;padding:9px 13px;font-weight:850;cursor:pointer;touch-action:manipulation}
+#onlinePanel button:disabled{opacity:.52;cursor:default}
+#onlinePanel .onlineHost{background:#b6f3c9;color:#193b26}
+#onlinePanel input{width:min(100%,210px);margin:7px auto 10px;padding:10px;border-radius:10px;border:1px solid #dac3eb85;background:#1d1634;color:#fff;letter-spacing:.18em;font-weight:800;text-align:center;text-transform:uppercase}
+#onlinePanel #onlineStatus{min-height:32px;margin:10px 0 5px;font-size:12px;line-height:1.55;color:#f2e3ff;overflow-wrap:anywhere}
+#onlinePanel button[hidden]{display:none}
+
 #hint{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:8px 12px;border-radius:12px;background:rgba(17,14,38,.72);border:1px solid rgba(255,255,255,.08);font-size:12px;color:#e9dfff;z-index:5;pointer-events:none}
 #notice{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));font-size:11px;color:#c8bde7;background:rgba(17,14,38,.72);padding:6px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.06);z-index:5;pointer-events:none}
 
@@ -194,9 +204,24 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   </div>
   <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
 </div>
+<div id="onlinePanel">
+  <div class="palette-label">🌐 PLAY ONLINE WITH FRIENDS · TEST VERSION</div>
+  <p class="onlineIntro">Create a private room and share its six-character code. Up to eight people can join; computers fill any empty spots. Solo Play still works!</p>
+  <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Cloudflare server address (paste once per device)</label>
+  <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://your-worker.workers.dev" aria-label="Your Cloudflare Worker URL">
+  <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
+  <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
+  <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
+  <div id="onlineStatus" role="status" aria-live="polite">Online play uses our Ghost Duel Cloudflare server. The host must keep their game open.</div>
+  <div class="onlineControls">
+    <button type="button" id="onlineCopy" hidden>🔗 Copy invite link</button>
+    <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 Start online match</button>
+    <button type="button" id="onlineLeave" hidden>Leave room</button>
+  </div>
+</div>
 <div class="bullets">
       <div><b>New this build</b><br>A four-way post-match menu and a heartfelt, scrollable With Gratitude credits page. Easy, Normal and Hard bots remain available.</div>
-      <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, and licensed soundtrack.</div>
+      <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
@@ -319,6 +344,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     if(creditsReturnFocus&&typeof creditsReturnFocus.focus==='function')creditsReturnFocus.focus();
   }
   function returnToMenu(purpose){
+    if(online)leaveOnline();
     results.classList.remove('open');
     menu.classList.remove('hidden');
     menuText.textContent=purpose==='difficulty'
@@ -410,6 +436,192 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   let keys = {};
   let game = null;
   let seed = 12345;
+  // Alpha 17 private rooms: connect directly to our Cloudflare Worker.
+  // The existing single-player simulation remains the default.
+  // Server location is user-configured, never committed to public source.
+  const onlineServerEl=document.getElementById('onlineServer');
+  try{onlineServerEl.value=localStorage.getItem('ghost-duel-server-url')||''}catch{}
+  function safeWebSocketServer(){
+    const address=new URL(onlineServerEl.value.trim());
+    if(address.protocol!=='https:'||address.username||address.password||address.search||address.hash)
+      throw Error('Enter your Cloudflare server HTTPS address (no password or extra parameters).');
+    if(address.pathname!=='/'&&address.pathname!=='')
+      throw Error('Use only the root Cloudflare server address.');
+    return 'wss://'+address.host;
+  }
+  const onlineCodeEl=document.getElementById('onlineCode');
+  const onlineCreateEl=document.getElementById('onlineCreate');
+  const onlineJoinEl=document.getElementById('onlineJoin');
+  const onlineStartEl=document.getElementById('onlineStart');
+  const onlineLeaveEl=document.getElementById('onlineLeave');
+  const onlineCopyEl=document.getElementById('onlineCopy');
+  const onlineStatusEl=document.getElementById('onlineStatus');
+  let online=null;
+  const localGhostId=()=>Number.isInteger(online?.seat)?online.seat:0;
+  const isOnlineGuest=()=>online?.host===false&&online?.started===true;
+  const isOnlineHost=()=>online?.host===true&&online?.started===true;
+  function setOnlineStatus(message){onlineStatusEl.textContent=message;}
+  function sendOnline(data){
+    if(online?.ws?.readyState===WebSocket.OPEN)online.ws.send(JSON.stringify(data));
+  }
+  function roomCode(){
+    const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes=new Uint8Array(6);crypto.getRandomValues(bytes);
+    return [...bytes].map(n=>alphabet[n%alphabet.length]).join('');
+  }
+  function showOnlineLobby(onlineRoom){
+    onlineStartEl.hidden=!onlineRoom?.host||!!onlineRoom.started;
+    onlineLeaveEl.hidden=!onlineRoom;
+    onlineCopyEl.hidden=!onlineRoom;
+    onlineCreateEl.disabled=!!onlineRoom;
+    onlineJoinEl.disabled=!!onlineRoom;
+  }
+  function leaveOnline(reason='Left the online room. Solo mode is available.'){
+    const old=online;
+    online=null;
+    if(old){try{old.ws.close(1000,'Leaving')}catch{}}
+    showOnlineLobby(null);
+    setOnlineStatus(reason);
+    const wasOnlineMatch=!!game?.online;
+    if(wasOnlineMatch){
+      game.phase='finished';game.online=false;
+      warningEl.classList.remove('visible');
+      difficultyHud.hidden=true;hud.hidden=true;carried.hidden=true;hint.classList.add('hidden');
+      results.classList.remove('open');
+      menu.classList.remove('hidden');
+      startBtn.textContent='START GAME';
+      document.getElementById('againBtn').textContent='👻 PLAY AGAIN';
+    }
+  }
+  function startOnlineConnection(makeNew){
+    if(online)leaveOnline('Switching rooms…');
+    const code=makeNew?roomCode():onlineCodeEl.value.trim().toUpperCase();
+    if(!/^[A-Z2-9]{6}$/.test(code)){setOnlineStatus('Enter your friend’s six-character room code first.');return}
+    let ws;
+    try{
+      const server=safeWebSocketServer();
+      ws=new WebSocket(server+'/room/'+code);
+      try{localStorage.setItem('ghost-duel-server-url',onlineServerEl.value.trim())}catch{}
+    }catch(error){setOnlineStatus(error.message||'Unable to open the online connection.');return}
+    const session={ws,code,seat:null,host:false,started:false,seats:[],inputs:new Map(),lastInput:0,lastSnapshot:0};
+    online=session;
+    onlineCodeEl.value=code;
+    showOnlineLobby(session);
+    setOnlineStatus('Connecting to online room '+code+'…');
+    ws.addEventListener('open',()=>{
+      if(online===session)setOnlineStatus('Connected. Assigning your Boo Crew ghost…');
+    });
+    ws.addEventListener('message',event=>{
+      if(online!==session)return;
+      let msg;
+      try{msg=JSON.parse(event.data)}catch{return}
+      if(msg.type==='welcome'){
+        session.seat=msg.seat;
+        session.host=!!msg.host;
+        showOnlineLobby(session);
+        setOnlineStatus('Room '+code+' · You are ghost #'+(msg.seat+1)+'. '+(session.host?
+          'Share this code or the invite link, then tap Start online match.':'Waiting for the host to start.'));
+      }else if(msg.type==='roster'){
+        session.seats=Array.isArray(msg.seats)?msg.seats:[];
+        if(!session.started)setOnlineStatus('Room '+code+' · '+session.seats.length+
+          '/8 people joined. '+(session.host?'Share the invite, then start the match.':'Waiting for host to start.'));
+      }else if(msg.type==='start'){
+        if(session.started)return;
+        session.started=true;
+        reset();game.online=true;
+        difficultyHud.textContent='🌐 ONLINE ROOM '+code;
+        showOnlineLobby(session);
+        if(session.host)publishOnlineSnapshot();
+      }else if(msg.type==='input'&&session.host&&session.started){
+        if(session.seats.includes(msg.seat)&&msg.seat!==0){
+          const x=Math.max(-1,Math.min(1,Number(msg.x)||0));
+          const y=Math.max(-1,Math.min(1,Number(msg.y)||0));
+          session.inputs.set(msg.seat,{x,y,mag:Math.min(1,Math.hypot(x,y)),at:performance.now()});
+        }
+      }else if(msg.type==='snapshot'&&!session.host&&session.started){
+        receiveOnlineSnapshot(msg.state);
+      }else if(msg.type==='leave'){
+        session.inputs.delete(msg.seat);
+      }else if(msg.type==='finish'){
+        if(!session.host&&game?.phase==='playing')finish();
+        session.started=false;
+        showOnlineLobby(session);
+      }else if(msg.type==='closed'){
+        leaveOnline(msg.reason||'The room has closed.');
+      }
+    });
+    ws.addEventListener('error',()=>{
+      if(online===session)setOnlineStatus('Unable to connect. Please try creating or joining a new room.');
+    });
+    ws.addEventListener('close',event=>{
+      if(online===session)leaveOnline(event.code===1000?'Room closed.':'Connection ended. Please try again.');
+    });
+  }
+  function publishOnlineSnapshot(){
+    if(!isOnlineHost()||!game)return;
+    sendOnline({type:'snapshot',state:{
+      remaining:game.remaining,phase:game.phase,scores:game.scores,difficulty:game.difficulty,
+      teamColors:teamColors.map(c=>c.hex),
+      ghosts:game.ghosts.map(g=>({
+        id:g.id,team:g.team,styleId:g.styleId,x:g.x,y:g.y,heading:g.heading,
+        trail:g.trail,trailPos:g.trailPos,score:g.score,face:g.face,
+        reaction:g.reaction,reactionTime:g.reactionTime,
+        reactionDuration:g.reactionDuration,bounce:g.bounce,blink:g.blink,
+        moveAmount:g.moveAmount,stats:g.stats
+      })),flames:game.flames
+    }});
+  }
+  function receiveOnlineSnapshot(s){
+    if(!s||!game||!Array.isArray(s.ghosts)||s.ghosts.length!==8||
+      !Array.isArray(s.scores)||s.scores.length!==2||!Array.isArray(s.flames))return;
+    game.remaining=Math.max(0,Math.min(120,Number(s.remaining)||0));
+    game.scores=s.scores;
+    game.flames=s.flames;
+    game.difficulty=DIFFICULTIES[s.difficulty]?s.difficulty:'normal';
+    if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
+      teamColors=s.teamColors.map((hex,i)=>({
+        name:i===0?'Friendly Boo Crew':'Rivals',
+        hex:typeof hex==='string'&&/^#[0-9a-fA-F]{6}$/.test(hex)?hex:PASTELS[i].hex
+      }));
+      greenScoreEl.style.color=color(0);
+      purpleScoreEl.style.color=color(1);
+    }
+    for(const snap of s.ghosts){
+      if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
+      const g=game.ghosts[snap.id];
+      for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
+        'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats']){
+        if(snap[field]!==undefined)g[field]=snap[field];
+      }
+    }
+    if(game.phase==='playing'&&s.phase==='finished'){
+      finish();
+    }else{
+      game.phase='playing';
+      updateGameHud();
+      warningEl.classList.toggle('visible',game.remaining>0&&game.remaining<=15);
+    }
+  }
+  try{
+    const invited=new URLSearchParams(location.search).get('room');
+    if(invited&&/^[A-Z2-9]{6}$/.test(invited.toUpperCase())){
+      onlineCodeEl.value=invited.toUpperCase();
+      setOnlineStatus('Invite code ready. Tap Join room to play with your friend.');
+    }
+  }catch{}
+  onlineCreateEl.addEventListener('click',()=>startOnlineConnection(true));
+  onlineJoinEl.addEventListener('click',()=>startOnlineConnection(false));
+  onlineLeaveEl.addEventListener('click',()=>leaveOnline());
+  onlineStartEl.addEventListener('click',()=>{
+    if(online?.host&&!online.started)sendOnline({type:'start'});
+  });
+  onlineCopyEl.addEventListener('click',async()=>{
+    if(!online)return;
+    const link=location.origin+location.pathname+'?room='+online.code;
+    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite link copied! Send it to a friend. Room '+online.code);}
+    catch{setOnlineStatus('Share this game address and room code: '+online.code);}
+  });
+
 
   const stars = Array.from({ length: 110 }, () => ({ x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, r: Math.random() * 1.7 + 0.2, twinkle: Math.random() * 7 }));
   const props = makeProps();
@@ -738,7 +950,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       ghost.styleId=roster[i]; ghosts.push(ghost);
     }
     const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
-    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing' };
+    game = { ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
+    document.getElementById('againBtn').textContent=online?.started?'👻 PLAY AGAIN (SOLO)':'👻 PLAY AGAIN';
     difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
     difficultyHud.hidden=false;
     warningEl.classList.remove('visible');
@@ -992,6 +1205,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   function update(dt) {
     if (!game || game.phase !== 'playing') return;
+    if(isOnlineGuest()){
+      game.toastLeft=Math.max(0,game.toastLeft-dt);
+      if(performance.now()-online.lastInput>=65){
+        online.lastInput=performance.now();
+        const dir=inputDirection();
+        sendOnline({type:'input',x:dir.x*dir.mag,y:dir.y*dir.mag});
+      }
+      return;
+    }
     game.remaining = Math.max(0, game.remaining - dt);
     const wholeSeconds=Math.ceil(game.remaining);
     if(wholeSeconds<=15&&game.lastWarningSecond>15){
@@ -1015,7 +1237,10 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       g.reactionTime=Math.max(0,g.reactionTime-dt);
       if(g.reactionTime===0)g.reaction='';
       g.wiggle+=dt;
-      const input = i === 0 ? inputDirection() : botDirection(g, dt);
+      const remote=online?.inputs.get(i);
+      const present=isOnlineHost()&&online.seats.includes(i);
+      const input=i===0?inputDirection():(present&&remote&&performance.now()-remote.at<500?
+        remote:botDirection(g,dt));
       const oldX=g.x,oldY=g.y;
       moveGhost(g, input, dt);
       g.moveAmount=Math.min(1,Math.hypot(g.x-oldX,g.y-oldY)/(dt*170));
@@ -1047,18 +1272,28 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       if (p.life <= 0) game.popups.splice(i, 1);
     }
 
-    greenScoreEl.textContent = game.scores[0];
-    purpleScoreEl.textContent = game.scores[1];
-    const sec = Math.ceil(game.remaining);
-    clockEl.textContent = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2);
-    carryValue.textContent = game.ghosts[0].trail.length;
-    upgradeEl.textContent=upgradeLabel(levelFor(game.ghosts[0]));
-    abilitiesEl.innerHTML=powerProgress(game.ghosts[0]).map(p=>p.on?
-      '<b style="color:#b7ffd7">'+p.name+' ✓</b>':
-      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-levelFor(game.ghosts[0]))+' to go</span>').join(' · ');
-    clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
+    updateGameHud();
+    if(isOnlineHost()&&performance.now()-online.lastSnapshot>=85){
+      online.lastSnapshot=performance.now();
+      publishOnlineSnapshot();
+    }
   }
 
+  function updateGameHud(){
+    if(!game)return;
+    const you=game.ghosts[localGhostId()];
+    if(!you)return;
+    greenScoreEl.textContent=game.scores[0];
+    purpleScoreEl.textContent=game.scores[1];
+    const sec=Math.ceil(game.remaining);
+    clockEl.textContent=Math.floor(sec/60)+':'+('0'+sec%60).slice(-2);
+    carryValue.textContent=you.trail.length;
+    upgradeEl.textContent=upgradeLabel(levelFor(you));
+    abilitiesEl.innerHTML=powerProgress(you).map(p=>p.on?
+      '<b style="color:#b7ffd7">'+p.name+' ✓</b>':
+      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-levelFor(you))+' to go</span>').join(' · ');
+    clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
+  }
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
@@ -1130,9 +1365,11 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function buildResults(){
     const [a,b]=game.scores;
-    resultHeading.textContent=(a>b?'YOUR TEAM WINS!':a<b?'THE RIVALS WIN!':'A SPOOKY DRAW!')+' · '+DIFFICULTIES[game.difficulty].name.toUpperCase();
+    const myTeam=game.ghosts[localGhostId()].team;
+    resultHeading.textContent=(a===b?'A SPOOKY DRAW!':(game.scores[myTeam]>game.scores[1-myTeam]?
+      'YOUR TEAM WINS!':'THE RIVALS WIN!'))+' · '+(game.online?'ONLINE':' '+DIFFICULTIES[game.difficulty].name.toUpperCase());
     resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
-    const awardMap=assignAwards(game.ghosts),you=game.ghosts[0],mine=awardMap.get(0);
+    const awardMap=assignAwards(game.ghosts),you=game.ghosts[localGhostId()],mine=awardMap.get(localGhostId());
     myAwardEmoji.innerHTML=ghostPortrait(you);
     myAwardName.textContent=mine.title;
     myAwardReason.textContent=mine.reason;
@@ -1144,13 +1381,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     const roster=[...game.ghosts].sort((a,b)=>a.team-b.team||b.score-a.score||a.id-b.id);
     roster.forEach((ghost,i)=>{
       const award=awardMap.get(ghost.id),tile=document.createElement('div');
-      tile.className='awardTile'+(ghost.id===0?' player':'');
+      tile.className='awardTile'+(ghost.id===localGhostId()?' player':'');
       tile.style.animationDelay=i*.06+'s';
       tile.style.setProperty('--tile-tint',alpha(color(ghost.team),.24));
       const avatar=document.createElement('div');avatar.className='portrait';
       avatar.style.setProperty('--team',color(ghost.team));avatar.innerHTML=ghostPortrait(ghost);
       const content=document.createElement('div');
-      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.styleId??ghost.id];
+      const who=document.createElement('div');who.className='who';who.textContent=(ghost.id===localGhostId()?'You':ghost.id===0?'Host':GHOST_NAMES[ghost.id])+
+        ' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.styleId??ghost.id];
       const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
       const why=document.createElement('div');why.className='why';why.textContent=award.reason;
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
@@ -1160,8 +1398,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   function finish() {
     game.phase='finished';
+    if(isOnlineHost()){
+      publishOnlineSnapshot();
+      sendOnline({type:'finish'});
+      online.started=false;
+      showOnlineLobby(online);
+    }
     warningEl.classList.remove('visible');
-    GhostAudio.endRound(game.scores[0]>=game.scores[1]);
+    const you=game.ghosts[localGhostId()];
+    GhostAudio.endRound(game.scores[you.team]>=game.scores[1-you.team]);
     hud.hidden=true;carried.hidden=true;difficultyHud.hidden=true;hint.classList.add('hidden');
     buildResults();
   }
@@ -1666,7 +1911,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     ctx.fillStyle = '#16122b'; ctx.fillRect(0, 0, W, H);
     if (!game) return;
 
-    const player = game.ghosts[0];
+    const player = game.ghosts[localGhostId()];
     const desiredX = clamp(player.x, W / (scale * 2), WORLD.w - W / (scale * 2));
     const desiredY = clamp(player.y, H / (scale * 2), WORLD.h - H / (scale * 2));
     camX = lerp(camX, desiredX, .08);
@@ -1738,8 +1983,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
-  startBtn.addEventListener('click', () => {reset();GhostAudio.thunder()});
-  document.getElementById('againBtn').addEventListener('click',()=>reset());
+  startBtn.addEventListener('click', () => {if(online)leaveOnline();reset();GhostAudio.thunder()});
+  document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
   document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));
 })();
