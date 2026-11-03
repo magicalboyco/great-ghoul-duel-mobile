@@ -609,6 +609,38 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
         osc.connect(gain);gain.connect(fxBus);osc.start(now);osc.stop(now+duration+.03);
       }catch(e){status('effect failed: '+e.message)}
     }
+    function thunder(){
+      // A short original, synthesized thunderclap. No external audio files.
+      // Resume from the user pressing Play (required on iOS browsers).
+      if(muted||!setup())return;
+      resume().then(()=>{
+        if(muted||ctx.state!=='running')return;
+        try{
+          const sr=ctx.sampleRate,duration=1.15,frames=Math.ceil(sr*duration);
+          const buffer=ctx.createBuffer(1,frames,sr),samples=buffer.getChannelData(0);
+          // Rolling, dark filtered noise with two quick lightning cracks.
+          let low=0;
+          for(let i=0;i<frames;i++){
+            const sec=i/sr;
+            const rand=Math.random()*2-1;
+            low=low*.944+rand*.056;
+            const rumble=Math.exp(-sec*3.2)*(low*3.3+rand*.16);
+            const crack1=Math.exp(-sec*64)*rand*.82;
+            const crack2=sec>.17?Math.exp(-(sec-.17)*49)*rand*.34:0;
+            samples[i]=Math.max(-1,Math.min(1,rumble+crack1+crack2));
+          }
+          const source=ctx.createBufferSource(),gain=ctx.createGain();
+          const filter=ctx.createBiquadFilter();
+          filter.type='lowpass';filter.frequency.value=1150;filter.Q.value=.45;
+          const now=ctx.currentTime;
+          gain.gain.setValueAtTime(.001,now);
+          gain.gain.linearRampToValueAtTime(.46,now+.025);
+          gain.gain.exponentialRampToValueAtTime(.001,now+duration);
+          source.buffer=buffer;source.connect(filter);filter.connect(gain);gain.connect(fxBus);
+          source.start(now);source.stop(now+duration+.01);
+        }catch(e){status('Thunder effect unavailable: '+e.message)}
+      });
+    }
     function effect(name){
       switch(name){
         case'collect':tone(680,.12,'sine',.46,0,1.5);break;
@@ -638,7 +670,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }
     function pause(){if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{})}
     function onVisible(){if(!muted&&wantsMusic)resume()}
-    return {init,hurry,endRound,effect,toggle,test,pause,onVisible};
+    return {init,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
   })();
 
   function rand() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
@@ -1706,7 +1738,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
-  startBtn.addEventListener('click', () => reset());
+  startBtn.addEventListener('click', () => {reset();GhostAudio.thunder()});
   document.getElementById('againBtn').addEventListener('click',()=>reset());
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
   document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));
