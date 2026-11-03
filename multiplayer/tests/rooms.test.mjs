@@ -655,7 +655,7 @@ test('Alpha 29: selected name is visible in setup, lobby, arena and results',()=
   assert.match(html,/maxlength="16"/);
   assert.match(html,/autocomplete="nickname"/);
   assert.match(html,/localStorage\.setItem\('boo-crew-player-name',[\s\S]*?sanitizePlayerName\(playerDisplayNameEl\.value\)\)/);
-  assert.match(html,/return \{styleId:selectedCharacter,color:PASTELS\[selectedIndex\]\.hex,name:sanitizePlayerName\(playerDisplayNameEl\.value\)\}/);
+  assert.match(html,/return \{styleId:selectedCharacter,color:PASTELS\[selectedIndex\]\.hex,\s*name:sanitizePlayerName\(playerDisplayNameEl\.value\)\}/);
   assert.match(html,/g\.playerName=human\?sanitizePlayerName\(profile\?\.name\):''/);
   assert.match(html,/const displayName=sanitizePlayerName\(profile\?\.name\)/);
   assert.match(html,/playerName:g\.playerName\|\|''/);
