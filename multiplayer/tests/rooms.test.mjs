@@ -582,3 +582,26 @@ test('Alpha 27 hotfix: health handshake allows GitHub Pages cross-origin Co-op r
   assert.match(html,/Check your connection and the Worker deployment/,
     'Safari Load failed errors explain the actionable connection issue');
 });
+
+
+test('Alpha 28: narrow-screen menu shrinks inside the viewport and remains scrollable',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const css=html.slice(html.indexOf('/* Alpha 28 — Adaptive menu layout.'),html.indexOf('</style>'));
+  assert.ok(css.length>2500,'Mobile-specific layout rules are present');
+  assert.match(html,/<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">/);
+  assert.match(css,/#menu>.panel\{\s*flex:0 1 780px;\s*width:100%;\s*max-width:780px;\s*min-width:0;/);
+  assert.match(css,/overflow-x:hidden;\s*overflow-y:auto;/,
+    'Menu is vertically scrollable without horizontal clipping');
+  assert.match(css,/#menu \.title\{[\s\S]*?overflow-wrap:anywhere;/,
+    'Long title wraps instead of growing the panel');
+  assert.match(css,/@media \(max-width:520px\)\{/);
+  assert.match(css,/#booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:9px;\}/);
+  assert.match(css,/\.crewCard span\{font-size:12px;min-height:15px;\}/);
+  assert.match(css,/#onlinePanel input\{max-width:100%;font-size:16px;\}/,
+    'iOS inputs avoid the under-16-pixel auto-zoom');
+  assert.match(css,/#onlineRoster\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
+  assert.match(css,/@media \(min-width:521px\) and \(max-width:679px\)\{/);
+  assert.match(css,/@media \(max-height:520px\) and \(orientation:landscape\)\{/);
+  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/,
+    'Gameplay power thresholds stay unchanged');
+});
