@@ -1,0 +1,29 @@
+# Local development and Cloudflare tooling
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+!.dev.vars.example
+
+# Credentials, private keys, and downloaded service-account files
+*.pem
+*.p12
+*.pfx
+*.key
+*.secret
+*.secrets
+credentials.json
+service-account*.json
+*api-token*
+*api_token*
+wrangler.log
+*.log
+
+# Local machine and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
