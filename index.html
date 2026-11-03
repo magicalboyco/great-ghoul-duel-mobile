@@ -1638,6 +1638,9 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   });
   async function prepareWinningHighScore(){
     scoreEntry.hidden=true;highScoreStatus.textContent='';
+    const submitButton=document.getElementById('submitHighScore');
+    submitButton.disabled=false;
+    submitButton.textContent='🏆 ENTER THE TOP 13';
     if(!game)return;
     const player=game.ghosts[localGhostId()];
     if(!player||game.scores[player.team]<=game.scores[1-player.team]||player.score<=0)return;
@@ -1647,7 +1650,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   }
   scoreEntry.addEventListener('submit',async event=>{
     event.preventDefault();
-    if(!game||game.phase!=='finished')return;
+    if(!game||game.phase!=='finished'||game.scoreSubmitted)return;
     const player=game.ghosts[localGhostId()];
     if(!player||game.scores[player.team]<=game.scores[1-player.team]||player.score<=0)return;
     const name=highScoreName.value.trim();
@@ -1664,15 +1667,20 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
     }catch{}
     try{
       const answer=await postHall(entry);
+      game.scoreSubmitted=true;
       highScoreStatus.textContent=answer.accepted?
         '🎉 You made the shared Top 13 at #'+answer.rank+'! Open the board to see your Boo Crew portrait.':
         'Your victory was recorded for this attempt, but the shared Top 13 is currently higher.';
     }catch{
       const result=saveDeviceHall(entry);
+      game.scoreSubmitted=true;
       highScoreStatus.textContent=result.rank?
         '📱 Saved as #'+result.rank+' on this device only. The shared server is not connected.':
         'This score did not make your device’s Top 13. The shared server is unavailable.';
-    }finally{button.disabled=false;scoreEntry.querySelector('button').textContent='🏆 ENTER THE TOP 13'}
+    }finally{
+      button.disabled=!!game.scoreSubmitted;
+      button.textContent=game.scoreSubmitted?'✓ SCORE SUBMITTED':'🏆 ENTER THE TOP 13';
+    }
   });
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
