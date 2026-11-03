@@ -36,3 +36,14 @@ Configuration file: `multiplayer/wrangler.jsonc` (relative to repository root).
 The initial setup build ran before the Wrangler configuration file was committed
 to `main`. This README commit is made after both server files are present and
 triggers a new GitHub-connected build when automatic deployments are enabled.
+
+## Retrying after the initial setup failure
+
+The first Cloudflare build (#f65e76e7) cloned the repository before the
+`multiplayer/wrangler.jsonc` configuration was added to `main`.
+That historical build cannot deploy the complete Worker. A new push to
+`main`, such as this documentation update, lets Cloudflare Workers Builds
+pick up the current `multiplayer` directory from the configured production
+branch. Look for a **new build ID** in Cloudflare's Deployments list rather
+than the old error screen. If none appears, verify Git integration triggers
+and the build API token in Settings → Builds.
