@@ -279,7 +279,7 @@ test('Alpha 24: team uniform follows each team captain and guest sees own base',
   assert.notEqual(same[0].hex,same[1].hex,'Two teams must remain distinguishable');
   const multiple=new Map([[0,{color:'#B8DDC4'}],[1,{color:'#C9B9E5'}],[4,{color:'#E8AD87'}]]);
   assert.equal(resolve(multiple,[4,1,0],'#B8DDC4')[0].hex,'#B8DDC4');
-  assert.match(html,/team===myTeam\?'YOUR BASE':'OTHER TEAM BASE'/);
+  assert.match(html,/team===ownTeam\?'YOUR BASE':'OTHER TEAM BASE'/);
 });
 
 test('Alpha 24: guest unlocks sound by tapping Join and can hear local scoring',()=>{
