@@ -182,3 +182,24 @@ test('Connected human ghosts keep control even when movement packets arrive late
   assert.match(html,/humanSeats:online\.seats/);
   assert.match(html,/★ YOU/);
 });
+
+test('Every match ghost uses team uniform, not its personal pastel',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  const start=html.indexOf('  function ghostBodyColor(g)');
+  const end=html.indexOf('\n',start);
+  assert.ok(start>0&&end>start,'Team uniform color resolver exists');
+  const source=html.slice(start,end);
+  const getColor=new Function('color',source+';return ghostBodyColor;')(
+    team=>['#B8DDC4','#D98A91'][team]);
+  for(let i=0;i<8;i++){
+    const g={id:i,team:i<4?0:1,playerColor:'#A7D3EA'};
+    assert.equal(getColor(g),i<4?'#B8DDC4':'#D98A91',
+      'Individual preferences must never change match body colors');
+  }
+  assert.match(html,/const baseColor=ghostBodyColor\(g\),edge=/,
+    'Canvas ghost body and glow use uniform');
+  assert.match(html,/const fill=previewColor\?\?ghostBodyColor\(g\),accent=/,
+    'Results and match portraits use uniform unless explicit lobby preview');
+  assert.match(html,/ctx\.fillStyle=g\.playerColor;ctx\.fill\(\);/,
+    'Personal color is still available as a small accessory');
+});
