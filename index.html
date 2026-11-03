@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 26)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 27)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -94,6 +94,17 @@ button{font:inherit}
 .roomSeat .seatGhost{height:48px;display:grid;place-items:center}
 .roomSeat .seatGhost svg{height:45px;width:41px;filter:drop-shadow(0 4px 3px #12091f55)}
 .roomSeat .seatTitle{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e2ff}
+.roomSeat .seatTeam{display:block;font-size:9px;margin-top:2px;font-weight:800;color:#b8efcc}
+.roomSeat.rival .seatTeam{color:#ffc8d0}
+#modeChooser{display:grid;gap:8px;margin:11px auto;max-width:415px}
+.modeCard{display:flex;gap:11px;align-items:center;width:100%;min-height:65px;padding:11px 12px;text-align:left;color:#fff2e4;border:1.5px solid #bda2d57d;border-radius:14px;background:linear-gradient(115deg,#614581b0,#2c254a);cursor:pointer;touch-action:manipulation}
+.modeCard .modeIcon{font-size:26px;width:37px;text-align:center;flex-shrink:0}
+.modeCard b,.modeCard small{display:block}
+.modeCard b{font-size:15px}
+.modeCard small{font-size:11px;line-height:1.4;color:#e9dcec;margin-top:4px}
+.modeCard[aria-checked="true"]{background:linear-gradient(105deg,#705099,#45346b);border:2px solid #ffe7ad;box-shadow:0 0 0 2px #f8d4dd44}
+.modeCard.upcoming{opacity:.6;cursor:default;background:#40345363;border-style:dashed}
+#modeNotice{font-weight:750;color:#f8e1bd!important}
 #onlineInvite{font-size:12px;color:#f9dfaa;font-weight:800;margin:10px 0;min-height:16px}
 #onlineInvite[hidden]{display:none}
 #onlineRoleCard{padding:13px 12px;margin:12px auto;border-radius:15px;border:2px solid #ffd39baa;max-width:390px;background:#fbe0ab17;text-align:center;color:#fff4d0;font-weight:900;font-size:14px;line-height:1.4}
@@ -266,7 +277,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 26</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 27</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -282,9 +293,21 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
 </div>
 <div id="onlinePanel">
-  <div class="palette-label">🌐 PLAY ONLINE WITH FRIENDS · TEST VERSION</div>
-  <p class="onlineIntro">Create a room and invite a friend using just the six-character code. The official Joy Haus server connects automatically. Up to eight people can join; bots fill the other seats.</p>
-  <p class="onlineIntro">Each team wears one matching color. The first player on each team picks that team's color; other players keep their personal pastel as a costume pin.</p>
+  <div class="palette-label">👻 CHOOSE YOUR HAUNT!</div>
+  <p class="onlineIntro">Choose how you want to play. The host chooses a mode when creating a room; friends join with the six-character code.</p>
+  <div id="modeChooser" role="radiogroup" aria-label="Multiplayer game mode">
+    <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
+      <span class="modeIcon">🤝</span><span><b>Boo Crew Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
+    </button>
+    <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="true" aria-label="Classic Duel, two opposing teams and up to eight players">
+      <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
+    </button>
+    <div class="modeCard upcoming" aria-disabled="true">
+      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · a larger cemetery · coming later</small></span>
+    </div>
+  </div>
+  <div id="modeNotice" class="onlineIntro" aria-live="polite">Classic Duel selected · Friends compete on opposing teams.</div>
+  <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
   <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
     <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
     <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
@@ -311,7 +334,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
-    <button id="startBtn">START GAME</button>
+    <button id="startBtn">👻 PLAY SOLO</button>
     <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
   <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
     <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
@@ -619,6 +642,24 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
       throw Error('Use the main Cloudflare Worker address, without any extra path.');
     return 'wss://'+address.host;
   }
+  const modeChooser=document.getElementById('modeChooser');
+  const modeNotice=document.getElementById('modeNotice');
+  let selectedOnlineMode='classic';
+  const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op'};
+  function selectOnlineMode(mode){
+    if(!MODE_NAMES[mode]||online||onlinePending)return;
+    selectedOnlineMode=mode;
+    for(const button of modeChooser.querySelectorAll('[data-mode]')){
+      button.setAttribute('aria-checked',String(button.dataset.mode===mode));
+    }
+    modeNotice.textContent=mode==='coop'
+      ?'Boo Crew Co-op · Four friendly seats (1–4 humans) against four rival bots.'
+      :'Classic Duel · Up to eight humans on opposing teams.';
+  }
+  modeChooser.addEventListener('click',e=>{
+    const button=e.target.closest('[data-mode]');
+    if(button)selectOnlineMode(button.dataset.mode);
+  });
   const onlineCodeEl=document.getElementById('onlineCode');
   const onlineCreateEl=document.getElementById('onlineCreate');
   const onlineJoinEl=document.getElementById('onlineJoin');
