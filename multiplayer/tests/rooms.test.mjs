@@ -740,3 +740,64 @@ test('Alpha 29: player name field, lobby, match and mobile sizing stay integrate
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/,
     'Power-up requirements stay intact');
 });
+
+
+test('Alpha 34: Four-Way Haunt reserves eight seats across four teams and synchronizes rounds',async()=>{
+  const {env,instances}=harness();
+  const health=await runtime.workerDefault.fetch(mockRequest('https://example.test/health'),env);
+  assert.deepEqual((await health.json()).modes,['classic','coop','fourway']);
+  const created=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms','POST',{Origin:'https://magicalboyco.github.io'},
+    {mode:'fourway'}),env);
+  assert.equal(created.status,201);
+  const {code,hostToken,mode}=await created.json();
+  assert.equal(mode,'fourway');
+  const status=await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms/'+code),env);
+  assert.deepEqual({mode:(await status.json()).mode,maxPlayers:(await status.json()).maxPlayers},
+    {mode:'fourway',maxPlayers:8});
+  const {room,sockets}=instances.get('room-'+code);
+  const joined=[];
+  for(let i=0;i<8;i++){
+    const response=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(response.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({
+      type:'hello',role:i===0?'host':'guest',
+      ...(i===0?{token:hostToken}:{}),
+      styleId:i,color:'#B8DDC4',name:'Ghost '+i
+    }));
+    joined.push(socket);
+  }
+  assert.deepEqual(joined.map(socket=>socket.deserializeAttachment().seat),
+    [0,2,4,6,1,3,5,7],
+    'First four humans occupy four distinct teams');
+  const extraSocket=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+  assert.equal(extraSocket.status,409);
+  const roster=joined[0].sent.findLast(msg=>msg.type==='roster');
+  assert.equal(roster.mode,'fourway');
+  assert.equal(roster.profiles.length,8);
+  await room.webSocketMessage(joined[0],JSON.stringify({type:'start'}));
+  const prepare=joined[0].sent.find(msg=>msg.type==='prepare');
+  assert.equal(prepare.mode,'fourway');
+  assert.equal(prepare.seats.length,8);
+  for(const socket of joined){
+    await room.webSocketMessage(socket,JSON.stringify({type:'ready',roundId:prepare.roundId}));
+  }
+  assert.equal(joined.every(socket=>socket.sent.some(msg=>msg.type==='start'&&msg.mode==='fourway')),true);
+});
+
+test('Alpha 34: Four-Way Haunt client has four-team arena, scoring and UI safeguards',()=>{
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+  assert.match(html,/data-mode="fourway"/);
+  assert.match(html,/FOURWAY_WORLD=\{w:2400,h:1500\}/);
+  assert.match(html,/scores: Array\(matchMode==='fourway'\?4:2\)\.fill\(0\)/);
+  assert.match(html,/teamForSeat=\(seat,mode\)=>mode==='fourway'\?Math\.floor\(seat\/2\)/);
+  assert.match(html,/s\.scores\.length!==\(isFourWay\(\)\?4:2\)/);
+  assert.match(html,/BASES\.every\(base=>distance\(p,base\)>base\.r\+55\)/);
+  assert.match(html,/game\.scores\.map\(\(score,i\)=>/);
+  assert.match(html,/scoreEls\.forEach/);
+  assert.match(html,/localLocatorUntil:performance\.now\(\)\+5000/);
+  assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
+});
