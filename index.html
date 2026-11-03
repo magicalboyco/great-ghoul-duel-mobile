@@ -65,6 +65,7 @@ button{font:inherit}
 #onlinePanel .onlineHost{background:#b6f3c9;color:#193b26}
 #onlinePanel input{width:min(100%,210px);margin:7px auto 10px;padding:10px;border-radius:10px;border:1px solid #dac3eb85;background:#1d1634;color:#fff;letter-spacing:.18em;font-weight:800;text-align:center;text-transform:uppercase}
 #onlinePanel #onlineStatus{min-height:32px;margin:10px 0 5px;font-size:12px;line-height:1.55;color:#f2e3ff;overflow-wrap:anywhere}
+#onlinePanel #onlineServer{width:min(100%,370px);letter-spacing:normal;text-transform:none;text-align:left;overflow:hidden}
 #onlinePanel button[hidden]{display:none}
 #onlineRoster{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px auto 6px;max-width:400px}
 #onlineRoster[hidden]{display:none}
@@ -255,7 +256,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   <div class="palette-label">🌐 PLAY ONLINE WITH FRIENDS · TEST VERSION</div>
   <p class="onlineIntro">Create a private room and share its six-character code. Everyone must enter the same Cloudflare server address once on their device. Up to eight people can join; bots fill empty spots.</p>
   <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Cloudflare server address (paste once per device)</label>
-  <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://your-worker.workers.dev" aria-label="Your Cloudflare Worker URL">
+  <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="Paste your HTTPS Cloudflare Worker address" aria-label="Your Cloudflare Worker URL">
+  <p class="onlineIntro" style="margin:4px 0 8px">Find this address by opening your deployed Cloudflare Worker and clicking <b>Visit</b>. An empty server field cannot create a room.</p>
   <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
   <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
   <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
@@ -549,11 +551,15 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   const onlineServerEl=document.getElementById('onlineServer');
   try{onlineServerEl.value=localStorage.getItem('ghost-duel-server-url')||''}catch{}
   function safeWebSocketServer(){
-    const address=new URL(onlineServerEl.value.trim());
+    const raw=onlineServerEl.value.trim();
+    if(!raw)throw Error('Cloudflare server address is missing. Paste your Worker URL into the field above, then try Create Room again.');
+    let address;
+    try{address=new URL(raw)}
+    catch{throw Error('That server address is not a valid URL. Paste its complete HTTPS address from Cloudflare → Visit.')}
     if(address.protocol!=='https:'||address.username||address.password||address.search||address.hash)
-      throw Error('Enter your Cloudflare server HTTPS address (no password or extra parameters).');
+      throw Error('Enter your Cloudflare server HTTPS address only, with no password or extra parameters.');
     if(address.pathname!=='/'&&address.pathname!=='')
-      throw Error('Use only the root Cloudflare server address.');
+      throw Error('Use the main Cloudflare Worker address, without any extra path.');
     return 'wss://'+address.host;
   }
   const onlineCodeEl=document.getElementById('onlineCode');
