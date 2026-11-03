@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 30)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 31)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -509,7 +509,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 30</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 31</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
@@ -567,7 +567,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   </div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>Alpha 30: repaired startup, restored ghost/color selectors and solo play; Alpha 29 added player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
+      <div><b>New this build</b><br>Alpha 31: persistent YOU marker above your ghost in solo and multiplayer. Alpha 30 repaired startup; Alpha 29 added player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
       <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
@@ -2961,19 +2961,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 
     drawReactionSymbols(g,x,y);
     drawGhostEmote(g,x,y);
-    if(game.online&&g.human){
-      // Visible human badge: every player can immediately distinguish the
-      // real friends from computer opponents in the same shared arena.
-      const mine=g.id===localGhostId();
+    if(game.online&&g.human&&g.id!==localGhostId()){
+      // Other human players retain their subtle multiplayer name badges.
+      // The local player's more prominent YOU marker is drawn last.
       ctx.save();ctx.font='900 12px system-ui';ctx.textAlign='center';
       const displayName=sanitizePlayerName(g.playerName);
-      const text=(mine?'★ ':'● ')+(displayName||('PLAYER '+(g.id+1)));
+      const text='● '+(displayName||('PLAYER '+(g.id+1)));
       const width=Math.max(69,Math.min(174,ctx.measureText(text).width+23));
-      ctx.fillStyle=mine?'#b4f8d9ed':'#39294ff0';
-      ctx.strokeStyle=mine?'#134d35':'#f0d2ff';
+      ctx.fillStyle='#39294ff0';ctx.strokeStyle='#f0d2ff';
       ctx.lineWidth=1.6;ctx.beginPath();ctx.roundRect(x-width/2,y-64,width,21,9);
       ctx.fill();ctx.stroke();
-      ctx.fillStyle=mine?'#1d4232':'#fff4ff';ctx.fillText(text,x,y-49,width-12);
+      ctx.fillStyle='#fff4ff';ctx.fillText(text,x,y-49,width-12);
       ctx.restore();
     }
     if(celebrating||stealing||g.reaction==='collect'){
@@ -2991,6 +2989,41 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       }
       ctx.restore();
     }
+  }
+
+  // Alpha 31: a persistent, high-contrast locator for the player on THIS
+  // device. It works for solo, host and guest seats, and is drawn on top of
+  // other ghosts so its identity cannot disappear in a crowded base.
+  function drawLocalPlayerMarker(g){
+    if(!g)return;
+    const x=g.x,y=g.y;
+    const nickname=sanitizePlayerName(g.playerName);
+    const label=nickname?'YOU · '+nickname:'YOU';
+    ctx.save();
+    // Animated gold locator ring distinguishes the local ghost from its
+    // teammates even when all four are the same team color.
+    const pulse=.5+.5*Math.sin(t*4.5);
+    ctx.strokeStyle='#fff1a3';
+    ctx.lineWidth=3.2;
+    ctx.beginPath();ctx.ellipse(x,y+27,27+pulse*3,10+pulse*1.5,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(34,23,54,.9)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(x,y+27,32+pulse*3,13+pulse*1.5,0,0,Math.PI*2);ctx.stroke();
+    // Keep the badge independent of body animation and team color.
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='900 13px system-ui';
+    const badgeWidth=Math.max(60,Math.min(168,ctx.measureText(label).width+23));
+    const badgeY=y-86;
+    ctx.shadowColor='rgba(8,5,20,.65)';ctx.shadowBlur=8;
+    ctx.fillStyle='#fff0a6';ctx.strokeStyle='#3c2855';ctx.lineWidth=2;
+    ctx.beginPath();ctx.roundRect(x-badgeWidth/2,badgeY,badgeWidth,27,11);
+    ctx.fill();ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#352246';ctx.fillText(label,x,badgeY+13.5,badgeWidth-14);
+    // Downward chevron always points to the ghost that is being controlled.
+    ctx.fillStyle='#fff0a6';ctx.strokeStyle='#3c2855';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x-7,badgeY+30);ctx.lineTo(x+7,badgeY+30);
+    ctx.lineTo(x,badgeY+39);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.restore();
   }
 
   // This animation never alters gameplay positions. Pickups, trails, stealing
@@ -3568,6 +3601,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       }else drawGhost(g);
     }
     drawPopups();
+    // Paint the local marker last to remain visible even at crowded spawns.
+    const localPlayer=game.ghosts[localGhostId()];
+    if(localPlayer){
+      const isGuest=isOnlineGuest();
+      if(isGuest&&Number.isFinite(localPlayer.viewX)&&Number.isFinite(localPlayer.viewY)){
+        drawLocalPlayerMarker({...localPlayer,x:localPlayer.viewX,y:localPlayer.viewY});
+      }else drawLocalPlayerMarker(localPlayer);
+    }
     ctx.restore();
 
     if (game.toastLeft > 0) {
