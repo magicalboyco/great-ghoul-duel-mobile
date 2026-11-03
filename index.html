@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 23)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 24)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -266,7 +266,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 23</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 24</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
@@ -283,10 +283,14 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="onlinePanel">
   <div class="palette-label">🌐 PLAY ONLINE WITH FRIENDS · TEST VERSION</div>
-  <p class="onlineIntro">Create a private room and share its six-character code. Everyone must enter the same Cloudflare server address once on their device. Up to eight people can join; bots fill empty spots. All ghosts wear matching team colors during a match; your chosen personal color appears in the lobby and as a tiny costume pin.</p>
-  <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Cloudflare server address (paste once per device)</label>
-  <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="Paste your HTTPS Cloudflare Worker address" aria-label="Your Cloudflare Worker URL">
-  <p class="onlineIntro" style="margin:4px 0 8px">Find this address by opening your deployed Cloudflare Worker and clicking <b>Visit</b>. An empty server field cannot create a room.</p>
+  <p class="onlineIntro">Create a room and invite a friend using just the six-character code. The official Joy Haus server connects automatically. Up to eight people can join; bots fill the other seats.</p>
+  <p class="onlineIntro">Each team wears one matching color. The first player on each team picks that team's color; other players keep their personal pastel as a costume pin.</p>
+  <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
+    <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
+    <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
+    <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
+    <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
+  </details>
   <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
   <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
   <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
@@ -581,11 +585,18 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   let keys = {};
   let game = null;
   let seed = 12345;
-  // Alpha 17 private rooms: connect directly to our Cloudflare Worker.
-  // The existing single-player simulation remains the default.
-  // Server location is user-configured, never committed to public source.
+  // Public multiplayer endpoint — intentionally shared in invitations.
+  // A Worker URL is public infrastructure, NOT an API token or credential.
+  // Keep host reservations secret in memory; never place them in a link.
+  const DEFAULT_ROOM_SERVER='https://ghost-duel-rooms.jonathanjoyner.workers.dev';
   const onlineServerEl=document.getElementById('onlineServer');
-  try{onlineServerEl.value=localStorage.getItem('ghost-duel-server-url')||''}catch{}
+  onlineServerEl.value=DEFAULT_ROOM_SERVER;
+  try{
+    const saved=localStorage.getItem('ghost-duel-server-url');
+    if(saved){const address=new URL(saved);if(address.protocol==='https:'&&
+      !address.username&&!address.password&&!address.search&&!address.hash&&
+      (address.pathname==='/'||address.pathname===''))onlineServerEl.value=address.origin;}
+  }catch{}
   function safeWebSocketServer(){
     const raw=onlineServerEl.value.trim();
     if(!raw)throw Error('Cloudflare server address is missing. Paste your Worker URL into the field above, then try Create Room again.');
@@ -948,8 +959,8 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
     const link=location.origin+location.pathname+'?room='+online.code;
-    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend also needs the same server address. Room '+online.code);}
-    catch{setOnlineStatus('Share this game address and room code: '+online.code);}
+    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend only needs this link (or room code '+online.code+').');}
+    catch{setOnlineStatus('Share the game link or this room code: '+online.code);}
   });
 
 
