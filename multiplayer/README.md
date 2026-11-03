@@ -299,3 +299,61 @@ difficulty modes, teammate bot consistency and the unchanged power-ups.
 After deployment, compare several games at each difficulty on the same
 device and with similar play strategies. This is an initial tuning
 experiment, not proof that wins become exactly 10/15/20% harder.
+
+## Alpha 27 — Choose Your Haunt! Co-op and Classic Duel
+
+The game menu now exposes two live multiplayer formats and preserves
+**Play Solo** as a direct button. **Four-Way Haunt** is shown only as
+`Coming later`; a four-team game is not implemented.
+
+**Boo Crew Co-op (1–4 humans):** The host and up to three guests are
+assigned ghost seats 0, 1, 2, and 3. All four are on the same team,
+competing against four rival computer ghosts in seats 4–7. Unoccupied
+friendly seats use computer allies. The host chooses the human team's
+main uniform color; each friend retains their own personal costume pin.
+The existing eight unique costumes, pickups, scores, match duration and
+power unlocks remain intact.
+
+**Classic Duel (1–8 humans):** Preserves the original alternating
+seating order `[0,4,1,5,2,6,3,7]`, with players filling both
+opposing teams and bots occupying unclaimed seats.
+
+The Worker now stores the mode in each room's existing Durable Object
+reservation metadata; no additional Durable Object class, migration,
+table, or secret is necessary. `POST /rooms` accepts
+`{"mode":"coop"}` or `{"mode":"classic"}`, defaulting to Classic
+for older clients. `GET /rooms/<CODE>` and the WebSocket welcome,
+roster, prepare and start messages expose the server's confirmed mode.
+The Worker enforces a four-human cap for Co-op and eight for Classic;
+clients cannot change the mode after room creation.
+
+The lobby previews the eight team positions, with human portraits,
+friendly-bot / rival-bot labels and team-color borders. A guest
+automatically adopts the room's mode upon joining; only the host
+chooses the mode. The host remains responsible for starting the
+synchronized multiplayer match, as before.
+
+### Deployment and compatibility
+
+**Both** `index.html` and `multiplayer/src/worker.js` must be
+deployed before Co-op will start. GitHub Pages can publish the
+frontend as usual; the Cloudflare Worker build must deploy from
+the repository's `main` branch with root `/multiplayer` and
+command `npx wrangler deploy`, using the existing
+`multiplayer/wrangler.jsonc` binding. There is no database migration.
+
+If a Co-op host attempts to create a room while the old Worker is
+still online, the browser checks `GET /health` and presents a
+clear message rather than silently starting a Classic game. Classic
+Duel and Play Solo continue working with the older Worker. Once
+the new Worker is deployed, `/health` should return a
+`modes` array containing `classic` and `coop`.
+
+Automated tests exercise mode persistence, four-person Co-op seating,
+the fifth-player rejection, the unchanged eight-seat Classic order,
+room start handshakes, human joystick routing, and the user-facing
+menu wiring. A real two-device browser check is still required.
+
+**Do not tell users Co-op is live until the Worker deployment is
+confirmed.** GitHub merge alone does not guarantee a Cloudflare build
+has completed successfully.
