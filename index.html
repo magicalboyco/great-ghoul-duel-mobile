@@ -1956,7 +1956,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     seed = 7321;
     const choices=PASTELS.filter((_,i)=>i!==selectedIndex);
     teamColors=[PASTELS[selectedIndex],choices[Math.floor(Math.random()*choices.length)]];
-    if(matchMode==='fourway')teamColors=[...FOUR_WAY_COLORS];
+    if(matchMode==='fourway')teamColors=[PASTELS[selectedIndex],...FOUR_WAY_COLORS.filter(c=>c.hex!==PASTELS[selectedIndex].hex)].slice(0,4);
     syncScoreColors();
     const ghosts = [];
     const roster=[selectedCharacter,...Array.from({length:8},(_,i)=>i).filter(i=>i!==selectedCharacter)];
