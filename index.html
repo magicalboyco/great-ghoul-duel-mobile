@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel by Joy Haus — Alpha 14</title>
+<title>Spooktacular Showdown — The Boo Crew</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -104,6 +107,27 @@ button{font:inherit}
 @keyframes trophyBob{to{transform:translateY(-5px) rotate(5deg)}}@keyframes tileAppear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:480px){.resultsPanel{padding:12px}.awardGrid{grid-template-columns:1fr;gap:8px}.awardTile{padding:10px;gap:12px}.awardTile .portrait{width:71px;height:80px;flex-basis:71px}.awardTile .who{font-size:14px}.awardTile .what{font-size:13px}.awardTile .why{font-size:11px}}
 @media (max-width:680px){.bullets{grid-template-columns:1fr}.title{font-size:50px}.panel{padding:18px}.sub{font-size:14px}}
+
+:root{--cream:#fff4da}
+html,body{font-family:'Fredoka',system-ui,sans-serif}
+#menu,#results,#credits{background-image:linear-gradient(180deg,#1b0c3270,#1b0c32ad),url('assets/boo-crew-night.svg');background-size:cover;background-position:center}
+.panel,.resultsPanel,.creditsPanel{background:linear-gradient(145deg,#362451f0,#1b1132f5);border:2px solid #dbb1f98c;box-shadow:0 0 0 4px #29123d77,0 24px 75px #070311bb;backdrop-filter:blur(10px)}
+.panel{width:min(96vw,780px);padding:17px 23px}
+.title,.resultsPanel h2,.creditsHero h2{font-family:'Caprasimo',Georgia,serif;font-weight:400;color:var(--cream);text-shadow:0 4px 0 #48245e,0 9px 16px #130b2788}
+.title{font-size:clamp(34px,7vw,65px);line-height:1.05;margin:7px 0 2px}
+.studioSignature{color:#ffe6ab}
+#startBtn,#againBtn{background:linear-gradient(#ffe5af,#ffbfdd);color:#442341;border:2px solid #ffe9d0;box-shadow:0 5px 0 #775080,0 9px 23px #18082188}
+#booCrewGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px auto 10px;max-width:610px}
+.crewCard{border:1.5px solid #ddbbef88;border-radius:14px;background:linear-gradient(150deg,#704b8c99,#2e204b99);color:#fff5e6;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;cursor:pointer;font-family:'Fredoka',sans-serif}
+.crewCard svg{width:56px;height:63px;filter:drop-shadow(0 4px 4px #0b092788)}
+.crewCard span{font-size:clamp(10px,2vw,13px);font-weight:700}
+.crewCard[aria-pressed="true"]{border:2px solid #ffe4aa;box-shadow:0 0 0 2px #f6c5ee77,0 0 18px #eaabec77;background:#8256a9aa}
+.crewCard:focus-visible{outline:3px solid #ffe4aa;outline-offset:2px}
+#crewSelection{font-size:12px;color:#ffe6ad}
+.swatches{grid-template-columns:repeat(7,minmax(0,1fr));max-width:435px}
+.swatch{width:35px;height:35px;justify-self:center}
+.bullets{margin:11px 0;gap:7px}.bullets div{padding:7px 9px;font-size:12px}
+@media(max-width:480px){.panel{padding:13px}.title{font-size:clamp(32px,9.6vw,47px)}.crewCard svg{width:46px;height:53px}.crewCard span{font-size:10px}.swatch{width:30px;height:30px}.bullets{display:none}.sub{font-size:12px;line-height:1.35}}
 </style>
 </head>
 <body>
@@ -125,14 +149,12 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 14</div>
-    <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
-    <div class="title">GHOST<br>DUEL</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 15</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
-    <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
-    <div class="palette-label">Choose your pastel-goth ghost</div>
+    <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
+    <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
-<div id="teamPreview">Your team: <b id="selectedName">Mint</b> · Rival team: random different pastel</div>
+<div id="teamPreview">Your color: <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
 <div id="difficultyWrap">
   <div class="palette-label">Computer opponent difficulty</div>
   <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
@@ -311,12 +333,12 @@ button{font:inherit}
   const palettePicker = document.getElementById('palettePicker');
   const selectedNameEl = document.getElementById('selectedName');
   const PASTELS = [
-    {name:'Blush',hex:'#ffc1cc'}, {name:'Peach',hex:'#ffe0b2'},
-    {name:'Moonlight',hex:'#fff8b0'}, {name:'Mint',hex:'#d5fcd6'},
-    {name:'Frost',hex:'#c2f0ff'}, {name:'Periwinkle',hex:'#c5d9ff'},
-    {name:'Lavender',hex:'#d9c2f0'}, {name:'Rose',hex:'#ffddf4'}
+    {name:'Red Rum',hex:'#D98A91'}, {name:'Occult Orange',hex:'#E8AD87'},
+    {name:'Yokai Yellow',hex:'#F2DF9D'}, {name:'Ghostly Green',hex:'#B8DDC4'},
+    {name:'Bewitching Blue',hex:'#A7D3EA'}, {name:'Lifeless Lavender',hex:'#C9B9E5'},
+    {name:'Poltergeist Pink',hex:'#F1B4D5'}
   ];
-  let selectedIndex=3,teamColors=[PASTELS[3],PASTELS[6]];
+  let selectedIndex=3,selectedCharacter=0,teamColors=[PASTELS[3],PASTELS[5]];
   const color=team=>teamColors[team].hex;
   const alpha=(hex,opacity)=>hex+Math.round(opacity*255).toString(16).padStart(2,'0');
   const darken=(hex,factor=.64)=>'#'+[1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*factor).toString(16).padStart(2,'0')).join('');
@@ -967,7 +989,7 @@ button{font:inherit}
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
-  const GHOST_CHARACTER_NAMES=['Ribbon','Sprout','Spellcaster','Stargazer','Scholar','Nightwing','Royal','Cozy'];
+  const GHOST_CHARACTER_NAMES=['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'];
   // Unique visual identity is independent of team colors or awards.
   // Each character has its own silhouette accent, facial expression and backdrop.
   const INDIVIDUAL_ACCENTS=['#ff72af','#65cfa0','#ae8bff','#ffd766','#6e93ec','#ab7cef','#fff09a','#ed986d'];
