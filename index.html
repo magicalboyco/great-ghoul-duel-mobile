@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#141127">
-<title>Ghost Duel — Alpha 13</title>
+<title>Ghost Duel — Alpha 14</title>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#100d1f;color:#f6f1ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
@@ -47,6 +47,12 @@ button{font:inherit}
 #difficultyWrap{margin:13px auto 8px;max-width:470px}
 .difficultyButtons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:9px 0}
 .difficultyBtn{min-height:43px;padding:8px 3px;border-radius:13px;background:rgba(255,255,255,.08);color:#f2e6ff;border:1.5px solid rgba(255,255,255,.22);font-size:13px;font-weight:850;touch-action:manipulation;cursor:pointer}
+#onlinePanel{margin:15px auto 10px;padding:13px;border-radius:16px;background:#b2a3ff0c;border:1px solid #ffffff30;text-align:left}
+#onlinePanel input{box-sizing:border-box;width:100%;padding:10px;margin:5px 0 8px;background:#15112e;color:#fff;border:1px solid #ffffff42;border-radius:10px;font:inherit;font-size:13px}
+.onlineRow{display:flex;gap:8px;flex-wrap:wrap}
+.onlineRow button{flex:1;min-width:112px;border:1px solid #ffffff50;border-radius:12px;background:#69528e;color:white;padding:10px;font-weight:850}
+#onlineStatus{font-size:12px;color:#edddff;line-height:1.5;margin:8px 0 0;overflow-wrap:anywhere}
+#onlineStart[hidden]{display:none}
 .difficultyBtn[aria-pressed="true"]{border:2px solid #c4ffda;background:rgba(147,255,190,.17);color:#d1ffe0;box-shadow:0 0 0 1px #a0ffba55}
 #difficultyDescription{color:#e9daff;font-size:12px;min-height:33px;line-height:1.4;margin:4px 0}
 #difficultyHud{position:absolute;top:calc(53px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);border:1px solid #ffffff44;border-radius:999px;padding:3px 12px;background:#16122bb8;color:#ecdefc;font-size:11px;font-weight:750;z-index:5;pointer-events:none}
@@ -101,7 +107,7 @@ button{font:inherit}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">Halloween gameplay recreation · Alpha 13</div>
+    <div class="eyebrow">Halloween gameplay recreation · Alpha 14</div>
     <div style="font-size:54px;margin-top:10px">👻 ✨ 🎃</div>
     <div class="title">GHOST<br>DUEL</div>
     <p class="sub" id="menuText">A richer playable milestone inspired by <b>The Great Ghoul Duel</b>. Choose your pastel ghost, collect wandering spirit flames, bring them to your matching base, and steal rival chains.</p>
@@ -117,9 +123,19 @@ button{font:inherit}
   </div>
   <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
 </div>
+<div id="onlinePanel">
+  <div class="palette-label">🌐 Online multiplayer · Experimental</div>
+  <label for="onlineServer" style="font-size:12px">Your Cloudflare Worker URL</label>
+  <input id="onlineServer" type="url" placeholder="https://ghost-duel-rooms.example.workers.dev" autocomplete="url" spellcheck="false">
+  <label for="onlineCode" style="font-size:12px">Friend's room code (to join)</label>
+  <input id="onlineCode" maxlength="6" placeholder="6-character room code" autocapitalize="characters" spellcheck="false">
+  <div class="onlineRow"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
+  <p id="onlineStatus" role="status" aria-live="polite">Solo play still works as before. Online needs your own deployed Cloudflare Worker.</p>
+  <div class="onlineRow"><button type="button" id="onlineStart" hidden>🎮 Start online match</button><button type="button" id="onlineLeave" hidden>Leave room</button></div>
+</div>
 <div class="bullets">
-      <div><b>New this build</b><br>Choose Easy, Normal or Hard opponent ghosts before the match. Different AI, same rules and powers.</div>
-      <div><b>Still missing</b><br>Original character art, all maps, full multiplayer, and licensed soundtrack.</div>
+      <div><b>New this build</b><br>Private online rooms with shareable codes (experimental), plus Easy / Normal / Hard bots.</div>
+      <div><b>Still missing</b><br>Server-authoritative anti-cheat, matchmaking, reconnection, and licensed soundtrack.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
@@ -234,6 +250,119 @@ button{font:inherit}
   let keys = {};
   let game = null;
   let seed = 12345;
+  let online = null;
+  const onlineServerEl=document.getElementById('onlineServer');
+  const onlineCodeEl=document.getElementById('onlineCode');
+  const onlineStatusEl=document.getElementById('onlineStatus');
+  const onlineStartEl=document.getElementById('onlineStart');
+  const onlineLeaveEl=document.getElementById('onlineLeave');
+  const onlineCreateEl=document.getElementById('onlineCreate');
+  const onlineJoinEl=document.getElementById('onlineJoin');
+  try{onlineServerEl.value=localStorage.getItem('ghost-duel-server')||''}catch{}
+  const myGhostId=()=>online?.seat??0;
+  const isGuest=()=>online&&!online.host;
+  const isHost=()=>online?.host===true;
+  function onlineStatus(message){onlineStatusEl.textContent=message;}
+  function onlineSend(data){if(online?.ws?.readyState===WebSocket.OPEN)online.ws.send(JSON.stringify(data));}
+  function roomURL(){
+    const url=new URL(onlineServerEl.value.trim());
+    if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1'].includes(url.hostname)))throw Error('Enter an HTTPS Cloudflare Worker URL.');
+    if(url.username||url.password||url.search||url.hash)throw Error('Use the Worker root URL without credentials or parameters.');
+    url.protocol=url.protocol==='https:'?'wss:':'ws:';
+    url.pathname=url.pathname.replace(/\\/$/,'');
+    return url.toString().replace(/\\/$/,'');
+  }
+  function makeRoomCode(){
+    const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes=new Uint8Array(6);crypto.getRandomValues(bytes);
+    return [...bytes].map(n=>alphabet[n%alphabet.length]).join('');
+  }
+  function disconnectOnline(message='Left room. Solo mode is ready.'){
+    if(online){const ws=online.ws;online=null;try{ws.close(1000,'Leaving')}catch{}}
+    onlineStartEl.hidden=true;onlineLeaveEl.hidden=true;
+    onlineCreateEl.disabled=false;onlineJoinEl.disabled=false;
+    onlineStatus(message);
+    if(game&&game.phase==='playing')game.phase='finished';
+    if(game&&results.classList.contains('open'))results.classList.remove('open');
+    if(menu.classList.contains('hidden')&&(!game||game.phase!=='playing'))menu.classList.remove('hidden');
+  }
+  function connectOnline(create){
+    if(online)disconnectOnline('Switching room...');
+    let server;try{server=roomURL();}catch(error){onlineStatus(error.message);return}
+    const code=create?makeRoomCode():onlineCodeEl.value.trim().toUpperCase().replace(/[^A-Z2-9]/g,'');
+    if(!/^[A-Z2-9]{6}$/.test(code)){onlineStatus('Enter a valid 6-character room code.');return}
+    try{localStorage.setItem('ghost-duel-server',onlineServerEl.value.trim())}catch{}
+    const ws=new WebSocket(server+'/room/'+code);
+    online={ws,code,seat:null,host:false,seats:[],inputs:new Map(),started:false,lastInput:0,lastSnapshot:0};
+    onlineCodeEl.value=code;onlineCreateEl.disabled=true;onlineJoinEl.disabled=true;
+    onlineStatus('Connecting to room '+code+'...');
+    ws.addEventListener('open',()=>{if(online?.ws===ws)onlineStatus('Connected to '+code+' — assigning a ghost...')});
+    ws.addEventListener('message',event=>{
+      if(online?.ws!==ws)return;
+      let m;try{m=JSON.parse(event.data)}catch{return}
+      if(m.type==='welcome'){
+        online.seat=m.seat;online.host=m.host;onlineLeaveEl.hidden=false;
+        onlineStartEl.hidden=!m.host;
+        onlineStatus((m.host?'You are hosting':'Joined')+' room '+code+'. Your ghost: #'+(m.seat+1)+'. '+(m.host?'Share the code, then press Start online match.':'Waiting for the host to start.'));
+      } else if(m.type==='roster'){
+        online.seats=m.seats;
+        if(!online.started)onlineStatus('Room '+code+' · '+m.seats.length+'/8 human ghosts. '+(online.host?'Share this code and press Start online match.':'Waiting for host to start.'));
+      } else if(m.type==='start'){
+        online.started=true;
+        reset();
+        game.online=true;
+        difficultyHud.textContent='🌐 ONLINE ROOM '+code;
+        onlineStartEl.hidden=true;
+        if(online.host)sendSnapshot();
+      } else if(m.type==='input'&&online.host){
+        if(online.seats.includes(m.seat))online.inputs.set(m.seat,{x:m.x,y:m.y,mag:Math.min(1,Math.hypot(m.x,m.y)),at:performance.now()});
+      } else if(m.type==='snapshot'&&!online.host&&online.started){
+        adoptSnapshot(m.state);
+      } else if(m.type==='leave'){
+        if(online.host)online.inputs.delete(m.seat);
+      } else if(m.type==='finish'&&!online.host){
+        if(game&&game.phase==='playing')finish();
+        online.started=false;
+      } else if(m.type==='closed'){disconnectOnline(m.reason||'Room closed.');}
+    });
+    ws.addEventListener('close',()=>{if(online?.ws===ws)disconnectOnline('Disconnected. Check your Worker URL or create a new room.')});
+    ws.addEventListener('error',()=>{if(online?.ws===ws)onlineStatus('Connection failed. Verify the Worker URL and deployment.')});
+  }
+  function sendSnapshot(){
+    if(!isHost()||!online.started||!game)return;
+    onlineSend({type:'snapshot',state:{
+      remaining:game.remaining,scores:game.scores,phase:game.phase,difficulty:game.difficulty,
+      teamColors:teamColors.map(c=>c.hex),
+      ghosts:game.ghosts.map(g=>({
+        id:g.id,team:g.team,x:g.x,y:g.y,heading:g.heading,trail:g.trail,
+        trailPos:g.trailPos,score:g.score,face:g.face,reaction:g.reaction,
+        reactionTime:g.reactionTime,reactionDuration:g.reactionDuration,
+        bounce:g.bounce,blink:g.blink,moveAmount:g.moveAmount,stats:g.stats
+      })),
+      flames:game.flames
+    }});
+  }
+  function adoptSnapshot(s){
+    if(!s||!game||!Array.isArray(s.ghosts)||s.ghosts.length!==8||
+       !Array.isArray(s.scores)||!Array.isArray(s.flames))return;
+    game.remaining=Math.max(0,Math.min(120,Number(s.remaining)||0));
+    game.scores=s.scores;
+    game.flames=s.flames;
+    game.difficulty=DIFFICULTIES[s.difficulty]?s.difficulty:'normal';
+    if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
+      teamColors=s.teamColors.map((hex,i)=>({name:i?'Rivals':'Team',hex:/^#[0-9a-fA-F]{6}$/.test(hex)?hex:PASTELS[i].hex}));
+      greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
+    }
+    for(const snap of s.ghosts){
+      const g=game.ghosts[snap.id];if(!g)continue;
+      const fields=['x','y','heading','trail','trailPos','score','face','reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats'];
+      for(const key of fields)if(snap[key]!==undefined)g[key]=snap[key];
+    }
+    game.phase=s.phase==='finished'?'finished':'playing';
+    updateHUD();
+    if(game.phase==='finished'&&!results.classList.contains('open'))finish();
+  }
+
 
   const stars = Array.from({ length: 110 }, () => ({ x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, r: Math.random() * 1.7 + 0.2, twinkle: Math.random() * 7 }));
   const props = makeProps();
@@ -782,6 +911,13 @@ button{font:inherit}
 
   function update(dt) {
     if (!game || game.phase !== 'playing') return;
+    if(isGuest()){
+      if(online.started&&performance.now()-online.lastInput>50){
+        online.lastInput=performance.now();
+        const input=inputDirection();onlineSend({type:'input',x:input.x*input.mag,y:input.y*input.mag});
+      }
+      return;
+    }
     game.remaining = Math.max(0, game.remaining - dt);
     const wholeSeconds=Math.ceil(game.remaining);
     if(wholeSeconds<=15&&game.lastWarningSecond>15){
@@ -805,7 +941,10 @@ button{font:inherit}
       g.reactionTime=Math.max(0,g.reactionTime-dt);
       if(g.reactionTime===0)g.reaction='';
       g.wiggle+=dt;
-      const input = i === 0 ? inputDirection() : botDirection(g, dt);
+      const remote=online?.inputs.get(i);
+      const human=online?.seats.includes(i);
+      const input=i===0?inputDirection():(isHost()&&human&&remote&&performance.now()-remote.at<450?
+        remote:botDirection(g,dt));
       const oldX=g.x,oldY=g.y;
       moveGhost(g, input, dt);
       g.moveAmount=Math.min(1,Math.hypot(g.x-oldX,g.y-oldY)/(dt*170));
@@ -837,18 +976,25 @@ button{font:inherit}
       if (p.life <= 0) game.popups.splice(i, 1);
     }
 
+    updateHUD();
+    if(isHost()&&online.started&&performance.now()-online.lastSnapshot>80){
+      online.lastSnapshot=performance.now();sendSnapshot();
+    }
+  }
+
+  function updateHUD(){
+    if(!game)return;
     greenScoreEl.textContent = game.scores[0];
     purpleScoreEl.textContent = game.scores[1];
     const sec = Math.ceil(game.remaining);
     clockEl.textContent = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2);
-    carryValue.textContent = game.ghosts[0].trail.length;
-    upgradeEl.textContent=upgradeLabel(levelFor(game.ghosts[0]));
-    abilitiesEl.innerHTML=powerProgress(game.ghosts[0]).map(p=>p.on?
+    carryValue.textContent = game.ghosts[myGhostId()].trail.length;
+    upgradeEl.textContent=upgradeLabel(levelFor(game.ghosts[myGhostId()]));
+    abilitiesEl.innerHTML=powerProgress(game.ghosts[myGhostId()]).map(p=>p.on?
       '<b style="color:#b7ffd7">'+p.name+' ✓</b>':
-      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-levelFor(game.ghosts[0]))+' to go</span>').join(' · ');
+      '<span style="opacity:.6">'+p.name+' '+Math.max(0,p.at-levelFor(game.ghosts[myGhostId()]))+' to go</span>').join(' · ');
     clockEl.style.color=game.remaining<=15?'#ff9fa9':'#fff5cb';
   }
-
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
@@ -920,9 +1066,10 @@ button{font:inherit}
   }
   function buildResults(){
     const [a,b]=game.scores;
-    resultHeading.textContent=(a>b?'YOUR TEAM WINS!':a<b?'THE RIVALS WIN!':'A SPOOKY DRAW!')+' · '+DIFFICULTIES[game.difficulty].name.toUpperCase();
+    const myTeam=game.ghosts[myGhostId()].team;
+    resultHeading.textContent=(a===b?'A SPOOKY DRAW!':(game.scores[myTeam]>game.scores[1-myTeam]?'YOUR TEAM WINS!':'THE RIVALS WIN!'))+' · '+(online?'ONLINE':DIFFICULTIES[game.difficulty].name.toUpperCase());
     resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
-    const awardMap=assignAwards(game.ghosts),you=game.ghosts[0],mine=awardMap.get(0);
+    const awardMap=assignAwards(game.ghosts),you=game.ghosts[myGhostId()],mine=awardMap.get(myGhostId());
     myAwardEmoji.innerHTML=ghostPortrait(you);
     myAwardName.textContent=mine.title;
     myAwardReason.textContent=mine.reason;
@@ -934,13 +1081,13 @@ button{font:inherit}
     const roster=[...game.ghosts].sort((a,b)=>a.team-b.team||b.score-a.score||a.id-b.id);
     roster.forEach((ghost,i)=>{
       const award=awardMap.get(ghost.id),tile=document.createElement('div');
-      tile.className='awardTile'+(ghost.id===0?' player':'');
+      tile.className='awardTile'+(ghost.id===myGhostId()?' player':'');
       tile.style.animationDelay=i*.06+'s';
       tile.style.setProperty('--tile-tint',alpha(color(ghost.team),.24));
       const avatar=document.createElement('div');avatar.className='portrait';
       avatar.style.setProperty('--team',color(ghost.team));avatar.innerHTML=ghostPortrait(ghost);
       const content=document.createElement('div');
-      const who=document.createElement('div');who.className='who';who.textContent=GHOST_NAMES[ghost.id]+' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.id];
+      const who=document.createElement('div');who.className='who';who.textContent=(ghost.id===myGhostId()?'You':GHOST_NAMES[ghost.id])+' · '+ghost.score+' pts · '+GHOST_CHARACTER_NAMES[ghost.id];
       const title=document.createElement('div');title.className='what';title.textContent=award.emoji+' '+award.title;
       const why=document.createElement('div');why.className='why';why.textContent=award.reason;
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
@@ -950,8 +1097,9 @@ button{font:inherit}
   }
   function finish() {
     game.phase='finished';
+    if(isHost()&&online.started){sendSnapshot();onlineSend({type:'finish'});online.started=false;}
     warningEl.classList.remove('visible');
-    GhostAudio.endRound(game.scores[0]>=game.scores[1]);
+    GhostAudio.endRound(game.scores[game.ghosts[myGhostId()].team]>=game.scores[1-game.ghosts[myGhostId()].team]);
     hud.hidden=true;carried.hidden=true;difficultyHud.hidden=true;hint.classList.add('hidden');
     buildResults();
   }
@@ -1418,7 +1566,7 @@ button{font:inherit}
     ctx.fillStyle = '#16122b'; ctx.fillRect(0, 0, W, H);
     if (!game) return;
 
-    const player = game.ghosts[0];
+    const player = game.ghosts[myGhostId()];
     const desiredX = clamp(player.x, W / (scale * 2), WORLD.w - W / (scale * 2));
     const desiredY = clamp(player.y, H / (scale * 2), WORLD.h - H / (scale * 2));
     camX = lerp(camX, desiredX, .08);
@@ -1490,13 +1638,18 @@ button{font:inherit}
 
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
-  startBtn.addEventListener('click', () => reset());
-  document.getElementById('againBtn').addEventListener('click',()=>reset());
+  startBtn.addEventListener('click', () => {if(online)disconnectOnline();reset();});
+  onlineCreateEl.addEventListener('click',()=>connectOnline(true));
+  onlineJoinEl.addEventListener('click',()=>connectOnline(false));
+  onlineLeaveEl.addEventListener('click',()=>disconnectOnline());
+  onlineStartEl.addEventListener('click',()=>{if(isHost()&&!online.started)onlineSend({type:'start'})});
+  document.getElementById('againBtn').addEventListener('click',()=>{if(online)disconnectOnline();reset();});
   document.getElementById('colorBtn').addEventListener('click',()=>{
     results.classList.remove('open');
     menu.classList.remove('hidden');
     menuText.textContent='Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
     startBtn.textContent='START GAME';
+    if(online)disconnectOnline();
   });
 })();
 </script>
