@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 28)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 29)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -357,6 +357,77 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   #menu>.panel{max-height:calc(100dvh - 16px);margin:auto;}
   .resultsPanel,.hallPanel,.creditsPanel{max-height:calc(100dvh - 16px);}
 }
+
+/* Alpha 29: Safari text inflation can make a correctly sized menu look
+   magnified even with the device-width viewport meta tag. Preserve normal
+   pinch zoom and accessibility zoom; prevent automatic font inflation. */
+html,body{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  min-width:0;
+  max-width:100%;
+}
+#playerIdentity{
+  width:100%;
+  max-width:400px;
+  min-width:0;
+  margin:13px auto 12px;
+  padding:11px 12px;
+  border-radius:14px;
+  background:linear-gradient(145deg,#5c3f7780,#301e5055);
+  border:1px solid #eecbff6b;
+}
+#playerIdentity label{
+  display:block;
+  font-size:13px;
+  font-weight:850;
+  color:#ffe5b8;
+  line-height:1.4;
+}
+#playerIdentity label span{color:#e2d3f3;font-size:11px;font-weight:500}
+#playerDisplayName{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-height:44px;
+  padding:10px 12px;
+  margin:8px auto 5px;
+  font:inherit;
+  font-size:16px;
+  color:#fff3df;
+  text-align:center;
+  background:#1e1734;
+  border:1.5px solid #efd8ff99;
+  border-radius:11px;
+}
+#playerDisplayName:focus-visible{outline:3px solid #c8f6d7;outline-offset:2px}
+#playerNameHint{font-size:11px;line-height:1.4;color:#e9dafa}
+#menu .panel{overflow-wrap:anywhere}
+#menu .panel .title{white-space:normal;hyphens:none}
+@media(max-width:520px){
+  #menu{align-items:stretch;}
+  #menu>.panel{
+    margin:auto;
+    flex:none;
+    max-width:100%;
+    width:100%;
+    padding:12px 10px 17px;
+  }
+  #menu .title{
+    font-size:clamp(25px,7.5vw,35px);
+    line-height:1.05;
+    letter-spacing:0;
+  }
+  #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .crewCard span{font-size:12px;line-height:1.18}
+  #playerIdentity{padding:10px 8px;margin:10px auto}
+  #onlinePanel .onlineControls{flex-wrap:wrap}
+  #onlinePanel .onlineControls button{min-width:110px}
+}
+@media (max-height:560px) and (orientation:landscape){
+  #menu{align-items:stretch}
+  #menu>.panel{margin:auto;max-height:calc(100dvh - 16px)}
+}
 </style>
 </head>
 <body>
@@ -378,12 +449,17 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
 </div>
 <div id="menu">
   <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 28</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 29</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
     <div class="studioSignature">A JOY HAUS GAME</div>
     <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
+<div id="playerIdentity">
+  <label for="playerDisplayName">👻 Your ghost name <span>(optional · up to 16 characters)</span></label>
+  <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="16" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Choose a spooky nickname" aria-describedby="playerNameHint">
+  <div id="playerNameHint">Friends will see this name in the lobby and above your ghost. Each friend chooses their own.</div>
+</div>
 <div id="difficultyWrap">
   <div class="palette-label">Computer opponent difficulty</div>
   <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
@@ -430,7 +506,7 @@ html,body{font-family:'Fredoka',system-ui,sans-serif}
   </div>
 </div>
 <div class="bullets">
-      <div><b>New this build</b><br>Top 13 Hall of Fame! Winning players can choose a 13-character nickname and country flag; their Boo Crew avatar joins the rankings. Private rooms, sounds and solo bots remain.</div>
+      <div><b>New this build</b><br>Alpha 29: player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
       <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
