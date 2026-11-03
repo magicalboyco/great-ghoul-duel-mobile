@@ -135,7 +135,9 @@ export class GhostRoom {
     this.profiles=new Map(sockets.map(ws=>ws.deserializeAttachment())
       .filter(info=>info&&Number.isInteger(info.seat)&&info.profile)
       .map(info=>[info.seat,info.profile]));
-    // Recover room player profiles and readiness after hibernation.
+    this.mode=validMode(sockets.map(ws=>ws.deserializeAttachment()?.mode)
+      .find(value=>ROOM_MODES.has(value)));
+    // Recover room mode, player profiles and readiness after hibernation.
   }
   send(ws, data) { try { ws.send(ok(data)); } catch {} }
   broadcast(data) { for (const ws of this.players.values()) this.send(ws, data); }
@@ -273,7 +275,7 @@ export class GhostRoom {
         return;
       }
       const profile=this.sanitizeProfile(msg);
-      ws.serializeAttachment({seat,started:false,profile});
+      ws.serializeAttachment({seat,started:false,profile,mode:this.mode});
       this.players.set(seat,ws);
       this.profiles.set(seat,profile);
       if(seat===0)this.host=ws;
