@@ -49,7 +49,12 @@ const tokenHash=async token=>{
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/health") return Response.json({ok:true,service:"ghost-duel-alpha27",modes:['classic','coop']});
+    // Health checks are requested directly by GitHub Pages, so they need
+    // the same cross-origin response headers as room creation.
+    if (url.pathname === "/health") return Response.json(
+      {ok:true,service:"ghost-duel-alpha27",modes:['classic','coop']},
+      {headers:roomHeaders}
+    );
     if (url.pathname === '/rooms' && request.method==='OPTIONS')
       return new Response(null,{status:204,headers:roomHeaders});
     if (url.pathname === '/rooms' && request.method==='POST') {
