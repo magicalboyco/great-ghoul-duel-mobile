@@ -555,7 +555,7 @@ test('Alpha 27: new modes and old Worker fallback remain explicit and safe',()=>
   assert.match(html,/data-mode="coop"/);
   assert.match(html,/data-mode="classic"/);
   assert.match(html,/Four-Way Haunt/);
-  assert.match(html,/aria-disabled="true"/);
+  assert.match(html,/fourwayPreviewLink/,'Four-Way Haunt opens the dedicated playable preview');
   assert.match(html,/function selectOnlineMode\(mode\)/);
   assert.match(html,/roomCapacity=mode=>mode==='coop'\?4:8/);
   assert.match(html,/mode:selectedOnlineMode/);
