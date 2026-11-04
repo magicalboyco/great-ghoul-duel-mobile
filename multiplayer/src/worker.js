@@ -355,8 +355,10 @@ export class GhostRoom {
       if(!vote||msg.id!==vote.id)return;
       if(Date.now()>=vote.deadline){await this.clearRematch('timeout');return}
       if(msg.accept!==true&&msg.accept!==false)return;
+      // First answer is final. A second packet must not overturn a YES.
+      if(vote.yesSeats.includes(meta.seat))return;
       if(msg.accept===false){await this.clearRematch('declined');return}
-      if(!vote.yesSeats.includes(meta.seat))vote.yesSeats.push(meta.seat);
+      vote.yesSeats.push(meta.seat);
       await this.state.storage.put('rematch-vote',vote);
       const seats=[...this.players.keys()];
       if(seats.length&&seats.every(seat=>vote.yesSeats.includes(seat))){
