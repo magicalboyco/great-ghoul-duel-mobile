@@ -105,6 +105,7 @@ button{font:inherit}
 .roomSeat .seatGhost svg{height:45px;width:41px;filter:drop-shadow(0 4px 3px #12091f55)}
 .roomSeat .seatTitle{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e2ff}
 .roomSeat .seatTeam{display:block;font-size:9px;margin-top:2px;font-weight:800;color:#b8efcc}
+.roomSeat .seatReady{display:block;font-size:9px;font-weight:850;margin-top:3px;color:#c7f5d6}
 .roomSeat.rival .seatTeam{color:#ffc8d0}
 #modeChooser{display:grid;gap:8px;margin:11px auto;max-width:415px}
 .modeCard{display:flex;gap:11px;align-items:center;width:100%;min-height:65px;padding:11px 12px;text-align:left;color:#fff2e4;border:1.5px solid #bda2d57d;border-radius:14px;background:linear-gradient(115deg,#614581b0,#2c254a);cursor:pointer;touch-action:manipulation}
@@ -1117,6 +1118,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const button=e.target.closest('[data-mode]');
     if(button)selectOnlineMode(button.dataset.mode);
   });
+  modeChooser.addEventListener('keydown',e=>{
+    if(!['ArrowDown','ArrowRight','ArrowUp','ArrowLeft'].includes(e.key))return;
+    const items=[...modeChooser.querySelectorAll('[data-mode]:not([disabled])')];
+    const index=items.indexOf(document.activeElement);
+    if(index<0||!items.length)return;
+    e.preventDefault();
+    const delta=['ArrowDown','ArrowRight'].includes(e.key)?1:-1;
+    const next=items[(index+delta+items.length)%items.length];
+    selectOnlineMode(next.dataset.mode);
+    next.focus();
+  });
   const onlineCodeEl=document.getElementById('onlineCode');
   const rematchPanel=document.getElementById('rematchPanel');
   const rematchHeading=document.getElementById('rematchHeading');
@@ -1337,7 +1349,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
       teamLabel.textContent='✦ TEAM '+['ONE','TWO','THREE','FOUR'][team];
       teamLabel.style.color=colors[team].hex;
-      tile.append(portrait,title,teamLabel);onlineRosterEl.appendChild(tile);
+      const ready=document.createElement('span');ready.className='seatReady';
+      ready.textContent=!occupied?'OPEN':room.preparing?
+        (room.readySeats?.includes(seat)?'✓ READY':'WAITING…'):'✓ CONNECTED';
+      tile.append(portrait,title,teamLabel,ready);onlineRosterEl.appendChild(tile);
     }
   }
   function showOnlineLobby(onlineRoom){
@@ -1494,6 +1509,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
           session.seats.length+'/'+roomCapacity(session.mode)+' humans connected. '+
           (session.host?'Tap START MATCH FOR EVERYONE when ready.':'Waiting for the host to start.'));
       }else if(msg.type==='prepare'){
+        session.readySeats=[];
         if(MODE_NAMES[msg.mode])session.mode=msg.mode;
         if(Array.isArray(msg.profiles)){
           session.profiles=new Map(msg.profiles
@@ -1511,8 +1527,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         sendOnline({type:'ready',roundId:msg.roundId});
       }else if(msg.type==='readyStatus'){
         if(session.preparing&&msg.roundId===session.roundId){
-          const ready=Array.isArray(msg.readySeats)?msg.readySeats.length:0;
+          session.readySeats=Array.isArray(msg.readySeats)?msg.readySeats:[];
+          const ready=session.readySeats.length;
           const total=Array.isArray(msg.seats)?msg.seats.length:session.seats.length;
+          renderOnlineRoster(session);
           setOnlineStatus('Preparing online match: '+ready+'/'+total+' players ready…');
         }
       }else if(msg.type==='start'){
