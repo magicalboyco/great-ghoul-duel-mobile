@@ -1430,6 +1430,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     let mainBuffer=null,hurryBuffer=null,finishBuffers=null;
     let active=null,muted=false,wantsMusic=false,currentCue='main';
     let rendered=false;
+    // Safari on touch-based Apple devices sometimes reports a running Web
+    // Audio graph even though its output is silent. Use an HTMLAudioElement
+    // for the music there, retaining Web Audio for effects and other browsers.
+    const safariMediaMusic=/iPad|iPhone|iPod/i.test(navigator.userAgent)||
+      (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    let mediaMusic=null,mediaCue='',mediaUrls=Object.create(null);
     const PI=Math.PI,TAU=2*PI;
     const hz=midi=>440*Math.pow(2,(midi-69)/12);
     const bell=(phase)=>Math.sin(phase)+.28*Math.sin(phase*2.01)+.10*Math.sin(phase*3.98);
@@ -1556,12 +1562,56 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       if(cue==='hurry')return hurryBuffer||(hurryBuffer=renderCue('hurry'));
       return mainBuffer||(mainBuffer=renderCue('main'));
     }
+    function mediaMusicUrl(cue){
+      if(mediaUrls[cue])return mediaUrls[cue];
+      // Encode our existing ORIGINAL generated composition as PCM WAV;
+      // no external music services, permissions or download requests.
+      const buffer=getBuffer(cue),samples=buffer.getChannelData(0),rate=buffer.sampleRate;
+      const bytes=new ArrayBuffer(44+samples.length*2),view=new DataView(bytes);
+      const label=(offset,str)=>{for(let i=0;i<str.length;i++)view.setUint8(offset+i,str.charCodeAt(i));};
+      label(0,'RIFF');view.setUint32(4,36+samples.length*2,true);
+      label(8,'WAVE');label(12,'fmt ');view.setUint32(16,16,true);
+      view.setUint16(20,1,true);view.setUint16(22,1,true);
+      view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);
+      view.setUint16(32,2,true);view.setUint16(34,16,true);
+      label(36,'data');view.setUint32(40,samples.length*2,true);
+      for(let i=0;i<samples.length;i++){
+        const n=Math.max(-1,Math.min(1,samples[i]));
+        view.setInt16(44+i*2,n<0?Math.round(n*32768):Math.round(n*32767),true);
+      }
+      mediaUrls[cue]=URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));
+      return mediaUrls[cue];
+    }
+    function playSafariMusic(cue,forceRestart=false){
+      if(!mediaMusic){
+        mediaMusic=new Audio();
+        mediaMusic.loop=true;mediaMusic.preload='auto';
+        mediaMusic.volume=.8;
+        mediaMusic.addEventListener('error',()=>status('Safari music error · tap Test sound'));
+      }
+      if(mediaCue!==cue){
+        mediaMusic.src=mediaMusicUrl(cue);
+        mediaCue=cue;
+      }else if(forceRestart){
+        try{mediaMusic.currentTime=0}catch(e){}
+      }
+      if(muted){mediaMusic.pause();return}
+      const playing=mediaMusic.play();
+      if(playing&&typeof playing.catch==='function')
+        playing.then(()=>status('Safari music playing · '+cue))
+          .catch(e=>status('Safari blocked music ('+e.name+') · tap Test sound'));
+    }
     function resume(){
       if(!setup())return Promise.resolve();
       return ctx.state==='running'?Promise.resolve():ctx.resume().catch(e=>status('Tap Test sound: '+e.name));
     }
     function playCue(cue,forceRestart=false){
       if(!setup())return;
+      if(safariMediaMusic){
+        currentCue=cue;
+        playSafariMusic(cue,forceRestart);
+        return;
+      }
       // A finished/faded or Safari-interrupted source cannot be reused.
       if(active&&currentCue===cue&&!forceRestart)return;
       currentCue=cue;
@@ -1600,6 +1650,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     function endRound(win){
       if(!setup())return;
       wantsMusic=false;
+      if(mediaMusic)mediaMusic.pause();
       if('speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
       if(active){
         const now=ctx.currentTime;
@@ -1794,6 +1845,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     }
     function toggle(){
       muted=!muted;
+      if(safariMediaMusic&&muted&&mediaMusic)mediaMusic.pause();
       if(!muted){
         if(!wantsMusic)wantsMusic=true;
         if(setup()){resume();playCue(currentCue,true);}
@@ -1804,6 +1856,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     }
     function test(){
       muted=false;
+      // Expose the live audio state so a silent iPad is diagnosable.
+      if(safariMediaMusic)status('Safari audio test · HTML audio + Web Audio '+(ctx?.state||'not started'));
       if(!wantsMusic)wantsMusic=true;
       if(setup()){
         // Test Sound is an explicit user gesture: restart the soundtrack
@@ -1820,6 +1874,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       if(ctx&&master)master.gain.setTargetAtTime(0,ctx.currentTime,.02);
     }
     function onVisible(){
+      if(safariMediaMusic&&mediaMusic&&!muted&&wantsMusic){
+        mediaMusic.play().catch(()=>status('Tap Test sound to resume Safari music'));
+      }
       if(!ctx||muted||!wantsMusic)return;
       if(master)master.gain.setTargetAtTime(.7,ctx.currentTime,.02);
       resume();
