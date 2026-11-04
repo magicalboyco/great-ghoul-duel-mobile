@@ -561,6 +561,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   #hud.fourway~#carried{top:calc(env(safe-area-inset-top) + 150px)}
 }
 
+/* Keep the primary action visible in the setup menu for all modes;
+   never rely on a prior mode's hidden attribute. */
+#previewGameActions{min-height:62px;align-items:center}
+#previewGameActions #startBtn:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-height:54px}
+
 </style>
 </head>
 <body>
@@ -851,7 +856,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     menuText.textContent=purpose==='difficulty'
       ?'Choose your opponent difficulty for the next match. Your selected ghost color is saved.'
       :'Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
-    startBtn.textContent=selectedOnlineMode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':'👻 PLAY CLASSIC SOLO';
     showOnlineLobby(null);
     if(purpose==='difficulty')difficultyButtons.querySelector('[aria-pressed="true"]').focus();
     else palettePicker.children[selectedIndex].focus();
@@ -1034,8 +1038,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     }
     // Selection controls both the highlighted card and the PLAY action.
     previewSoloMode=mode==='fourway'?'fourway':'classic';
-    startBtn.textContent=mode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':'👻 PLAY CLASSIC SOLO';
-    startBtn.hidden=mode==='coop'||!!online||onlinePending;
+    startBtn.textContent=mode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':
+      mode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY CLASSIC SOLO';
+    startBtn.hidden=!!online||onlinePending;
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=mode==='fourway';
     modeNotice.textContent=mode==='coop'
@@ -1221,9 +1226,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       '⏳ Host is starting the match. Getting all players ready…':
       '⏳ Waiting for the HOST to press “START MATCH FOR EVERYONE” on their device.';
     // Never present solo Start as the main CTA in an online lobby.
-    startBtn.hidden=!!onlineRoom||onlinePending||selectedOnlineMode==='coop';
+    // Always offer a primary action for every selected game mode.
+    // The host's dedicated Start Match button takes over inside a room.
+    startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
-    startBtn.textContent=selectedOnlineMode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':'👻 PLAY CLASSIC SOLO';
+    startBtn.textContent=selectedOnlineMode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':
+      selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY CLASSIC SOLO';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom||selectedOnlineMode==='fourway';
@@ -3886,6 +3894,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     // is clicked. Only the room host can start a multiplayer round.
     if(online||onlinePending){
       setOnlineStatus('You are in an online room. The host must press Start online match, or choose Leave room for solo play.');
+      return;
+    }
+    if(selectedOnlineMode==='coop'){
+      GhostAudio.unlock();
+      startOnlineConnection(true);
       return;
     }
     previewSoloMode=selectedOnlineMode==='fourway'?'fourway':'classic';
