@@ -498,6 +498,65 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   line-height:1.45;
 }
 #zoomNotice[hidden]{display:none}
+
+/* Alpha 34 HUD polish: large countdown on top, four team scores underneath.
+   This is scoped to Four-Way Haunt: Classic Duel and Co-op keep their HUD. */
+#hud.fourway{
+  position:absolute;inset:0 auto auto 50%;transform:translateX(-50%);
+  width:min(430px,calc(100vw - 20px));
+  max-width:calc(100vw - 20px);
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  justify-items:stretch;align-items:center;
+  column-gap:7px;row-gap:6px;
+  padding:max(10px,env(safe-area-inset-top)) 0 0;
+}
+#hud.fourway[hidden]{display:none}
+#hud.fourway .pill{
+  width:100%;min-width:0;max-width:none;
+  font-size:clamp(16px,2.4vw,20px);
+  padding:7px 5px;text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+#hud.fourway #clock{
+  grid-column:1/-1;grid-row:1;justify-self:center;
+  width:min(205px,64vw);
+  min-height:54px;padding:7px 14px;
+  font-size:clamp(30px,5vw,39px);
+  line-height:1.12;
+  border:2px solid #ffe6ad99;
+  background:rgba(18,14,40,.94);
+  box-shadow:0 6px 23px #0007;
+}
+#hud.fourway #greenScore{grid-column:1;grid-row:2}
+#hud.fourway #purpleScore{grid-column:2;grid-row:2}
+#hud.fourway #thirdScore{grid-column:3;grid-row:2}
+#hud.fourway #fourthScore{grid-column:4;grid-row:2}
+/* Keep the mode badge below the score row, never over the countdown. */
+#hud.fourway~#difficultyHud{
+  top:calc(env(safe-area-inset-top) + 121px);
+  max-width:calc(100vw - 20px);
+  text-align:center;
+  white-space:normal;
+}
+/* Keep the carried-flames panel clear of the header and mode badge. */
+#hud.fourway~#carried{
+  top:calc(env(safe-area-inset-top) + 160px);
+}
+@media(max-width:540px) and (orientation:portrait){
+  #hud.fourway{
+    width:calc(100vw - 16px);max-width:calc(100vw - 16px);
+    column-gap:4px;row-gap:5px;
+    padding:calc(env(safe-area-inset-top) + 6px) 0 0;
+  }
+  #hud.fourway .pill{font-size:clamp(13px,3.8vw,17px);padding:7px 3px}
+  #hud.fourway #clock{
+    font-size:34px;min-height:51px;width:min(185px,60vw);
+    padding:6px 10px;
+  }
+  #hud.fourway~#difficultyHud{top:calc(env(safe-area-inset-top) + 112px)}
+  #hud.fourway~#carried{top:calc(env(safe-area-inset-top) + 150px)}
+}
+
 </style>
 </head>
 <body>
