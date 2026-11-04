@@ -597,16 +597,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 <div id="menu">
   <div class="panel">
     <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 34 PREVIEW</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
-    <div class="studioSignature">A JOY HAUS GAME</div>
+    
     <p class="sub" id="menuText">✨ FOUR-WAY HAUNT PREVIEW: Try four teams and a larger cemetery against bots, or play the existing Classic Duel and Boo Crew Co-op modes online below.</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
 <div id="playerIdentity">
-  <label for="playerDisplayName">👻 Your ghost name <span>(optional · up to 16 characters)</span></label>
-  <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="16" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Choose a spooky nickname" aria-describedby="playerNameHint">
-  <div id="playerNameHint">Friends will see this name in the lobby and above your ghost. Each friend chooses their own.</div>
+  <label for="playerDisplayName">👻 Your ghost name <span>(optional · up to 13 characters)</span></label>
+  <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Choose a spooky nickname" aria-describedby="playerNameHint">
+  <div id="playerNameHint">Your name appears above your ghost and on the high-score board if you qualify.</div>
 </div>
 <div id="difficultyWrap">
   <div class="palette-label">Computer opponent difficulty</div>
@@ -658,10 +658,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   </div>
 </div>
 <details id="gameGuide" class="gameGuide">
-      <summary>👻 How to play · Upgrades · What's new</summary>
+      <summary>👻 How to play · Powers</summary>
       <div class="bullets">
-        <div><b>New in Alpha 34</b><br>Four-Way Haunt preview: four teams, a larger cemetery, and a bigger countdown. Classic Duel and Boo Crew Co-op remain available.</div>
-        <div><b>Online test</b><br>Private game rooms are experimental. The host runs the game. Four-Way online play is not enabled yet.</div>
         <div><b>Upgrades</b><br>Speed at 8, Glow at 23, Magnet at 53, Phase at 113 carried flames. Powers reset after a deposit or loss.</div>
         <div><b>How to play</b><br>Move using the joystick or drag on the arena. Use Test Sound if audio is silent.</div>
       </div>
@@ -682,10 +680,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 <div id="myStats"></div>
     <form id="highScoreEntry" hidden>
       <h3>🏆 A WINNING BOO CREW GHOST!</h3>
-      <p class="scoreTip">Put your personal banked score in contention for the Top 13. Choose a nickname and flag. Only these display details are public. Scores are currently unverified.</p>
-      <label for="highScoreName">Ghostly name · 13 characters maximum</label>
-      <input id="highScoreName" type="text" maxlength="13" minlength="1" autocomplete="nickname" placeholder="Your spooky name" required>
-      <label for="highScoreCountry">Your country flag · chosen by you</label>
+      <p class="scoreTip" id="qualifiedGhostName">Your ghost name is ready for the scoreboard.</p>
+      <input id="highScoreName" type="hidden">
+      <label for="highScoreCountry">Choose your flag</label>
       <select id="highScoreCountry" required><option value="">Choose your flag…</option></select>
       <p class="scoreTip" id="highScorePreview"></p>
       <button type="submit" id="submitHighScore">🏆 ENTER THE TOP 13</button>
@@ -1090,7 +1087,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   // never submitted to the public high-score list automatically.
   function sanitizePlayerName(value){
     const name=typeof value==='string'?value.trim().replace(/\s+/g,' '):'';
-    return name.length<=16&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
+    return name.length<=13&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
       (!name||/[\p{L}\p{N}]/u.test(name))?name:'';
   }
   try{
@@ -1100,7 +1097,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }catch{}
   playerDisplayNameEl.addEventListener('input',()=>{
     const next=playerDisplayNameEl.value
-      .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,16);
+      .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,13);
     if(next!==playerDisplayNameEl.value)playerDisplayNameEl.value=next;
     try{localStorage.setItem('boo-crew-player-name',
       sanitizePlayerName(playerDisplayNameEl.value))}catch{}
@@ -2523,7 +2520,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     highScoreCountry.appendChild(option);
   });
   try{
-    highScoreName.value=localStorage.getItem('boo-crew-score-name')||'';
+    highScoreName.value='';
     highScoreCountry.value=localStorage.getItem('boo-crew-score-country')||'';
   }catch{}
   const nicknameIsValid=value=>value.length>=1&&value.length<=13&&
@@ -2727,7 +2724,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const player=game.ghosts[localGhostId()];
     if(!player||game.scores.some((score,i)=>i!==player.team&&score>=game.scores[player.team])||player.score<=0)return;
     const chosen=GHOST_CHARACTER_NAMES[player.styleId??player.id];
-    highScorePreview.textContent=chosen+' · '+player.score+' banked spirit flames · '+(game.online?'Online':'Solo')+' victory';
+    const ghostName=sanitizePlayerName(player.playerName)||chosen.slice(0,13);
+     highScoreName.value=ghostName;
+     document.getElementById('qualifiedGhostName').textContent='🏆 '+ghostName+', choose your flag to join the Top 13!';
+     highScorePreview.textContent=player.score+' banked spirit flames · '+(game.online?'Online':'Solo')+' victory';
     scoreEntry.hidden=false;
   }
   scoreEntry.addEventListener('submit',async event=>{
@@ -2738,7 +2738,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const name=highScoreName.value.trim();
     const country=highScoreCountry.value;
     if(!nicknameIsValid(name)||!COUNTRY_SET.has(country)){
-      highScoreStatus.textContent='Choose a nickname of 1–13 letters/numbers and a country flag.';return;
+      highScoreStatus.textContent='Please choose your flag to enter the Top 13.';return;
     }
     const entry={name,country,styleId:player.styleId??player.id,color:color(player.team),score:player.score};
     const button=document.getElementById('submitHighScore');
