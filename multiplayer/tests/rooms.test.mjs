@@ -740,3 +740,19 @@ test('Alpha 29: player name field, lobby, match and mobile sizing stay integrate
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/,
     'Power-up requirements stay intact');
 });
+
+test('Alpha 34 preview UX regression checks',()=>{
+  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  assert.match(html,/id="modeChooser"/);
+  assert.match(html,/modeCard\[aria-checked="true"\]::after/);
+  assert.match(html,/id="joinCodeWrap" hidden/);
+  assert.match(html,/id="rematchPanel"/);
+  assert.match(html,/id="rematchRoundCountdown"/);
+  assert.match(html,/game\.phase==='countdown'/);
+  assert.match(html,/msg\.type==='rematchInvite'/);
+  assert.match(html,/msg\.type==='rematchAccepted'/);
+  assert.equal((html.match(/id="startBtn"/g)||[]).length,1);
+  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+  assert.ok(scripts.length>0);
+  for(const [,body] of scripts)assert.doesNotThrow(()=>new Function(body));
+});
