@@ -1402,7 +1402,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(onlinePending)return;
     if(online)leaveOnline('Switching rooms…');
     onlinePending=true;showOnlineLobby(null);
-    let code=onlineCodeEl.value.trim().toUpperCase(),hostToken=null,ws;
+    let code=onlineCodeEl.value.trim().toUpperCase(),hostToken=null,ws,serverFeatures=null;
     try{
       const server=safeWebSocketServer();
       const endpoint='https://'+new URL(server).host;
@@ -1412,7 +1412,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       // Co-op needs the mode-aware Worker (Alpha 27). If the old Worker is
       // still deployed, fail clearly instead of silently placing friends
       // on opposing teams or giving a fifth person a co-op seat.
-      let serverFeatures=null;
       try{
         const health=await fetch(endpoint+'/health',{cache:'no-store'});
         if(health.ok)serverFeatures=await health.json();
