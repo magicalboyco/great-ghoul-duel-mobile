@@ -801,3 +801,69 @@ test('Alpha 34: Four-Way Haunt client has four-team arena, scoring and UI safegu
   assert.match(html,/localLocatorUntil:performance\.now\(\)\+5000/);
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
 });
+
+test('Alpha 34 rematch: only host can invite, unanimous YES is needed, and rooms stay connected',async()=>{
+  const {env,instances}=harness();
+  const response=await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms',
+    'POST',{Origin:'https://magicalboyco.github.io'},{mode:'classic'}),env);
+  const {code,hostToken}=await response.json();
+  const {room,sockets}=instances.get('room-'+code);
+  const connect=async(role,token)=>{
+    const res=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(res.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({type:'hello',role,
+      ...(token?{token}:{})}));
+    return socket;
+  };
+  const host=await connect('host',hostToken);
+  const guest=await connect('guest');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  const prepare=host.sent.findLast(msg=>msg.type==='prepare');
+  for(const ws of [host,guest])
+    await room.webSocketMessage(ws,JSON.stringify({type:'ready',roundId:prepare.roundId}));
+  assert.equal(room.started,true);
+  await room.webSocketMessage(host,JSON.stringify({type:'finish'}));
+  assert.equal(room.started,false);
+  const originalCount=room.players.size;
+  await room.webSocketMessage(guest,JSON.stringify({type:'rematchInvite'}));
+  assert.equal(host.sent.some(msg=>msg.type==='rematchInvite'),false,'Guests may not invite');
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
+  const invited=host.sent.findLast(msg=>msg.type==='rematchInvite');
+  assert.ok(invited&&invited.deadline>Date.now());
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:invited.id,accept:true}));
+  assert.equal(host.sent.some(msg=>msg.type==='rematchAccepted'),false,'Host YES is not enough');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  assert.equal(room.started,false,'No round may start while a vote is active');
+  await room.webSocketMessage(guest,JSON.stringify({type:'rematchVote',id:invited.id,accept:false}));
+  assert.equal(host.sent.findLast(msg=>msg.type==='rematchCancelled').reason,'declined');
+  assert.equal(room.players.size,originalCount,'Declining leaves the room intact');
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
+  const second=host.sent.findLast(msg=>msg.type==='rematchInvite');
+  await room.webSocketMessage(guest,JSON.stringify({type:'rematchVote',id:second.id,accept:true}));
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:second.id,accept:true}));
+  assert.ok(host.sent.some(msg=>msg.type==='rematchAccepted'&&msg.id===second.id));
+  assert.equal(room.started,false,'Host starts only after every player accepts');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  const secondPrepare=guest.sent.findLast(msg=>msg.type==='prepare');
+  assert.notEqual(secondPrepare.roundId,prepare.roundId);
+  for(const ws of [host,guest])
+    await room.webSocketMessage(ws,JSON.stringify({type:'ready',roundId:secondPrepare.roundId}));
+  assert.equal(room.started,true,'Existing round handshake works after rematch');
+  assert.equal(room.players.size,originalCount,'No one rejoined or entered a code');
+  await room.webSocketMessage(host,JSON.stringify({type:'finish'}));
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
+  const timed=host.sent.findLast(msg=>msg.type==='rematchInvite');
+  room.rematch.deadline=Date.now()-1;
+  await room.alarm();
+  assert.equal(host.sent.findLast(msg=>msg.type==='rematchCancelled').id,timed.id);
+  assert.equal(await room.currentRematch(),null,'Expired votes are removed');
+  assert.equal(room.players.size,originalCount);
+});
+
+test('Alpha 34 Worker advertises rematch voting capability',async()=>{
+  const {env}=harness();
+  const response=await runtime.workerDefault.fetch(mockRequest('https://example.test/health'),env);
+  assert.equal((await response.json()).rematchVoting,true);
+});
