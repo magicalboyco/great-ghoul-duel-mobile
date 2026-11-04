@@ -609,6 +609,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 #rematchNo{background:#58496c;color:#fff3fa}
 #rematchPanel button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 
+
+#rematchRoundCountdown[hidden]{display:none!important}
+#rematchRoundCountdown{position:fixed;inset:0;display:grid;place-items:center;z-index:9;
+ background:#180f2dd1;color:#fff0bd;text-shadow:0 9px 25px #12091d;
+ font:1000 clamp(80px,22vw,160px) 'Caprasimo',Georgia,serif;pointer-events:none}
+
 </style>
 </head>
 <body>
@@ -620,6 +626,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 </div>
 <div id="carried" hidden>✨ Spirit flames carried: <b id="carryValue">0</b><span id="upgrade">No upgrade yet</span><div id="abilities">Trail powers: ⚡ 8 · ✨ 23 · 🧲 53 · 👻 113</div></div>
 <div id="last15" role="alert" aria-live="off">⏰ FINAL 15 SECONDS!</div>
+<div id="rematchRoundCountdown" hidden role="status" aria-live="polite">3</div>
 <div id="controls">
   <div id="joystick"><div id="knob"></div></div>
   <div class="controlStack">
@@ -1148,7 +1155,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function showRematchState(){
     rematchPanel.hidden=!online||!game||game.phase!=='finished';
     if(rematchPanel.hidden){stopRematchDisplay();return}
-    againBtn.hidden=!!online;
+    againBtn.hidden=false;
+    againBtn.textContent='👻 PLAY SOLO INSTEAD';
     const host=online.host;
     const voting=!!rematchVote;
     const seconds=voting?Math.max(0,Math.ceil((rematchVote.deadline-Date.now())/1000)):0;
@@ -1166,7 +1174,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     rematchStart.hidden=!rematchReadyToStart||!host;
     rematchStart.disabled=false;
     rematchInviteButton.hidden=!host||voting||rematchReadyToStart||!online.rematchSupported;
-    againBtn.hidden=!!online;
+    againBtn.hidden=false;
+    againBtn.textContent='👻 PLAY SOLO INSTEAD';
     if(!voting)stopRematchDisplay();
     else if(!rematchDisplayTimer)rematchDisplayTimer=setInterval(()=>{
       showRematchState();
@@ -1189,12 +1198,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(!online||!rematchVote)return;
     GhostAudio.unlock();
     sendOnline({type:'rematchVote',id:rematchVote.id,accept:true});
-    rematchYes.disabled=true;
+    rematchYes.disabled=true;rematchNo.disabled=true;
   });
   rematchNo.addEventListener('click',()=>{
     if(!online||!rematchVote)return;
     sendOnline({type:'rematchVote',id:rematchVote.id,accept:false});
-    rematchNo.disabled=true;
+    rematchNo.disabled=true;rematchYes.disabled=true;
   });
   rematchStart.addEventListener('click',()=>{
     if(!online?.host||!rematchReadyToStart||online.ws.readyState!==WebSocket.OPEN)return;
@@ -1546,6 +1555,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         session.preparing=false;
         session.started=true;
         reset();game.online=true;
+        rematchVote=null;rematchReadyToStart=false;
+        const delay=Number(msg.launchAt)-Date.now();
+        if(Number.isFinite(delay)&&delay>0){
+          game.phase='countdown';
+          game.roundStartsAt=performance.now()+delay;
+          rematchRoundCountdown.hidden=false;
+          rematchRoundCountdown.textContent=String(Math.max(1,Math.min(3,Math.ceil(delay/1000))));
+        }else rematchRoundCountdown.hidden=true;
         // The host's button tap and the guest's Join tap unlocked Web Audio
         // before this asynchronous start packet; both now play the soundtrack.
         syncOnlineTeamColors();
@@ -2579,7 +2596,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
 
   function update(dt) {
-    if (!game || game.phase !== 'playing') return;
+    if(!game)return;
+    if(game.phase==='countdown'){
+      const remain=(game.roundStartsAt||0)-performance.now();
+      if(remain>0){
+        rematchRoundCountdown.hidden=false;
+        rematchRoundCountdown.textContent=String(Math.max(1,Math.min(3,Math.ceil(remain/1000))));
+        return;
+      }
+      rematchRoundCountdown.hidden=true;
+      game.phase='playing';
+    }
+    if(game.phase!=='playing')return;
     if(isOnlineGuest()){
       game.toastLeft=Math.max(0,game.toastLeft-dt);
       if(performance.now()-online.lastInput>=50){
@@ -3084,6 +3112,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function finish() {
     game.phase='finished';
+    rematchRoundCountdown.hidden=true;
     if(isOnlineHost()){
       publishOnlineSnapshot();
       sendOnline({type:'finish'});
@@ -4110,7 +4139,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     GhostAudio.unlock();reset();GhostAudio.thunder();
   });
   againBtn.addEventListener('click',()=>{
-    if(online){showRematchState();return}
+    if(online)leaveOnline('Left the room. Starting solo play.');
+    rematchRoundCountdown.hidden=true;
     reset();
   });
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
