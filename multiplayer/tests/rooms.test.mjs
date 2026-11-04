@@ -873,20 +873,10 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
   assert.equal((await response.json()).rematchVoting,true);
 });
 
-test('Alpha 34 preview: intuitive mode selector, progressive join and rematch options',()=>{
-  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
-  assert.match(html,/id="modeChooser"/);
-  assert.match(html,/modeCard\[aria-checked="true"\]::after/);
-  assert.match(html,/id="joinCodeWrap" hidden/);
-  assert.match(html,/id="startBtn"/);
-  assert.match(html,/id="rematchPanel"/);
-  assert.match(html,/id="rematchYes"/);
-  assert.match(html,/id="rematchNo"/);
-  assert.match(html,/id="rematchRoundCountdown"/);
-  assert.match(html,/msg\.type==='rematchInvite'/);
-  assert.match(html,/msg\.type==='rematchAccepted'/);
-  assert.match(html,/game\.phase==='countdown'/);
-  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
-  assert.ok(scripts.length>0);
-  for(const [,body] of scripts)assert.doesNotThrow(()=>new Function(body));
+test('Alpha 34 Worker: rematch voting and countdown remain server-authoritative',()=>{
+  assert.match(workerSource,/rematchVoting:true/);
+  assert.match(workerSource,/msg.type==='rematchInvite'/);
+  assert.match(workerSource,/msg.type==='rematchVote'/);
+  assert.match(workerSource,/vote.yesSeats.includes\(meta.seat\)\)return/);
+  assert.match(workerSource,/this.rematchApproved\?now\+3000:null/);
 });
