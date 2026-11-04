@@ -566,6 +566,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 #previewGameActions{min-height:62px;align-items:center}
 #previewGameActions #startBtn:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-height:54px}
 
+/* Alpha 34 menu: group the primary action with the room-code controls. */
+#onlinePanel #previewGameActions{margin:16px auto 8px;min-height:60px;display:flex;justify-content:center;align-items:center}
+#onlinePanel #previewGameActions #startBtn{max-width:min(100%,390px);margin:0}
+#onlinePanel #previewGameActions #startBtn[hidden]{display:none!important}
+.gameGuide{margin:12px auto;max-width:780px;border:1px solid #dfc9f550;border-radius:15px;background:#21172f70;padding:10px 14px}
+.gameGuide>summary{cursor:pointer;list-style-position:inside;text-align:center;color:#f7e3c5;font-weight:800;font-size:13px}
+.gameGuide .bullets{margin-top:12px}
+
 </style>
 </head>
 <body>
@@ -634,6 +642,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
   <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
   <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
+  <div id="previewGameActions" aria-label="Start your selected game">
+    <button id="startBtn" type="button">✨ PLAY FOUR-WAY (BOTS)</button>
+  </div>
   <div id="onlineStatus" role="status" aria-live="polite">Online play uses our Ghost Duel Cloudflare server. The host must keep their game open.</div>
   <div id="onlineInvite" hidden></div>
   <div id="onlineRoleCard" role="status" aria-live="polite" hidden></div>
@@ -645,13 +656,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <button type="button" id="onlineLeave" hidden>Leave room</button>
   </div>
 </div>
-<div class="bullets">
-      <div><b>New this build</b><br>Alpha 33: the gold locator fades after five seconds while the YOU name label stays visible. Alpha 30 repaired startup; Alpha 29 added player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
-      <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
-      <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
-      <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
-    </div>
-    <div id="previewGameActions"><button id="startBtn">✨ PLAY FOUR-WAY (BOTS)</button></div>
+<details id="gameGuide" class="gameGuide">
+      <summary>👻 How to play · Upgrades · What's new</summary>
+      <div class="bullets">
+        <div><b>New in Alpha 34</b><br>Four-Way Haunt preview: four teams, a larger cemetery, and a bigger countdown. Classic Duel and Boo Crew Co-op remain available.</div>
+        <div><b>Online test</b><br>Private game rooms are experimental. The host runs the game. Four-Way online play is not enabled yet.</div>
+        <div><b>Upgrades</b><br>Speed at 8, Glow at 23, Magnet at 53, Phase at 113 carried flames. Powers reset after a deposit or loss.</div>
+        <div><b>How to play</b><br>Move using the joystick or drag on the arena. Use Test Sound if audio is silent.</div>
+      </div>
+    </details>
     <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
   <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
     <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
