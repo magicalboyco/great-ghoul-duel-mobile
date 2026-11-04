@@ -501,7 +501,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 /* Isolated pre-release demo: bots only, no rooms until Worker is deployed. */
 #previewModeNotice{margin:10px auto;padding:10px 12px;max-width:480px;border:1px solid #ffe7ad88;border-radius:12px;background:#433155;color:#fff4cc;font-size:13px;line-height:1.4}
 #previewGameActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-#previewClassicSolo{padding:14px 18px;border-radius:16px;border:1px solid #e9caff;background:#4b3566;color:#fff4ff;font-weight:900}
+
 
 /* Alpha 34 HUD polish: large countdown on top, four team scores underneath.
    This is scoped to Four-Way Haunt: Classic Duel and Co-op keep their HUD. */
@@ -611,14 +611,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
       <span class="modeIcon">🤝</span><span><b>Boo Crew Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
     </button>
-    <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="true" aria-label="Classic Duel, two opposing teams and up to eight players">
+    <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
       <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
     </button>
-    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="false" aria-label="Four-Way Haunt, four teams of two ghosts, bots preview only">
+    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, bots preview only">
       <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play with bots below (online coming soon)</small></span>
     </button>
   </div>
-  <div id="modeNotice" class="onlineIntro" aria-live="polite">Classic Duel selected · Friends compete on opposing teams.</div>
+  <div id="modeNotice" class="onlineIntro" aria-live="polite">Four-Way Haunt selected · Play against bots below. Online four-way is not yet available.</div>
   <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
   <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
     <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
@@ -646,7 +646,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
       <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
     </div>
-    <div id="previewGameActions"><button id="startBtn">✨ PLAY FOUR-WAY (BOTS)</button><button type="button" id="previewClassicSolo">👻 PLAY CLASSIC SOLO</button></div>
+    <div id="previewGameActions"><button id="startBtn">✨ PLAY FOUR-WAY (BOTS)</button></div>
     <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
   <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
     <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
@@ -851,7 +851,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     menuText.textContent=purpose==='difficulty'
       ?'Choose your opponent difficulty for the next match. Your selected ghost color is saved.'
       :'Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
-    startBtn.textContent='✨ PLAY FOUR-WAY (BOTS)';
+    startBtn.textContent=selectedOnlineMode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':'👻 PLAY CLASSIC SOLO';
+    showOnlineLobby(null);
     if(purpose==='difficulty')difficultyButtons.querySelector('[aria-pressed="true"]').focus();
     else palettePicker.children[selectedIndex].focus();
   }
@@ -1021,7 +1022,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   const modeChooser=document.getElementById('modeChooser');
   const modeNotice=document.getElementById('modeNotice');
-  let selectedOnlineMode='classic';
+  let selectedOnlineMode='fourway';
   let previewSoloMode='fourway';
   const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op',fourway:'Four-Way Haunt'};
   function displayOnlineMode(mode){
@@ -1031,12 +1032,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       button.setAttribute('aria-checked',String(button.dataset.mode===mode));
       button.disabled=!!online||onlinePending;
     }
+    // Selection controls both the highlighted card and the PLAY action.
+    previewSoloMode=mode==='fourway'?'fourway':'classic';
+    startBtn.textContent=mode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':'👻 PLAY CLASSIC SOLO';
+    startBtn.hidden=mode==='coop'||!!online||onlinePending;
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=mode==='fourway';
     modeNotice.textContent=mode==='coop'
-      ?'Boo Crew Co-op · Four friendly seats (1–4 humans) against four rival bots.'
-      :mode==='fourway'?'Four-Way Haunt · Four competing teams, two ghosts each, eight seats total.'
-      :'Classic Duel · Up to eight humans on opposing teams.';
+      ?'Boo Crew Co-op selected · Create an online room for friends against bots.'
+      :mode==='fourway'?'Four-Way Haunt selected · Play four teams with bots. Four-way online rooms are not yet available.'
+      :'Classic Duel selected · Play solo below or create an online room against friends.';
   }
   function selectOnlineMode(mode){
     if(!MODE_NAMES[mode]||online||onlinePending)return;
@@ -1216,10 +1221,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       '⏳ Host is starting the match. Getting all players ready…':
       '⏳ Waiting for the HOST to press “START MATCH FOR EVERYONE” on their device.';
     // Never present solo Start as the main CTA in an online lobby.
-    startBtn.hidden=!!onlineRoom||onlinePending;
+    startBtn.hidden=!!onlineRoom||onlinePending||selectedOnlineMode==='coop';
     startBtn.disabled=!!onlineRoom||onlinePending;
-    document.getElementById('previewClassicSolo').hidden=!!onlineRoom||onlinePending;
-    startBtn.textContent='✨ PLAY FOUR-WAY (BOTS)';
+    startBtn.textContent=selectedOnlineMode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':'👻 PLAY CLASSIC SOLO';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom||selectedOnlineMode==='fourway';
@@ -3877,11 +3881,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 
   soundToggle.addEventListener('click', () => { const on = GhostAudio.toggle(); soundToggle.textContent = on ? '🔊 Sound' : '🔇 Sound'; });
   testSoundBtn.addEventListener('click', () => GhostAudio.test());
-  document.getElementById('previewClassicSolo').addEventListener('click',()=>{
-    if(online||onlinePending)return;
-    previewSoloMode='classic';
-    GhostAudio.unlock();reset();GhostAudio.thunder();
-  });
   startBtn.addEventListener('click', () => {
     // Do not silently disconnect from a shared game when the solo button
     // is clicked. Only the room host can start a multiplayer round.
@@ -3889,7 +3888,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       setOnlineStatus('You are in an online room. The host must press Start online match, or choose Leave room for solo play.');
       return;
     }
-    previewSoloMode='fourway';
+    previewSoloMode=selectedOnlineMode==='fourway'?'fourway':'classic';
     GhostAudio.unlock();reset();GhostAudio.thunder();
   });
   document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
