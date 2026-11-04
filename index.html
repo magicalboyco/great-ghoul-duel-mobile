@@ -488,6 +488,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   line-height:1.45;
 }
 #zoomNotice[hidden]{display:none}
+/* Four-way preview is a genuine navigable choice, not a disabled card. */
+#modeChooser a.fourwayPreviewLink{
+  text-decoration:none;box-sizing:border-box;display:flex;align-items:center;
+  color:#fff2e4;opacity:1;border:1.5px solid #ffe1a8;
+  background:linear-gradient(110deg,#574072,#342854);
+  cursor:pointer;
+}
+#modeChooser a.fourwayPreviewLink:hover{background:linear-gradient(110deg,#725292,#4c376a)}
+#modeChooser a.fourwayPreviewLink:focus-visible{outline:3px solid #c4ffda;outline-offset:3px}
+
 </style>
 </head>
 <body>
@@ -540,9 +550,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="true" aria-label="Classic Duel, two opposing teams and up to eight players">
       <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
     </button>
-    <div class="modeCard upcoming" aria-disabled="true">
-      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · a larger cemetery · coming later</small></span>
-    </div>
+    <a class="modeCard fourwayPreviewLink" href="preview/fourway/?v=alpha34-modes-fixed" aria-label="Play Four-Way Haunt preview with bots">
+      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play the bots preview</small></span>
+    </a>
   </div>
   <div id="modeNotice" class="onlineIntro" aria-live="polite">Classic Duel selected · Friends compete on opposing teams.</div>
   <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
