@@ -834,6 +834,8 @@ test('Alpha 34 rematch: only host can invite, unanimous YES is needed, and rooms
   assert.ok(invited&&invited.deadline>Date.now());
   await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:invited.id,accept:true}));
   assert.equal(host.sent.some(msg=>msg.type==='rematchAccepted'),false,'Host YES is not enough');
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:invited.id,accept:false}));
+  assert.equal(await room.currentRematch()!==null,true,'Duplicate NO must not undo an already sent YES');
   await room.webSocketMessage(host,JSON.stringify({type:'start'}));
   assert.equal(room.started,false,'No round may start while a vote is active');
   await room.webSocketMessage(guest,JSON.stringify({type:'rematchVote',id:invited.id,accept:false}));
@@ -852,6 +854,9 @@ test('Alpha 34 rematch: only host can invite, unanimous YES is needed, and rooms
     await room.webSocketMessage(ws,JSON.stringify({type:'ready',roundId:secondPrepare.roundId}));
   assert.equal(room.started,true,'Existing round handshake works after rematch');
   assert.equal(room.players.size,originalCount,'No one rejoined or entered a code');
+  const rematchLaunch=guest.sent.findLast(msg=>msg.type==='start');
+  assert.ok(rematchLaunch.launchAt>=rematchLaunch.serverTime+3000,
+    'All browsers receive the same delayed 3-second round launch');
   await room.webSocketMessage(host,JSON.stringify({type:'finish'}));
   await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
   const timed=host.sent.findLast(msg=>msg.type==='rematchInvite');
@@ -866,4 +871,22 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
   const {env}=harness();
   const response=await runtime.workerDefault.fetch(mockRequest('https://example.test/health'),env);
   assert.equal((await response.json()).rematchVoting,true);
+});
+
+test('Alpha 34 preview: intuitive mode selector, progressive join and rematch options',()=>{
+  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  assert.match(html,/id="modeChooser"/);
+  assert.match(html,/modeCard\[aria-checked="true"\]::after/);
+  assert.match(html,/id="joinCodeWrap" hidden/);
+  assert.match(html,/id="startBtn"/);
+  assert.match(html,/id="rematchPanel"/);
+  assert.match(html,/id="rematchYes"/);
+  assert.match(html,/id="rematchNo"/);
+  assert.match(html,/id="rematchRoundCountdown"/);
+  assert.match(html,/msg\.type==='rematchInvite'/);
+  assert.match(html,/msg\.type==='rematchAccepted'/);
+  assert.match(html,/game\.phase==='countdown'/);
+  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+  assert.ok(scripts.length>0);
+  for(const [,body] of scripts)assert.doesNotThrow(()=>new Function(body));
 });
