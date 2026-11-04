@@ -592,6 +592,22 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 #joinCodeWrap[hidden]{display:none!important}
 #onlinePanel #onlineCreate[hidden]{display:none!important}
 
+
+#rematchPanel[hidden],#rematchChoices[hidden],#rematchStart[hidden],#rematchInviteButton[hidden]{display:none!important}
+#rematchPanel{margin:14px auto;max-width:520px;padding:16px 12px;border:2px solid #e8c99b;
+ border-radius:17px;background:#392950;color:#fff7e4;text-align:center}
+#rematchHeading{font-weight:950;font-size:19px;color:#ffe8b5;margin:0 0 7px}
+#rematchPrompt{font-size:13px;line-height:1.5}
+#rematchCountdown{font-size:clamp(27px,6vw,40px);font-weight:1000;color:#ffe7af;
+ font-variant-numeric:tabular-nums;min-height:35px}
+#rematchReady{font-size:12px;color:#d6fbe1;margin:5px 0}
+#rematchChoices{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:12px}
+#rematchChoices button,#rematchStart,#rematchInviteButton{min-height:47px;padding:10px 16px;border-radius:13px;
+ border:1px solid #ffe6b6;font-weight:900;cursor:pointer;touch-action:manipulation}
+#rematchYes,#rematchStart,#rematchInviteButton{background:#c9f7d5;color:#22442d}
+#rematchNo{background:#58496c;color:#fff3fa}
+#rematchPanel button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
 </style>
 </head>
 <body>
@@ -715,6 +731,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     </div>
 <div class="eyebrow" style="margin-top:15px">ALL EIGHT GHOSTS</div>
 <div id="awardGrid" class="awardGrid"></div>
+<section id="rematchPanel" hidden aria-live="polite">
+  <div id="rematchHeading">👻 Another round together?</div>
+  <div id="rematchPrompt">Stay with your Boo Crew for another match.</div>
+  <div id="rematchCountdown" aria-live="off"></div>
+  <div id="rematchReady"></div>
+  <div id="rematchChoices" hidden>
+    <button type="button" id="rematchYes">✓ YES, I'M IN!</button>
+    <button type="button" id="rematchNo">NO, THANKS</button>
+  </div>
+  <button type="button" id="rematchInviteButton" hidden>👻 PLAY AGAIN WITH FRIENDS</button>
+  <button type="button" id="rematchStart" hidden>🎮 START NEXT ROUND</button>
+</section>
 <div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button><button id="resultDifficultyBtn">🎚️ DIFFICULTY</button><button id="hallResultsBtn">🏆 TOP 13</button><button id="resultsCreditsBtn">💗 CREDITS</button></div>
 </div></div>
 <section id="hallOfFame" role="dialog" aria-modal="true" aria-labelledby="hallHeading" hidden>
@@ -1090,6 +1118,78 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(button)selectOnlineMode(button.dataset.mode);
   });
   const onlineCodeEl=document.getElementById('onlineCode');
+  const rematchPanel=document.getElementById('rematchPanel');
+  const rematchHeading=document.getElementById('rematchHeading');
+  const rematchPrompt=document.getElementById('rematchPrompt');
+  const rematchCountdown=document.getElementById('rematchCountdown');
+  const rematchReady=document.getElementById('rematchReady');
+  const rematchChoices=document.getElementById('rematchChoices');
+  const rematchYes=document.getElementById('rematchYes');
+  const rematchNo=document.getElementById('rematchNo');
+  const rematchStart=document.getElementById('rematchStart');
+  const rematchInviteButton=document.getElementById('rematchInviteButton');
+  const againBtn=document.getElementById('againBtn');
+  let rematchVote=null,rematchDisplayTimer=null,rematchReadyToStart=false;
+  function stopRematchDisplay(){
+    if(rematchDisplayTimer){clearInterval(rematchDisplayTimer);rematchDisplayTimer=null}
+  }
+  function showRematchState(){
+    rematchPanel.hidden=!online||!game||game.phase!=='finished';
+    if(rematchPanel.hidden){stopRematchDisplay();return}
+    againBtn.hidden=!!online;
+    const host=online.host;
+    const voting=!!rematchVote;
+    const seconds=voting?Math.max(0,Math.ceil((rematchVote.deadline-Date.now())/1000)):0;
+    rematchHeading.textContent=voting?'👑 HOST REQUESTED A REMATCH':
+      rematchReadyToStart?'🎉 EVERYBODY IS READY!':'👻 KEEP HAUNTING TOGETHER?';
+    rematchPrompt.textContent=voting?'Another round with your friends?':
+      rematchReadyToStart?(host?'Everyone said YES. Start the next match!':'Everyone said YES. Waiting for the host to start!'):
+      host?(online.rematchSupported?'Keep your room and invite everyone to play again.':'Rematch invitations need the updated multiplayer server.'):
+      'Your host can invite everyone to play again.';
+    rematchCountdown.textContent=voting?('0:'+String(seconds).padStart(2,'0')):'';
+    const accepted=voting?rematchVote.yesSeats.includes(online.seat):false;
+    rematchChoices.hidden=!voting||accepted||seconds<=0;
+    rematchReady.textContent=voting?
+      rematchVote.yesSeats.length+' of '+rematchVote.seats.length+' friends ready'+(accepted?' · ✓ You said YES':''):'';
+    rematchStart.hidden=!rematchReadyToStart||!host;
+    rematchStart.disabled=false;
+    rematchInviteButton.hidden=!host||voting||rematchReadyToStart||!online.rematchSupported;
+    againBtn.hidden=!!online;
+    if(!voting)stopRematchDisplay();
+    else if(!rematchDisplayTimer)rematchDisplayTimer=setInterval(()=>{
+      showRematchState();
+      if(rematchVote&&Date.now()>=rematchVote.deadline){
+        rematchHeading.textContent='⌛ INVITATION EXPIRED';
+        rematchPrompt.textContent='Not everyone responded. The host can invite everyone again.';
+        rematchVote=null;
+        showRematchState();
+      }
+    },250);
+  }
+  rematchInviteButton.addEventListener('click',()=>{
+    if(!online?.host||!online.rematchSupported||game?.phase!=='finished')return;
+    GhostAudio.unlock();
+    sendOnline({type:'rematchInvite'});
+    rematchInviteButton.disabled=true;
+    rematchPrompt.textContent='Inviting your friends…';
+  });
+  rematchYes.addEventListener('click',()=>{
+    if(!online||!rematchVote)return;
+    GhostAudio.unlock();
+    sendOnline({type:'rematchVote',id:rematchVote.id,accept:true});
+    rematchYes.disabled=true;
+  });
+  rematchNo.addEventListener('click',()=>{
+    if(!online||!rematchVote)return;
+    sendOnline({type:'rematchVote',id:rematchVote.id,accept:false});
+    rematchNo.disabled=true;
+  });
+  rematchStart.addEventListener('click',()=>{
+    if(!online?.host||!rematchReadyToStart||online.ws.readyState!==WebSocket.OPEN)return;
+    rematchStart.disabled=true;
+    rematchPrompt.textContent='Getting everyone ready…';
+    sendOnline({type:'start'});
+  });
   const joinCodeWrap=document.getElementById('joinCodeWrap');
   function setJoinCodeVisible(visible){
     joinCodeWrap.hidden=!visible;
@@ -1279,6 +1379,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     renderOnlineRoster(onlineRoom);
   }
   function leaveOnline(reason='Left the online room. Solo mode is available.'){
+    rematchVote=null;rematchReadyToStart=false;stopRematchDisplay();rematchPanel.hidden=true;
+    rematchInviteButton.disabled=false;
     const old=online;
     online=null;
     if(old){try{old.ws.close(1000,'Leaving')}catch{}}
@@ -1310,12 +1412,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       // Co-op needs the mode-aware Worker (Alpha 27). If the old Worker is
       // still deployed, fail clearly instead of silently placing friends
       // on opposing teams or giving a fifth person a co-op seat.
-      if(makeNew&&selectedOnlineMode!=='classic'){
+      let serverFeatures=null;
+      try{
         const health=await fetch(endpoint+'/health',{cache:'no-store'});
-        const service=health.ok?await health.json().catch(()=>null):null;
-        if(!Array.isArray(service?.modes)||!service.modes.includes(selectedOnlineMode))
-          throw Error(MODE_NAMES[selectedOnlineMode]+' needs an updated multiplayer server. Classic Duel is still available.');
-      }
+        if(health.ok)serverFeatures=await health.json();
+      }catch{}
+      if(makeNew&&selectedOnlineMode!=='classic'&&
+         (!Array.isArray(serverFeatures?.modes)||!serverFeatures.modes.includes(selectedOnlineMode)))
+        throw Error(MODE_NAMES[selectedOnlineMode]+' needs an updated multiplayer server. Classic Duel is still available.');
       const response=await fetch(makeNew?endpoint+'/rooms':endpoint+'/rooms/'+code,{
         method:makeNew?'POST':'GET',
         headers:makeNew?{'Content-Type':'application/json'}:{},
@@ -1354,6 +1458,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
       mode:selectedOnlineMode,seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
       lastFullSnapshot:-Infinity,inputSeq:0,receivedSeq:-1,teamColors:null};
+    session.rematchSupported=serverFeatures?.rematchVoting===true;
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -1413,6 +1518,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         }
       }else if(msg.type==='start'){
         if(MODE_NAMES[msg.mode])session.mode=msg.mode;
+        rematchVote=null;rematchReadyToStart=false;stopRematchDisplay();
+        rematchStart.disabled=false;againBtn.hidden=false;
         if(session.started)return;
         if(!session.preparing||msg.roundId!==session.roundId){
           // Only accept the confirmed round that this browser prepared.
@@ -1466,6 +1573,35 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         session.profiles.delete(msg.seat);
         session.seats=session.seats.filter(seat=>seat!==msg.seat);
         if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
+      }else if(msg.type==='rematchInvite'){
+        rematchInviteButton.disabled=false;
+        if(game?.phase==='finished'&&typeof msg.id==='string'&&Number.isFinite(msg.deadline)){
+          rematchVote={id:msg.id,deadline:msg.deadline,yesSeats:[],seats:msg.seats||session.seats};
+          rematchReadyToStart=false;
+          rematchYes.disabled=false;rematchNo.disabled=false;
+          showRematchState();
+        }
+      }else if(msg.type==='rematchStatus'){
+        if(rematchVote&&msg.id===rematchVote.id){
+          rematchVote.yesSeats=Array.isArray(msg.yesSeats)?msg.yesSeats:[];
+          rematchVote.seats=Array.isArray(msg.seats)?msg.seats:session.seats;
+          showRematchState();
+        }
+      }else if(msg.type==='rematchAccepted'){
+        rematchInviteButton.disabled=false;
+        if(game?.phase==='finished'){
+          rematchVote=null;rematchReadyToStart=true;showRematchState();
+          setOnlineStatus('Everyone accepted! Host can start the next round.');
+        }
+      }else if(msg.type==='rematchCancelled'){
+        rematchInviteButton.disabled=false;
+        rematchVote=null;rematchReadyToStart=false;
+        rematchYes.disabled=false;rematchNo.disabled=false;
+        showRematchState();
+        if(game?.phase==='finished')
+          rematchPrompt.textContent=msg.reason==='declined'?
+            'A friend declined. You can invite everyone again.':
+            'The invitation expired. You can invite everyone again.';
       }else if(msg.type==='finish'){
         if(!session.host&&game?.phase==='playing')finish();
         session.started=false;
@@ -1580,6 +1716,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       sendOnline({type:'start'});
     }
   });
+  // Host invitation is only available after a completed online round and on
+  // an updated Worker. Never mistake the existing solo action for a rematch.
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
     const link=location.origin+location.pathname+'?room='+online.code;
@@ -2921,6 +3059,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
     });
     results.classList.add('open');
+    againBtn.hidden=!!game.online;
+    if(game.online)showRematchState();
+    else rematchPanel.hidden=true;
     prepareWinningHighScore();
     results.querySelector('.resultsPanel').scrollTop=0;
   }
@@ -3951,7 +4092,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     previewSoloMode=selectedOnlineMode==='fourway'?'fourway':'classic';
     GhostAudio.unlock();reset();GhostAudio.thunder();
   });
-  document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
+  againBtn.addEventListener('click',()=>{
+    if(online){showRematchState();return}
+    reset();
+  });
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
   document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));
 })();
