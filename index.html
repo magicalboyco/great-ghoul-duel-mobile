@@ -1560,9 +1560,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       if(!setup())return Promise.resolve();
       return ctx.state==='running'?Promise.resolve():ctx.resume().catch(e=>status('Tap Test sound: '+e.name));
     }
-    function playCue(cue){
+    function playCue(cue,forceRestart=false){
       if(!setup())return;
-      if(active&&currentCue===cue)return;
+      // A finished/faded or Safari-interrupted source cannot be reused.
+      if(active&&currentCue===cue&&!forceRestart)return;
       currentCue=cue;
       const now=ctx.currentTime;
       if(active){
@@ -1593,7 +1594,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       Object.keys(lastCue).forEach(key=>delete lastCue[key]);
       if(muted)return;
       if(!setup())return;
-      playCue('main');resume();
+      resume();playCue('main',true);
     }
     function hurry(){if(!wantsMusic||muted)return;playCue('hurry')}
     function endRound(win){
@@ -1795,8 +1796,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       muted=!muted;
       if(!muted){
         if(!wantsMusic)wantsMusic=true;
-        if(setup())playCue(currentCue);
-        resume();
+        if(setup()){resume();playCue(currentCue,true);}
       }
       if(master&&ctx)master.gain.setTargetAtTime(muted?0:.7,ctx.currentTime,.02);
       if(muted&&'speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
@@ -1805,15 +1805,25 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     function test(){
       muted=false;
       if(!wantsMusic)wantsMusic=true;
-      if(setup())playCue(currentCue);
+      if(setup()){
+        // Test Sound is an explicit user gesture: restart the soundtrack
+        // even when its previous source still exists but became silent.
+        resume();playCue(currentCue,true);
+      }
       if(master&&ctx)master.gain.setTargetAtTime(.7,ctx.currentTime,.02);
       resume().then(()=>{tone(523.25,.3,'sine',.6);tone(783.99,.3,'triangle',.5,.15)});
     }
     function pause(){
       if('speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
-      if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});
+      // Safari can permanently silence a manually suspended context after
+      // tab/background transitions. Fade output instead of suspending it.
+      if(ctx&&master)master.gain.setTargetAtTime(0,ctx.currentTime,.02);
     }
-    function onVisible(){if(!muted&&wantsMusic)resume()}
+    function onVisible(){
+      if(!ctx||muted||!wantsMusic)return;
+      if(master)master.gain.setTargetAtTime(.7,ctx.currentTime,.02);
+      resume();
+    }
     return {init,unlock,hurry,endRound,effect,thunder,toggle,test,pause,onVisible};
   })();
 
@@ -3689,7 +3699,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       setOnlineStatus('You are in an online room. The host must press Start online match, or choose Leave room for solo play.');
       return;
     }
-    reset();GhostAudio.thunder();
+    GhostAudio.unlock();reset();GhostAudio.thunder();
   });
   document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
