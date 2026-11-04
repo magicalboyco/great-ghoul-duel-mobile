@@ -574,6 +574,42 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .gameGuide>summary{cursor:pointer;list-style-position:inside;text-align:center;color:#f7e3c5;font-weight:800;font-size:13px}
 .gameGuide .bullets{margin-top:12px}
 
+
+/* Alpha 34 welcome: original minimal ink drawings, not stock clip art. */
+#welcomeScreen[hidden]{display:none!important}
+#welcomeScreen{
+  position:fixed;inset:0;z-index:30;display:grid;place-items:center;
+  padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right))
+    max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+  background:rgba(18,12,37,.97);overflow-y:auto;touch-action:pan-y;
+}
+.welcomeCard{
+  width:min(100%,610px);max-height:calc(100dvh - 28px);overflow-y:auto;
+  border:2px solid #cbb4ea;border-radius:24px;background:#fbf6ed;color:#332644;
+  padding:clamp(16px,3vw,30px);text-align:center;
+  box-shadow:0 20px 50px #0a071b95;
+}
+.welcomeStudio{font-size:11px;letter-spacing:.16em;font-weight:900;color:#795386}
+.welcomeCard h1{font:900 clamp(27px,6vw,45px)/.97 'Caprasimo',Georgia,serif;
+  margin:10px auto 7px;letter-spacing:.01em;color:#322141}
+.welcomeTagline{font-weight:800;color:#795081;font-size:clamp(14px,3vw,18px);margin:4px 0 12px}
+.welcomeArt{width:min(100%,390px);max-height:240px;display:block;margin:0 auto}
+.welcomeLead{max-width:45ch;line-height:1.48;margin:8px auto 13px;font-size:15px}
+.welcomeSteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;margin:12px 0 16px}
+.welcomeSteps div{padding:10px 5px;border-radius:12px;background:#efe5f0;
+  font-weight:800;font-size:clamp(11px,2.6vw,14px)}
+.welcomeSteps span{display:block;font-size:21px;margin-bottom:3px}
+#welcomeContinue{display:block;margin:8px auto 0;width:min(100%,270px);
+  padding:13px 16px;border:2px solid #49314e;border-radius:15px;
+  background:#ddadd1;color:#2b1935;font-weight:1000;font-size:16px;
+  cursor:pointer;touch-action:manipulation;box-shadow:0 4px 0 #8d6395}
+#welcomeContinue:focus-visible,#welcomeOpen:focus-visible{outline:3px solid #3d9a82;outline-offset:3px}
+.welcomeFinePrint{font-size:12px;color:#6b576c;margin-top:13px}
+#welcomeOpen{font:800 12px system-ui;background:transparent;color:#e5c9ff;
+  border:1px solid #bda2d583;border-radius:12px;padding:8px 13px;cursor:pointer}
+@media(prefers-reduced-motion:reduce){#welcomeScreen *{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -656,6 +692,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <button type="button" id="onlineLeave" hidden>Leave room</button>
   </div>
 </div>
+<div><button type="button" id="welcomeOpen">👻 What is this game?</button></div>
 <details id="gameGuide" class="gameGuide">
       <summary>👻 How to play · Upgrades · What's new</summary>
       <div class="bullets">
@@ -670,6 +707,67 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
   </div>
 </div>
+<section id="welcomeScreen" hidden aria-modal="true" role="dialog" aria-labelledby="welcomeHeading">
+  <div class="welcomeCard">
+    <div class="welcomeStudio">A JOY HAUS GAME · ALPHA 34 PREVIEW</div>
+    <h1 id="welcomeHeading">SPOOKTACULAR<br>SHOWDOWN</h1>
+    <div class="welcomeTagline">Little ghosts. Big competition!</div>
+    <!-- Original simplified ink drawings of three Boo Crew personalities. -->
+    <svg class="welcomeArt" viewBox="0 0 400 242" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three smiling Boo Crew ghosts in simple hand-drawn line art: a ghost with a bow, a witch ghost, and a bat-wing ghost, with wandering spirit flames">
+      <g stroke="#362842" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+        <!-- Bowtie -->
+        <g transform="translate(48 72) rotate(-6 52 70)">
+          <path d="M14 115 Q7 79 20 47 Q32 19 56 22 Q85 19 99 49 Q110 75 102 115 L84 104 L70 117 L53 104 L37 117 Z" fill="#d8f0dd"/>
+          <path d="M46 21 L34 8 Q24 6 26 23 Q23 39 42 30 L52 25 L62 32 Q81 43 80 24 Q83 5 70 10 L55 21 Z" fill="#f2bfd9"/>
+          <circle cx="51" cy="25" r="6" fill="#fff7ee"/>
+          <path d="M39 65 Q41 58 44 65 M69 65 Q71 58 74 65 M49 83 Q56 91 65 83" fill="none"/>
+          <ellipse cx="29" cy="82" rx="5" ry="3" fill="#e7a7c3" stroke="none"/>
+          <ellipse cx="82" cy="82" rx="5" ry="3" fill="#e7a7c3" stroke="none"/>
+        </g>
+        <!-- Abra-ca-dabra -->
+        <g transform="translate(146 36)">
+          <path d="M20 164 Q10 111 27 83 Q42 63 63 67 Q89 60 105 83 Q121 109 111 165 L94 154 L80 169 L64 155 L46 168 L33 152 Z" fill="#d7e4f5"/>
+          <path d="M33 73 Q63 19 77 -11 Q86 25 91 73 Z" fill="#c7afe2"/>
+          <path d="M8 83 Q61 60 118 84 Q133 96 107 99 Q61 90 21 100 Q-2 101 8 83Z" fill="#c7afe2"/>
+          <path d="M56 39 L86 48" fill="none" stroke="#f9e8a9" stroke-width="6"/>
+          <path d="M50 117 Q53 110 57 117 M79 117 Q83 110 86 117 M60 136 Q70 145 81 135" fill="none"/>
+          <path d="M38 128 L40 128 M98 128 L100 128" stroke="#e8abc5" stroke-width="7"/>
+        </g>
+        <!-- Batty Boo -->
+        <g transform="translate(280 84) rotate(7 43 57)">
+          <path d="M15 98 Q7 69 16 36 Q30 12 53 18 Q78 13 91 38 Q99 66 94 101 L78 91 L63 103 L48 91 L33 102 Z" fill="#d4e8d6"/>
+          <path d="M16 43 Q-12 5 -15 46 Q-4 71 17 65 M94 43 Q123 5 126 46 Q110 73 93 66" fill="#ac92c7"/>
+          <ellipse cx="43" cy="57" rx="4" ry="7" fill="#352841"/>
+          <ellipse cx="68" cy="57" rx="4" ry="7" fill="#352841"/>
+          <path d="M47 78 Q56 89 66 78" fill="none"/>
+        </g>
+        <!-- Tiny spirits -->
+        <g fill="#fff" stroke-width="2.5">
+          <path d="M24 42 Q13 21 28 16 Q43 13 43 31 L36 43 L32 37 Z"/>
+          <path d="M351 45 Q345 24 359 21 Q375 22 375 39 L367 48 L361 43 Z"/>
+          <path d="M193 220 Q184 205 195 201 Q210 202 208 218 L201 224 Z"/>
+        </g>
+        <g fill="#382c47" stroke="none">
+          <circle cx="26" cy="29" r="2"/><circle cx="34" cy="29" r="2"/>
+          <circle cx="358" cy="34" r="2"/><circle cx="366" cy="34" r="2"/>
+          <circle cx="195" cy="213" r="2"/><circle cx="202" cy="213" r="2"/>
+        </g>
+      </g>
+      <g fill="#e6bdcb" opacity=".85">
+        <circle cx="125" cy="31" r="3"/><circle cx="276" cy="22" r="3"/>
+        <circle cx="260" cy="193" r="3"/><circle cx="145" cy="185" r="3"/>
+      </g>
+    </svg>
+    <p class="welcomeLead">Float through a haunted cemetery, collect wandering spirit flames, and race home to score. Watch out—rival ghosts can steal your flames before you make it back!</p>
+    <div class="welcomeSteps" aria-label="How to play in three steps">
+      <div><span>👻</span>Pick a ghost</div>
+      <div><span>✨</span>Collect spirits</div>
+      <div><span>🏠</span>Bring them home</div>
+    </div>
+    <button type="button" id="welcomeContinue">LET'S PLAY! 👻</button>
+    <div class="welcomeFinePrint">Two-minute rounds · Solo or with friends · No downloads</div>
+  </div>
+</section>
 <div id="difficultyHud" hidden>👻 NORMAL OPPONENTS</div>
 <div id="results" role="dialog" aria-modal="true" aria-labelledby="resultHeading">
 <div class="resultsPanel">
@@ -3920,6 +4018,43 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
   document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));
+})();
+</script>
+
+<script>
+/* Isolated welcome controller: if this fails, the working game stays intact. */
+(()=>{
+  const splash=document.getElementById('welcomeScreen');
+  const enter=document.getElementById('welcomeContinue');
+  const reopen=document.getElementById('welcomeOpen');
+  const menu=document.getElementById('menu');
+  let previousFocus=null;
+  if(!splash||!enter||!reopen||!menu)return;
+  const open=()=>{
+    previousFocus=document.activeElement;
+    splash.hidden=false;
+    menu.inert=true;
+    enter.focus({preventScroll:true});
+  };
+  const close=()=>{
+    splash.hidden=true;
+    menu.inert=false;
+    try{sessionStorage.setItem('boo-crew-welcome-seen','yes')}catch{}
+    const target=previousFocus===reopen?reopen:document.getElementById('booCrewGrid');
+    if(target&&typeof target.focus==='function')target.focus({preventScroll:true});
+  };
+  enter.addEventListener('click',close);
+  reopen.addEventListener('click',open);
+  splash.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){e.preventDefault();close()}
+    if(e.key==='Tab'){
+      e.preventDefault();
+      enter.focus({preventScroll:true});
+    }
+  });
+  let seen=false;
+  try{seen=sessionStorage.getItem('boo-crew-welcome-seen')==='yes'}catch{}
+  if(!seen)open();
 })();
 </script>
 </body>
