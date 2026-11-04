@@ -575,6 +575,23 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .gameGuide .bullets{margin-top:12px}
 
 
+
+/* Clear, keyboard-accessible mutually exclusive haunt choices. */
+#modeChooser .modeCard{position:relative;padding-right:63px;transition:border-color .12s,background .12s,box-shadow .12s}
+#modeChooser .modeCard[aria-checked="true"]{
+  background:linear-gradient(110deg,#76529a,#4a3469);
+  border:3px solid #ffedb7;box-shadow:0 0 0 3px #f5dabb40,0 5px 17px #110b2255;
+}
+#modeChooser .modeCard[aria-checked="true"]::after{
+  content:"✓";position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  width:31px;height:31px;display:grid;place-items:center;border-radius:50%;
+  background:#ffe9ae;color:#3a2545;font-weight:1000;font-size:21px;
+}
+#modeChooser .modeCard:focus-visible{outline:3px solid #b7ffe4;outline-offset:3px}
+#modeNotice{font-size:13px!important;font-weight:900!important;color:#fff1c7!important;min-height:20px}
+#joinCodeWrap[hidden]{display:none!important}
+#onlinePanel #onlineCreate[hidden]{display:none!important}
+
 </style>
 </head>
 <body>
@@ -620,7 +637,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 <div id="onlinePanel">
   <p id="previewModeNotice" role="status">Classic Duel and Boo Crew Co-op rooms are available. Four-Way Haunt is playable against bots; four-way online rooms are not available yet.</p>
   <div class="palette-label">👻 CHOOSE YOUR HAUNT!</div>
-  <p class="onlineIntro">Choose how you want to play. The host chooses a mode when creating a room; friends join with the six-character code.</p>
+  <p class="onlineIntro">Choose a mode, then press Play or invite friends.</p>
   <div id="modeChooser" role="radiogroup" aria-label="Multiplayer game mode">
     <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
       <span class="modeIcon">🤝</span><span><b>Boo Crew Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
@@ -632,7 +649,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play with bots below (online coming soon)</small></span>
     </button>
   </div>
-  <div id="modeNotice" class="onlineIntro" aria-live="polite">Four-Way Haunt selected · Play against bots below. Online four-way is not yet available.</div>
+  <div id="modeNotice" class="onlineIntro" aria-live="polite">✓ Four-Way Haunt selected · Play with bots</div>
   <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
   <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
     <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
@@ -640,9 +657,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
     <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
   </details>
-  <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
-  <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
-  <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
+  <div class="onlineControls"><button type="button" id="onlineCreate">✨ CREATE ROOM</button><button type="button" id="onlineJoin" aria-expanded="false" aria-controls="joinCodeWrap">👻 JOIN FRIENDS</button></div>
+  <div id="joinCodeWrap" hidden>
+    <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Enter your friend's room code</label>
+    <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
+  </div>
   <div id="previewGameActions" aria-label="Start your selected game">
     <button id="startBtn" type="button">✨ PLAY FOUR-WAY (BOTS)</button>
   </div>
@@ -1055,9 +1074,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=mode==='fourway';
     modeNotice.textContent=mode==='coop'
-      ?'Boo Crew Co-op selected · Create an online room for friends against bots.'
-      :mode==='fourway'?'Four-Way Haunt selected · Play four teams with bots. Four-way online rooms are not yet available.'
-      :'Classic Duel selected · Play solo below or create an online room against friends.';
+      ?'✓ Boo Crew Co-op selected · Create a room to play together'
+      :mode==='fourway'?'✓ Four-Way Haunt selected · Play with bots'
+      :'✓ Classic Duel selected · Play solo or invite friends';
+    onlineCreateEl.hidden=mode==='fourway';
+    onlineCreateEl.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':'✨ CREATE CLASSIC ROOM';
   }
   function selectOnlineMode(mode){
     if(!MODE_NAMES[mode]||online||onlinePending)return;
@@ -1069,6 +1090,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(button)selectOnlineMode(button.dataset.mode);
   });
   const onlineCodeEl=document.getElementById('onlineCode');
+  const joinCodeWrap=document.getElementById('joinCodeWrap');
+  function setJoinCodeVisible(visible){
+    joinCodeWrap.hidden=!visible;
+    onlineJoinEl.setAttribute('aria-expanded',String(visible));
+    onlineJoinEl.textContent=visible?'👻 JOIN WITH CODE':'👻 JOIN FRIENDS';
+  }
   const onlineCreateEl=document.getElementById('onlineCreate');
   const onlineJoinEl=document.getElementById('onlineJoin');
   const onlineStartEl=document.getElementById('onlineStart');
@@ -1246,7 +1273,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom||selectedOnlineMode==='fourway';
+    onlineCreateEl.hidden=selectedOnlineMode==='fourway'||!!onlineRoom;
     onlineJoinEl.disabled=onlinePending||!!onlineRoom;
+    if(onlineRoom)setJoinCodeVisible(false);
     renderOnlineRoster(onlineRoom);
   }
   function leaveOnline(reason='Left the online room. Solo mode is available.'){
@@ -1532,11 +1561,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const invited=new URLSearchParams(location.search).get('room');
     if(invited&&/^[A-Z2-9]{6}$/.test(invited.toUpperCase())){
       onlineCodeEl.value=invited.toUpperCase();
-      setOnlineStatus('Invite code ready. Tap Join room to play with your friend.');
+      setJoinCodeVisible(true);
+      setOnlineStatus('Invite ready! Tap JOIN WITH CODE to enter your friend\'s room.');
     }
   }catch{}
   onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
-  onlineJoinEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(false)});
+  onlineJoinEl.addEventListener('click',()=>{
+    if(joinCodeWrap.hidden){setJoinCodeVisible(true);onlineCodeEl.focus();return}
+    GhostAudio.unlock();startOnlineConnection(false);
+  });
   onlineLeaveEl.addEventListener('click',()=>leaveOnline());
   onlineStartEl.addEventListener('click',()=>{
     if(online?.host&&!online.started&&!online.preparing&&online.seat===0&&
