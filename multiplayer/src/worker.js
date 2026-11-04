@@ -427,8 +427,8 @@ export class GhostRoom {
       this.roster();
     }
   }
-  webSocketClose(ws) { this.remove(ws); }
-  webSocketError(ws) { this.remove(ws); }
+  webSocketClose(ws) { return this.remove(ws); }
+  webSocketError(ws) { return this.remove(ws); }
   async remove(ws) {
     const meta=ws.deserializeAttachment();
     if (!meta || this.players.get(meta.seat)!==ws) return;
