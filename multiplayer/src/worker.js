@@ -122,6 +122,7 @@ export class GhostRoom {
     this.profiles=new Map();
     this.mode='classic';
     this.rematch=null; // vote window: invitation id, deadline, affirmative seats
+    this.rematchApproved=false;
     // Connection state is rehydrated from attachment metadata after hibernation.
     this.rebuild();
   }
@@ -204,7 +205,10 @@ export class GhostRoom {
     }
     // The server declares the round started only once ALL seated browsers
     // have confirmed receiving the prepare message.
-    this.broadcast({type:'start',roundId:this.roundId,seats:[...this.players.keys()],mode:this.mode,serverTime:Date.now()});
+    const now=Date.now();
+    this.broadcast({type:'start',roundId:this.roundId,seats:[...this.players.keys()],
+      mode:this.mode,serverTime:now,launchAt:this.rematchApproved?now+3000:null});
+    this.rematchApproved=false;
   }
   async leaderboardRequest(request) {
     if(request.method!=='GET'&&request.method!=='POST')
@@ -358,6 +362,7 @@ export class GhostRoom {
       if(seats.length&&seats.every(seat=>vote.yesSeats.includes(seat))){
         this.rematch=null;
         await this.state.storage.delete('rematch-vote');
+        this.rematchApproved=true;
         this.broadcast({type:'rematchAccepted',id:vote.id,readySeats:seats});
         // Existing ready/prepare handshake stays authoritative. The host
         // starts the new round only after unanimous explicit consent.
@@ -415,6 +420,7 @@ export class GhostRoom {
     }
     if (msg.type === "finish" && meta.seat === 0) {
       await this.clearRematch('round finished');
+      this.rematchApproved=false;
       this.broadcast({type:"finish"});
       this.started=false;
       this.preparing=false;
@@ -433,6 +439,7 @@ export class GhostRoom {
     const meta=ws.deserializeAttachment();
     if (!meta || this.players.get(meta.seat)!==ws) return;
     await this.clearRematch('player left');
+    this.rematchApproved=false;
     this.players.delete(meta.seat);
     this.profiles.delete(meta.seat);
     if(meta.seat===0) {
