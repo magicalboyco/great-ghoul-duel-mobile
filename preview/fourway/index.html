@@ -615,6 +615,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
  background:#180f2dd1;color:#fff0bd;text-shadow:0 9px 25px #12091d;
  font:1000 clamp(80px,22vw,160px) 'Caprasimo',Georgia,serif;pointer-events:none}
 
+
+/* An opt-in accessibility setting, directly in the existing setup screen. */
+#contrastChoice{display:flex;align-items:center;justify-content:center;gap:9px;
+  margin:10px auto 9px;padding:8px 12px;width:fit-content;max-width:100%;
+  border:1px solid #c4acd999;border-radius:12px;background:#3d2d55;
+  font-size:13px;font-weight:850;color:#fff3e2;cursor:pointer}
+#highContrastToggle{appearance:auto;accent-color:#beeccf;width:20px;height:20px;
+  flex:none;cursor:pointer}
+#highContrastToggle:focus-visible{outline:3px solid #fff0bb;outline-offset:3px}
+
 </style>
 </head>
 <body>
@@ -642,6 +652,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     <p class="sub" id="menuText">✨ FOUR-WAY HAUNT PREVIEW: Try four teams and a larger cemetery against bots, or play the existing Classic Duel and Boo Crew Co-op modes online below.</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
     <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
+<label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast ghost colors</span></label>
 <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
 <div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
 <div id="playerIdentity">
@@ -985,15 +996,34 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     {name:'Bewitching Blue',hex:'#A7D3EA'}, {name:'Lifeless Lavender',hex:'#C9B9E5'},
     {name:'Poltergeist Pink',hex:'#F1B4D5'}
   ];
+  // The seven vibrant colors from the playtester's reference image.
+  // Accessibility mapping is display-only: multiplayer wires still transmit
+  // accepted pastel hex values, so mixed client versions remain compatible.
+  const HIGH_CONTRAST=[
+    {name:'Vivid Red',hex:'#ED1B24'},{name:'Bright Orange',hex:'#F6871E'},
+    {name:'Electric Yellow',hex:'#F0EA0C'},{name:'Emerald Green',hex:'#00944A'},
+    {name:'Bright Teal',hex:'#00B5B8'},{name:'Deep Purple',hex:'#4D2E8E'},
+    {name:'Vivid Magenta',hex:'#93288F'}
+  ];
+  const highContrastToggle=document.getElementById('highContrastToggle');
+  let highContrast=false;
+  try{highContrast=localStorage.getItem('boo-crew-high-contrast')==='true'}catch{}
+  highContrastToggle.checked=highContrast;
+  const visualPalette=()=>highContrast?HIGH_CONTRAST:PASTELS;
+  const visualEntry=entry=>{
+    const index=PASTELS.findIndex(p=>p.hex.toUpperCase()===String(entry?.hex||'').toUpperCase());
+    return index<0?(entry||PASTELS[3]):visualPalette()[index];
+  };
+  const visualHex=hex=>visualEntry({hex}).hex;
   let selectedIndex=3,selectedCharacter=0,teamColors=[PASTELS[3],PASTELS[5]];
-  const color=team=>(teamColors[team]||PASTELS[3]).hex;
+  const color=team=>visualEntry(teamColors[team]||PASTELS[3]).hex;
   const teamForSeat=(seat,mode)=>mode==='fourway'?Math.floor(seat/2):seat<4?0:1;
   const isFourWay=()=>game?.mode==='fourway';
   const FOUR_WAY_COLORS=[PASTELS[3],PASTELS[6],PASTELS[4],PASTELS[2]];
   function syncScoreColors(){
     scoreEls.forEach((el,i)=>{
       el.hidden=i>=teamColors.length;
-      if(teamColors[i]){el.style.color=color(i);el.title=teamColors[i].name+' team';}
+      if(teamColors[i]){el.style.color=color(i);el.title=visualEntry(teamColors[i]).name+' team';}
     });
     hud.classList.toggle('fourway',teamColors.length===4);
   }
@@ -1006,20 +1036,34 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function selectBooCrewColor(index){
     if(!PASTELS[index])return;
     selectedIndex=index;
-    selectedNameEl.textContent=PASTELS[index].name;
+    selectedNameEl.textContent=visualPalette()[index].name;
     [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)));
     // The selected color is independent of costume. All eight ghosts must
     // immediately preview the same named pastel-goth skin, not their match team.
     refreshCrewCards();
   }
   PASTELS.forEach((entry,index)=>{
-    const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=entry.hex;
-    b.setAttribute('aria-label','Preview the Boo Crew in '+entry.name);
+    const shown=visualPalette()[index];
+    const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=shown.hex;
+    b.setAttribute('aria-label','Preview the Boo Crew in '+shown.name);
     b.setAttribute('aria-pressed',String(index===selectedIndex));
     b.addEventListener('click',()=>selectBooCrewColor(index));
     palettePicker.appendChild(b);
   });
 
+  highContrastToggle.addEventListener('change',()=>{
+    highContrast=highContrastToggle.checked;
+    try{localStorage.setItem('boo-crew-high-contrast',String(highContrast))}catch{}
+    [...palettePicker.children].forEach((button,i)=>{
+      const shown=visualPalette()[i];
+      button.style.background=shown.hex;
+      button.setAttribute('aria-label','Preview the Boo Crew in '+shown.name);
+    });
+    selectedNameEl.textContent=visualPalette()[selectedIndex].name;
+    syncScoreColors();
+    refreshCrewCards();
+    if(online?.seat!==null)renderOnlineRoster(online);
+  });
   const joy = document.getElementById('joystick');
   const knob = document.getElementById('knob');
 
@@ -1344,11 +1388,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       const occupied=room.seats.includes(seat),team=teamForSeat(seat,room.mode);
       const tile=document.createElement('div');
       tile.className='roomSeat'+(occupied?' full':'')+(seat===0?' host':'')+(team===1?' rival':'');
-      tile.style.borderColor=colors[team].hex;
+      tile.style.borderColor=visualHex(colors[team].hex);
       const portrait=document.createElement('div');portrait.className='seatGhost';
       const profile=room.profiles.get(seat);
       const styleId=occupied?(profile?.styleId??(seat===room.seat?selectedCharacter:seat)):seat;
-      const fill=occupied?(profile?.color||colors[team].hex):colors[team].hex;
+      const fill=visualHex(occupied?(profile?.color||colors[team].hex):colors[team].hex);
       portrait.innerHTML=ghostPortrait({id:seat,styleId,team},fill);
       const title=document.createElement('span');title.className='seatTitle';
       const displayName=sanitizePlayerName(profile?.name);
@@ -1357,7 +1401,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         room.mode==='coop'?(team===0?'Friendly Bot':'Rival Bot'):'Bot / Open';
       const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
       teamLabel.textContent='✦ TEAM '+['ONE','TWO','THREE','FOUR'][team];
-      teamLabel.style.color=colors[team].hex;
+      teamLabel.style.color=visualHex(colors[team].hex);
       const ready=document.createElement('span');ready.className='seatReady';
       ready.textContent=!occupied?'OPEN':room.preparing?
         (room.readySeats?.includes(seat)?'✓ READY':'WAITING…'):'✓ CONNECTED';
@@ -3197,7 +3241,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     // always reflect the actual team's match color.
     // Explicit previews (lobby, icon, Top 13) may show personal color.
     // Match portraits and awards must match the authoritative team color.
-    const fill=previewColor??ghostBodyColor(g),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
+    const fill=previewColor?visualHex(previewColor):ghostBodyColor(g),
+      accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
     const ink='#272038';
     const faces=[
       '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
@@ -3245,7 +3290,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(online&&online.seat!==null&&!online.started&&online.ws.readyState===WebSocket.OPEN){
       sendOnline({type:'profile',...lobbyPlayerProfile()});
     }
-    const swatch=PASTELS[selectedIndex];
+    const swatch=visualPalette()[selectedIndex];
     const skinEdge=darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
@@ -3894,7 +3939,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function drawBaseNameplate(ctx,base,team){
     const ownTeam=game.online?game.ghosts[localGhostId()].team:0;
     const subtitle=game.online?(team===ownTeam?'YOUR BASE':'OTHER TEAM BASE'):'BOO CREW BASE';
-    const title=teamColors[team].name.toUpperCase();
+    const title=visualEntry(teamColors[team]).name.toUpperCase();
     const x=base.x,y=base.y+67,width=262,height=57;
     ctx.save();
     ctx.shadowColor='#110b20bf';ctx.shadowBlur=12;ctx.shadowOffsetY=4;
