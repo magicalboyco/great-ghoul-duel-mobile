@@ -756,3 +756,18 @@ test('Alpha 34 preview UX regression checks',()=>{
   assert.ok(scripts.length>0);
   for(const [,body] of scripts)assert.doesNotThrow(()=>new Function(body));
 });
+
+test('Alpha 34 high contrast colors remain optional and do not change multiplayer wire colors',()=>{
+  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  const colors=['ED1B24','F6871E','F0EA0C','00944A','00B5B8','4D2E8E','93288F'];
+  colors.forEach(hex=>assert.ok(html.includes('#'+hex),'Missing supplied color '+hex));
+  assert.match(html,/id="highContrastToggle" type="checkbox"/);
+  assert.match(html,/localStorage\.setItem\('boo-crew-high-contrast'/);
+  assert.match(html,/localStorage\.getItem\('boo-crew-high-contrast'/);
+  assert.match(html,/const color=team=>visualEntry\(teamColors\[team\]/);
+  assert.match(html,/body\.highContrast #hud \.pill:not\(#clock\)::before/);
+  assert.match(html,/const visual=visualEntry\(teamColors\[i\]\)/);
+  assert.match(html,/return \{styleId:selectedCharacter,color:PASTELS\[selectedIndex\]\.hex/);
+  for(const [,source] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))
+    assert.doesNotThrow(()=>new Function(source));
+});
