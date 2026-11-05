@@ -625,6 +625,27 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   flex:none;cursor:pointer}
 #highContrastToggle:focus-visible{outline:3px solid #fff0bb;outline-offset:3px}
 
+
+/* Contrast mode: white-readable numbers and distinct colored score outlines.
+   All seven colors remain visible even if a player cannot discriminate hue. */
+body.highContrast #hud .pill:not(#clock){
+  border:2px solid var(--score-accent,#fff);
+  box-shadow:0 0 0 2px #120e27,0 6px 14px #0009;
+  color:#fff9e9!important;
+  text-shadow:0 1px 4px #000;
+}
+body.highContrast #hud .pill:not(#clock)::before{
+  content:attr(data-team-name);display:block;font:800 9px/1.1 system-ui;
+  color:#fff9e9;margin-bottom:3px;letter-spacing:.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body.highContrast #hud.fourway .pill:not(#clock)::before{font-size:8px}
+body.highContrast .swatch{border:2px solid #fff;box-shadow:0 0 0 2px #1b1330,0 4px 8px #0007}
+body.highContrast .swatch[aria-pressed="true"]::after{
+  color:#fff;background:#211733dd;border-radius:50%;
+  font-size:16px;inset:3px;
+}
+
 </style>
 </head>
 <body>
@@ -1009,6 +1030,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   let highContrast=false;
   try{highContrast=localStorage.getItem('boo-crew-high-contrast')==='true'}catch{}
   highContrastToggle.checked=highContrast;
+  document.body.classList.toggle('highContrast',highContrast);
   const visualPalette=()=>highContrast?HIGH_CONTRAST:PASTELS;
   const visualEntry=entry=>{
     const index=PASTELS.findIndex(p=>p.hex.toUpperCase()===String(entry?.hex||'').toUpperCase());
@@ -1023,7 +1045,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function syncScoreColors(){
     scoreEls.forEach((el,i)=>{
       el.hidden=i>=teamColors.length;
-      if(teamColors[i]){el.style.color=color(i);el.title=visualEntry(teamColors[i]).name+' team';}
+      if(teamColors[i]){
+        const visual=visualEntry(teamColors[i]);
+        el.style.color=highContrast?'#fff9e9':visual.hex;
+        el.style.borderColor=highContrast?visual.hex:'rgba(255,255,255,.18)';
+        el.style.setProperty('--score-accent',visual.hex);
+        el.dataset.teamName=visual.name;
+        el.title=visual.name+' team';
+      }
     });
     hud.classList.toggle('fourway',teamColors.length===4);
   }
@@ -1053,6 +1082,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 
   highContrastToggle.addEventListener('change',()=>{
     highContrast=highContrastToggle.checked;
+    document.body.classList.toggle('highContrast',highContrast);
     try{localStorage.setItem('boo-crew-high-contrast',String(highContrast))}catch{}
     [...palettePicker.children].forEach((button,i)=>{
       const shown=visualPalette()[i];
@@ -3242,7 +3272,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     // Explicit previews (lobby, icon, Top 13) may show personal color.
     // Match portraits and awards must match the authoritative team color.
     const fill=previewColor?visualHex(previewColor):ghostBodyColor(g),
-      accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
+      accent=INDIVIDUAL_ACCENTS[styleId],
+      edge=highContrast?'#fff7e7':darken(fill,.52);
     const ink='#272038';
     const faces=[
       '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
@@ -3291,7 +3322,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       sendOnline({type:'profile',...lobbyPlayerProfile()});
     }
     const swatch=visualPalette()[selectedIndex];
-    const skinEdge=darken(swatch.hex,.52);
+    const skinEdge=highContrast?'#fff7e7':darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
       button.setAttribute('aria-label','Choose '+GHOST_CHARACTER_NAMES[id]+' in '+swatch.name);
@@ -3342,7 +3373,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const tilt=celebrating?Math.sin(progress*Math.PI*5)*.18:
       stolen?Math.sin(progress*Math.PI*12)*.18:
       moving?Math.sin(g.heading)*.085:Math.sin(motion)*.035;
-    const baseColor=ghostBodyColor(g),edge=darken(baseColor,.56);
+    const baseColor=ghostBodyColor(g),edge=highContrast?'#fff7e7':darken(baseColor,.56);
     if(carried>=23){
       const halo=88+Math.sin(t*5+g.bounce)*7;
       drawGlow(x,y-3,halo,alpha(baseColor,.59));
@@ -3368,7 +3399,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     ctx.scale(1+squash+pulse,1-squash+pulse);
     // Natural trailing shape has three soft waving tails, rather than a rigid bottom.
     const flutter=Math.sin(t*6+g.bounce)*3,flutter2=Math.cos(t*7+g.bounce)*3;
-    ctx.fillStyle=baseColor;ctx.strokeStyle=edge;ctx.lineWidth=2.6;
+    ctx.fillStyle=baseColor;ctx.strokeStyle=edge;ctx.lineWidth=highContrast?4:2.6;
     ctx.beginPath();
     ctx.moveTo(-24,12);
     ctx.lineTo(-24,-2);
