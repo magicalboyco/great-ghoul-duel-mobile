@@ -4,7 +4,9 @@
 
 An independent **preservation and recreation project** studying the gameplay of Google's *The Great Ghoul Duel* (Halloween 2018), with the goal of a playable browser game and eventually iOS and Android apps.
 
-> **Current state:** Project repository initialized. **Not yet playable from this repository.** Do not mistake older standalone HTML demos or the Lovable preview for a working build.
+> **Current state (updated 2026-11-06):** `index.html` is a single-file playable alpha titled "Spooktacular Showdown: The Boo Crew (Alpha 33)". `.github/workflows/pages.yml` publishes it on every push to `main` (expected URL: https://magicalboyco.github.io/great-ghoul-duel-mobile/, not verified live). An experimental online-rooms relay (Cloudflare Worker) lives in `multiplayer/` with tests in CI. Phone testing is not documented here. The roadmap and code layout below predate this build; `apps/`, `server/`, `packages/` and `tests/` do not exist yet.
+>
+> **Names:** the repo is `great-ghoul-duel-mobile`, the current build title is *Spooktacular Showdown: The Boo Crew*, and the docs and attributions still say *Ghost Duel*.
 
 ## Goals
 
@@ -52,7 +54,7 @@ This repository can be managed in GitHub's browser interface; its web build will
 - [x] Project scope and architecture documented
 - [ ] Structured Lovable client imported
 - [ ] Build and touch smoke tests passing
-- [ ] Playable web deployment
+- [x] Playable alpha build in `index.html` (single file; deployment URL not verified)
 - [ ] Original-game fidelity validation
 - [ ] Online multiplayer
 - [ ] iOS and Android release
