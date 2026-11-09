@@ -691,7 +691,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
 </div>
 <div id="onlinePanel">
-  <p id="previewModeNotice" role="status">Classic Duel and Boo Crew Co-op rooms are available. Four-Way Haunt is playable against bots; four-way online rooms are not available yet.</p>
+  <p id="previewModeNotice" role="status">Alpha 34 multiplayer test: Classic Duel, Boo Crew Co-op and Four-Way Haunt rooms. Invite friends with a private room code; solo play is available too.</p>
   <div class="palette-label">👻 CHOOSE YOUR HAUNT!</div>
   <p class="onlineIntro">Choose a mode, then press Play or invite friends.</p>
   <div id="modeChooser" role="radiogroup" aria-label="Multiplayer game mode">
@@ -701,11 +701,11 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
       <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
     </button>
-    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, bots preview only">
-      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play with bots below (online coming soon)</small></span>
+    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
+      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
     </button>
   </div>
-  <div id="modeNotice" class="onlineIntro" aria-live="polite">✓ Four-Way Haunt selected · Play with bots</div>
+  <div id="modeNotice" class="onlineIntro" aria-live="polite">✓ Four-Way Haunt selected · Play solo or create a room</div>
   <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
   <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
     <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
@@ -1182,13 +1182,14 @@ body.highContrast .swatch[aria-pressed="true"]::after{
       mode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY CLASSIC SOLO';
     startBtn.hidden=!!online||onlinePending;
     if(!online&&!onlinePending&&onlineCreateEl)
-      onlineCreateEl.disabled=mode==='fourway';
+      onlineCreateEl.disabled=false;
     modeNotice.textContent=mode==='coop'
       ?'✓ Boo Crew Co-op selected · Create a room to play together'
-      :mode==='fourway'?'✓ Four-Way Haunt selected · Play with bots'
+      :mode==='fourway'?'✓ Four-Way Haunt selected · Play solo or create a room'
       :'✓ Classic Duel selected · Play solo or invite friends';
-    onlineCreateEl.hidden=mode==='fourway';
-    onlineCreateEl.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':'✨ CREATE CLASSIC ROOM';
+    onlineCreateEl.hidden=false;
+    onlineCreateEl.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':
+      mode==='fourway'?'✨ CREATE FOUR-WAY ROOM':'✨ CREATE CLASSIC ROOM';
   }
   function selectOnlineMode(mode){
     if(!MODE_NAMES[mode]||online||onlinePending)return;
@@ -1470,8 +1471,8 @@ body.highContrast .swatch[aria-pressed="true"]::after{
       selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY CLASSIC SOLO';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
-    onlineCreateEl.disabled=onlinePending||!!onlineRoom||selectedOnlineMode==='fourway';
-    onlineCreateEl.hidden=selectedOnlineMode==='fourway'||!!onlineRoom;
+    onlineCreateEl.disabled=onlinePending||!!onlineRoom;
+    onlineCreateEl.hidden=!!onlineRoom;
     onlineJoinEl.disabled=onlinePending||!!onlineRoom;
     if(onlineRoom)setJoinCodeVisible(false);
     renderOnlineRoster(onlineRoom);
