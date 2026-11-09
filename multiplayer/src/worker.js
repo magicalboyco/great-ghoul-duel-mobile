@@ -24,12 +24,14 @@ const validNickname=name=>typeof name==='string'&&
 // anti-cheat authoritative simulation. Upgrade to server-side physics later.
 const CLASSIC_SEATS=[0,4,1,5,2,6,3,7];
 const COOP_SEATS=[0,1,2,3];
-const ROOM_MODES=new Set(['classic','coop']);
+const FOURWAY_SEATS=[0,2,4,6,1,3,5,7];
+const ROOM_MODES=new Set(['classic','coop','fourway']);
 const validMode=value=>ROOM_MODES.has(value)?value:'classic';
 const ok = (value) => JSON.stringify(value);
 const validCode = (code) => /^[A-Z2-9]{6}$/.test(code);
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ROOM_LIFETIME_MS=60*60*1000;
+const REMATCH_VOTE_MS=10000;
 const roomHeaders={
   ...leaderboardCors,
   'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
@@ -52,7 +54,7 @@ export default {
     // Health checks are requested directly by GitHub Pages, so they need
     // the same cross-origin response headers as room creation.
     if (url.pathname === "/health") return Response.json(
-      {ok:true,service:"ghost-duel-alpha27",modes:['classic','coop']},
+      {ok:true,service:"ghost-duel-alpha34",modes:['classic','coop','fourway'],rematchVoting:true},
       {headers:roomHeaders}
     );
     if (url.pathname === '/rooms' && request.method==='OPTIONS')
@@ -119,6 +121,8 @@ export class GhostRoom {
     this.readySeats=new Set();
     this.profiles=new Map();
     this.mode='classic';
+    this.rematch=null; // vote window: invitation id, deadline, affirmative seats
+    this.rematchApproved=false;
     // Connection state is rehydrated from attachment metadata after hibernation.
     this.rebuild();
   }
@@ -142,6 +146,8 @@ export class GhostRoom {
       .map(info=>[info.seat,info.profile]));
     this.mode=validMode(sockets.map(ws=>ws.deserializeAttachment()?.mode)
       .find(value=>ROOM_MODES.has(value)));
+    // The vote state is mirrored in Durable Object storage and rehydrated
+    // on demand so a hibernating Worker cannot force a rematch.
     // Recover room mode, player profiles and readiness after hibernation.
   }
   send(ws, data) { try { ws.send(ok(data)); } catch {} }
@@ -153,6 +159,28 @@ export class GhostRoom {
       profiles:[...this.profiles].map(([seat,profile])=>({seat,...profile})),
       started:this.started,preparing:this.preparing,mode:this.mode
     });
+  }
+  async currentRematch(){
+    if(this.rematch===null)this.rematch=await this.state.storage.get('rematch-vote')||null;
+    return this.rematch;
+  }
+  async clearRematch(reason='cancelled'){
+    const vote=await this.currentRematch();
+    if(!vote)return;
+    this.rematch=null;
+    await this.state.storage.delete('rematch-vote');
+    this.broadcast({type:'rematchCancelled',id:vote.id,reason});
+  }
+  async voteStatus(){
+    const vote=await this.currentRematch();
+    if(!vote)return;
+    const seats=[...this.players.keys()].sort((a,b)=>a-b);
+    this.broadcast({type:'rematchStatus',id:vote.id,deadline:vote.deadline,
+      yesSeats:vote.yesSeats.filter(seat=>seats.includes(seat)),seats});
+  }
+  async alarm(){
+    const vote=await this.currentRematch();
+    if(vote&&Date.now()>=vote.deadline)await this.clearRematch('timeout');
   }
   sanitizeProfile(message){
     // User-chosen display names are shared only inside their private room.
@@ -177,7 +205,10 @@ export class GhostRoom {
     }
     // The server declares the round started only once ALL seated browsers
     // have confirmed receiving the prepare message.
-    this.broadcast({type:'start',roundId:this.roundId,seats:[...this.players.keys()],mode:this.mode,serverTime:Date.now()});
+    const now=Date.now();
+    this.broadcast({type:'start',roundId:this.roundId,seats:[...this.players.keys()],
+      mode:this.mode,serverTime:now,launchAt:this.rematchApproved?now+3000:null});
+    this.rematchApproved=false;
   }
   async leaderboardRequest(request) {
     if(request.method!=='GET'&&request.method!=='POST')
@@ -274,7 +305,7 @@ export class GhostRoom {
         }
         seat=0;
       }else if(msg.role==='guest'){
-        const seatOrder=this.mode==='coop'?COOP_SEATS:CLASSIC_SEATS;
+        const seatOrder=this.mode==='coop'?COOP_SEATS:this.mode==='fourway'?FOURWAY_SEATS:CLASSIC_SEATS;
         seat=seatOrder.find(s=>s!==0&&!this.players.has(s));
         if(seat===undefined){
           this.send(ws,{type:'error',reason:'Room is full'});
@@ -302,7 +333,47 @@ export class GhostRoom {
       this.roster();
       return;
     }
+    // Host invites; every connected human (including the host) must
+    // explicitly vote YES. Silence counts as NO after ten seconds.
+    // No single user can force other devices into another game.
+    if(msg.type==='rematchInvite'){
+      if(meta.seat!==0||this.started||this.preparing)return;
+      if(await this.currentRematch())return;
+      const vote={id:crypto.randomUUID(),deadline:Date.now()+REMATCH_VOTE_MS,yesSeats:[]};
+      this.rematch=vote;
+      await this.state.storage.put('rematch-vote',vote);
+      if(typeof this.state.storage.setAlarm==='function')
+        await this.state.storage.setAlarm(vote.deadline);
+      this.broadcast({type:'rematchInvite',id:vote.id,deadline:vote.deadline,
+        seats:[...this.players.keys()]});
+      await this.voteStatus();
+      return;
+    }
+    if(msg.type==='rematchVote'){
+      if(this.started||this.preparing)return;
+      const vote=await this.currentRematch();
+      if(!vote||msg.id!==vote.id)return;
+      if(Date.now()>=vote.deadline){await this.clearRematch('timeout');return}
+      if(msg.accept!==true&&msg.accept!==false)return;
+      // First answer is final. A second packet must not overturn a YES.
+      if(vote.yesSeats.includes(meta.seat))return;
+      if(msg.accept===false){await this.clearRematch('declined');return}
+      vote.yesSeats.push(meta.seat);
+      await this.state.storage.put('rematch-vote',vote);
+      const seats=[...this.players.keys()];
+      if(seats.length&&seats.every(seat=>vote.yesSeats.includes(seat))){
+        this.rematch=null;
+        await this.state.storage.delete('rematch-vote');
+        this.rematchApproved=true;
+        this.broadcast({type:'rematchAccepted',id:vote.id,readySeats:seats});
+        // Existing ready/prepare handshake stays authoritative. The host
+        // starts the new round only after unanimous explicit consent.
+      }else await this.voteStatus();
+      return;
+    }
     if(msg.type==='start'&&meta.seat===0&&!this.started) {
+      // Ordinary host starts are valid when no rematch vote is active.
+      if(await this.currentRematch())return;
       this.started=true;
       this.preparing=true;
       this.roundId=crypto.randomUUID();
@@ -350,6 +421,8 @@ export class GhostRoom {
       for (const [seat,socket] of this.players) if (seat!==0) this.send(socket,{type:"snapshot",state:msg.state});
     }
     if (msg.type === "finish" && meta.seat === 0) {
+      await this.clearRematch('round finished');
+      this.rematchApproved=false;
       this.broadcast({type:"finish"});
       this.started=false;
       this.preparing=false;
@@ -362,11 +435,13 @@ export class GhostRoom {
       this.roster();
     }
   }
-  webSocketClose(ws) { this.remove(ws); }
-  webSocketError(ws) { this.remove(ws); }
-  remove(ws) {
+  webSocketClose(ws) { return this.remove(ws); }
+  webSocketError(ws) { return this.remove(ws); }
+  async remove(ws) {
     const meta=ws.deserializeAttachment();
     if (!meta || this.players.get(meta.seat)!==ws) return;
+    await this.clearRematch('player left');
+    this.rematchApproved=false;
     this.players.delete(meta.seat);
     this.profiles.delete(meta.seat);
     if(meta.seat===0) {
