@@ -440,7 +440,9 @@ export class GhostRoom {
   async remove(ws) {
     const meta=ws.deserializeAttachment();
     if (!meta || this.players.get(meta.seat)!==ws) return;
-    await this.clearRematch('player left');
+    // Disconnect bookkeeping must be synchronous: the status endpoint can be
+    // queried immediately after a socket closes. Do not await storage first.
+    const cleanup=this.clearRematch('player left');
     this.rematchApproved=false;
     this.players.delete(meta.seat);
     this.profiles.delete(meta.seat);
@@ -459,5 +461,6 @@ export class GhostRoom {
       if(this.preparing&&[...this.players.keys()].every(seat=>this.readySeats.has(seat)))
         this.beginRound();
     }
+    await cleanup;
   }
 }
