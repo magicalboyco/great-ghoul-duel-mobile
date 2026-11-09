@@ -67,7 +67,8 @@ test('room creation requires a real reservation, host secret and join authorizat
   assert.match(code,/^[A-Z2-9]{6}$/);
   assert.equal(hostToken.length,48);
   const roomId='room-'+code;
-  assert.equal((await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms/ZZZZZZ'),env)).status,404);
+  const unknownCode=code==='ZZZZZZ'?'YYYYYY':'ZZZZZZ';
+  assert.equal((await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms/'+unknownCode),env)).status,404);
   assert.equal((await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms/'+code),env)).status,200);
   const instance=instances.get(roomId);
   async function enter(){
@@ -576,7 +577,7 @@ test('Alpha 27 hotfix: health handshake allows GitHub Pages cross-origin Co-op r
   assert.equal(health.status,200);
   assert.equal(health.headers['Access-Control-Allow-Origin'],'*',
     'Health CORS must match /rooms so Safari can read the mode list');
-  assert.deepEqual((await health.json()).modes,['classic','coop']);
+  assert.deepEqual((await health.json()).modes,['classic','coop','fourway']);
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   assert.match(html,/const health=await fetch\(endpoint\+'\/health'/,
     'Co-op verifies the deployed Worker has the selected mode');
@@ -771,3 +772,123 @@ test('Alpha 34 high contrast colors remain optional and do not change multiplaye
   for(const [,source] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))
     assert.doesNotThrow(()=>new Function(source));
 });
+
+test('Alpha 34: Four-Way Haunt reserves eight seats across four teams and synchronizes rounds',async()=>{
+  const {env,instances}=harness();
+  const health=await runtime.workerDefault.fetch(mockRequest('https://example.test/health'),env);
+  assert.deepEqual((await health.json()).modes,['classic','coop','fourway']);
+  const created=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/rooms','POST',{Origin:'https://magicalboyco.github.io'},
+    {mode:'fourway'}),env);
+  assert.equal(created.status,201);
+  const {code,hostToken,mode}=await created.json();
+  assert.equal(mode,'fourway');
+  const status=await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms/'+code),env);
+  assert.deepEqual({mode:(await status.json()).mode,maxPlayers:(await status.json()).maxPlayers},
+    {mode:'fourway',maxPlayers:8});
+  const {room,sockets}=instances.get('room-'+code);
+  const joined=[];
+  for(let i=0;i<8;i++){
+    const response=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(response.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({
+      type:'hello',role:i===0?'host':'guest',
+      ...(i===0?{token:hostToken}:{}),
+      styleId:i,color:'#B8DDC4',name:'Ghost '+i
+    }));
+    joined.push(socket);
+  }
+  assert.deepEqual(joined.map(socket=>socket.deserializeAttachment().seat),
+    [0,2,4,6,1,3,5,7],
+    'First four humans occupy four distinct teams');
+  const extraSocket=await runtime.workerDefault.fetch(mockRequest(
+    'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+  assert.equal(extraSocket.status,409);
+  const roster=joined[0].sent.findLast(msg=>msg.type==='roster');
+  assert.equal(roster.mode,'fourway');
+  assert.equal(roster.profiles.length,8);
+  await room.webSocketMessage(joined[0],JSON.stringify({type:'start'}));
+  const prepare=joined[0].sent.find(msg=>msg.type==='prepare');
+  assert.equal(prepare.mode,'fourway');
+  assert.equal(prepare.seats.length,8);
+  for(const socket of joined){
+    await room.webSocketMessage(socket,JSON.stringify({type:'ready',roundId:prepare.roundId}));
+  }
+  assert.equal(joined.every(socket=>socket.sent.some(msg=>msg.type==='start'&&msg.mode==='fourway')),true);
+});
+
+
+test('Alpha 34 rematch: only host can invite, unanimous YES is needed, and rooms stay connected',async()=>{
+  const {env,instances}=harness();
+  const response=await runtime.workerDefault.fetch(mockRequest('https://example.test/rooms',
+    'POST',{Origin:'https://magicalboyco.github.io'},{mode:'classic'}),env);
+  const {code,hostToken}=await response.json();
+  const {room,sockets}=instances.get('room-'+code);
+  const connect=async(role,token)=>{
+    const res=await runtime.workerDefault.fetch(mockRequest(
+      'https://example.test/room/'+code,'GET',{Upgrade:'websocket'}),env);
+    assert.equal(res.status,101);
+    const socket=sockets.at(-1);
+    await room.webSocketMessage(socket,JSON.stringify({type:'hello',role,
+      ...(token?{token}:{})}));
+    return socket;
+  };
+  const host=await connect('host',hostToken);
+  const guest=await connect('guest');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  const prepare=host.sent.findLast(msg=>msg.type==='prepare');
+  for(const ws of [host,guest])
+    await room.webSocketMessage(ws,JSON.stringify({type:'ready',roundId:prepare.roundId}));
+  assert.equal(room.started,true);
+  await room.webSocketMessage(host,JSON.stringify({type:'finish'}));
+  assert.equal(room.started,false);
+  const originalCount=room.players.size;
+  await room.webSocketMessage(guest,JSON.stringify({type:'rematchInvite'}));
+  assert.equal(host.sent.some(msg=>msg.type==='rematchInvite'),false,'Guests may not invite');
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
+  const invited=host.sent.findLast(msg=>msg.type==='rematchInvite');
+  assert.ok(invited&&invited.deadline>Date.now());
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:invited.id,accept:true}));
+  assert.equal(host.sent.some(msg=>msg.type==='rematchAccepted'),false,'Host YES is not enough');
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:invited.id,accept:false}));
+  assert.equal(await room.currentRematch()!==null,true,'Duplicate NO must not undo an already sent YES');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  assert.equal(room.started,false,'No round may start while a vote is active');
+  await room.webSocketMessage(guest,JSON.stringify({type:'rematchVote',id:invited.id,accept:false}));
+  assert.equal(host.sent.findLast(msg=>msg.type==='rematchCancelled').reason,'declined');
+  assert.equal(room.players.size,originalCount,'Declining leaves the room intact');
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
+  const second=host.sent.findLast(msg=>msg.type==='rematchInvite');
+  await room.webSocketMessage(guest,JSON.stringify({type:'rematchVote',id:second.id,accept:true}));
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchVote',id:second.id,accept:true}));
+  assert.ok(host.sent.some(msg=>msg.type==='rematchAccepted'&&msg.id===second.id));
+  assert.equal(room.started,false,'Host starts only after every player accepts');
+  await room.webSocketMessage(host,JSON.stringify({type:'start'}));
+  const secondPrepare=guest.sent.findLast(msg=>msg.type==='prepare');
+  assert.notEqual(secondPrepare.roundId,prepare.roundId);
+  for(const ws of [host,guest])
+    await room.webSocketMessage(ws,JSON.stringify({type:'ready',roundId:secondPrepare.roundId}));
+  assert.equal(room.started,true,'Existing round handshake works after rematch');
+  assert.equal(room.players.size,originalCount,'No one rejoined or entered a code');
+  const rematchLaunch=guest.sent.findLast(msg=>msg.type==='start');
+  assert.ok(rematchLaunch.launchAt>=rematchLaunch.serverTime+3000,
+    'All browsers receive the same delayed 3-second round launch');
+  await room.webSocketMessage(host,JSON.stringify({type:'finish'}));
+  await room.webSocketMessage(host,JSON.stringify({type:'rematchInvite'}));
+  const timed=host.sent.findLast(msg=>msg.type==='rematchInvite');
+  room.rematch.deadline=Date.now()-1;
+  await room.alarm();
+  assert.equal(host.sent.findLast(msg=>msg.type==='rematchCancelled').id,timed.id);
+  assert.equal(await room.currentRematch(),null,'Expired votes are removed');
+  assert.equal(room.players.size,originalCount);
+});
+
+
+test('Alpha 34 Worker advertises rematch voting capability',async()=>{
+  const {env}=harness();
+  const response=await runtime.workerDefault.fetch(mockRequest('https://example.test/health'),env);
+  assert.equal((await response.json()).rematchVoting,true);
+});
+
