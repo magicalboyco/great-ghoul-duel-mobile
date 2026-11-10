@@ -1,4 +1,4 @@
-# Ghost Duel — Alpha 14 online-room prototype
+# Boo Crew — Alpha 14 online-room prototype
 
 This is an **opt-in experimental mode**. The existing Alpha 13 solo game stays unchanged.
 
@@ -6,7 +6,7 @@ This is an **opt-in experimental mode**. The existing Alpha 13 solo game stays u
 1. From this repository, go to the `multiplayer` directory.
 2. With Node.js installed, run `npx wrangler login`, then `npx wrangler deploy`.
 3. Copy the printed `https://ghost-duel-rooms.<subdomain>.workers.dev` URL.
-4. Open Ghost Duel's menu, paste that URL in the **Online multiplayer** server field, and select **Create room**. Share the six-character room code. Other players enter the same server URL and room code and select **Join room**.
+4. Open the Boo Crew menu, paste that URL in the **Online multiplayer** server field, and select **Create room**. Share the six-character room code. Other players enter the same server URL and room code and select **Join room**.
 5. The host selects **Start online match**. Remaining seats are bots. Up to eight humans can play (four per team).
 
 The Workers Free plan supports SQLite-backed Durable Objects. See https://developers.cloudflare.com/durable-objects/ and https://developers.cloudflare.com/durable-objects/best-practices/websockets/.

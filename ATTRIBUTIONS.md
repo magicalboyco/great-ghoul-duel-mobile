@@ -1,4 +1,4 @@
-# Ghost Duel — Attribution and Gratitude Register
+# Spooktacular Showdown — Attribution and Gratitude Register
 
 Updated for Alpha 14 (2026-11-02).
 
@@ -6,21 +6,18 @@ This document distinguishes **inspiration and thanks**, **materials currently in
 
 ## Game studio
 
-**Joy Haus** is the game studio behind the independent Ghost Duel project.
+**Joy Haus** is the game studio behind the independent Spooktacular Showdown project.
 
 The studio websites supplied by the project owner are `http://joy.haus`, `http://www.joy-haus.us`, and `http://www.joy-haus.com`. These are recorded as provided; site availability and the preferred official address remain unverified, so none has been selected as the main in-game link yet.
 
-## Original gameplay inspiration — not bundled assets
+## Inspiration — not bundled assets
 
-- **Google, The Great Ghoul Duel (Halloween 2018)** — central reference for the two-team, eight-ghost, two-minute spirit-flame collection/deposit/steal mechanics and individual end-of-match superlatives. [Official Doodle and complete original credits](https://doodles.google/doodle/halloween-2018/). The game thanks the artists, musicians, producers, designers, engineers, and Google Cloud contributors listed there.
-- The independent project is **not affiliated with or endorsed by Google**. Original Google Doodle artwork, music recordings, characters, or code must not be copied into the distributable game without independent rights verification.
 - **My Little Pony** — named as a broad example of cheerful pastel fantasy aesthetics that influenced the color palette; no franchise artwork, characters, music, or logo is intentionally included. No affiliation with Hasbro.
 
 ## Code and graphics currently shipped
 
-- The current playable web build is the project's own JavaScript/HTML/CSS single-page implementation at [index.html](https://github.com/magicalboyco/great-ghoul-duel-mobile/blob/main/index.html). Game graphics and ghost portraits are drawn at runtime in Canvas/SVG; no original Google Doodle assets are embedded in this build.
+- The current playable web build is the project's own JavaScript/HTML/CSS single-page implementation at [index.html](https://github.com/magicalboyco/great-ghoul-duel-mobile/blob/main/index.html). Game graphics and ghost portraits are drawn at runtime in Canvas/SVG; no third-party game art or code is embedded in this build.
 - Browser APIs used include Canvas 2D, Web Audio, pointer events, and standard JavaScript. Browser APIs are not themselves third-party code redistributed by the game.
-- **JasonTheKitten's custom-ggd-server** — a community source and historical multiplayer reference at https://github.com/JasonTheKitten/custom-ggd-server. The current Alpha 14 single-page game does not bundle this repository or claim its source code was incorporated. Check its exact license and requirements before reusing any code in the planned multiplayer server.
 - An earlier [Lovable prototype](https://lovable.dev/projects/1a3002c4-6a10-4152-a534-f9e98a2cdf23) helped inform project exploration. It is cited as project history, not as proof of copied code in the current file.
 
 ## Music and sound currently shipped
