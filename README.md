@@ -60,6 +60,8 @@ Pushes to `main` are published automatically with GitHub Pages. The multiplayer 
 - [ ] Original-art and audio provenance review before any app-store submission
 - [ ] iOS and Android store builds (wrap the web game; needs developer accounts)
 
-## Asset and licensing policy
+## Credits and licensing
 
-This is **not an official Google project**. It was inspired by the 2018 Halloween Doodle ([The Great Ghoul Duel](https://doodles.google/doodle/halloween-2018/)), but this game's graphics are drawn at runtime and its music and effects are synthesized in the browser; no Google Doodle art, music or code is included (see `ATTRIBUTIONS.md`). Source code published under open-source licenses does not give us permission to distribute Google's original art, sound, characters or branding. Use clearly labeled original or temporary assets, record their provenance in `ATTRIBUTIONS.md`, and keep reference material separate from distributable assets.
+Thank you to the creators of Google's 2018 Halloween Doodle, whose ghost game inspired the idea of collecting and stealing spirit flames. Spooktacular Showdown is an independent game and is not affiliated with, sponsored or endorsed by Google.
+
+Its graphics are drawn at runtime and its music and effects are synthesized in the browser; no third-party art, music recordings or code from that inspiration are included. Record the provenance of any asset you add in `ATTRIBUTIONS.md`, and don't reuse anyone's original art, sound, characters or branding without verified permission.

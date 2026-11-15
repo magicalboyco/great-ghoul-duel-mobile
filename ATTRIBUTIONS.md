@@ -12,15 +12,15 @@ The studio websites supplied by the project owner are `http://joy.haus`, `http:/
 
 ## Original gameplay inspiration — not bundled assets
 
-- **Google, The Great Ghoul Duel (Halloween 2018)** — central reference for the two-team, eight-ghost, two-minute spirit-flame collection/deposit/steal mechanics and individual end-of-match superlatives. [Official Doodle and complete original credits](https://doodles.google/doodle/halloween-2018/). The game thanks the artists, musicians, producers, designers, engineers, and Google Cloud contributors listed there.
-- The independent project is **not affiliated with or endorsed by Google**. Original Google Doodle artwork, music recordings, characters, or code must not be copied into the distributable game without independent rights verification.
+- **Google's 2018 Halloween Doodle** — thank you to its creators for the inspiration behind the idea of collecting and stealing spirit flames. The game is independent and **not affiliated with or endorsed by Google**.
+- No third-party artwork, music recordings, characters or code from that inspiration are included in the distributable game. Do not add any without independent rights verification.
 - **My Little Pony** — named as a broad example of cheerful pastel fantasy aesthetics that influenced the color palette; no franchise artwork, characters, music, or logo is intentionally included. No affiliation with Hasbro.
 
 ## Code and graphics currently shipped
 
 - The current playable web build is the project's own JavaScript/HTML/CSS single-page implementation at [index.html](https://github.com/magicalboyco/great-ghoul-duel-mobile/blob/main/index.html). Game graphics and ghost portraits are drawn at runtime in Canvas/SVG; no original Google Doodle assets are embedded in this build.
 - Browser APIs used include Canvas 2D, Web Audio, pointer events, and standard JavaScript. Browser APIs are not themselves third-party code redistributed by the game.
-- **JasonTheKitten's custom-ggd-server** — a community source and historical multiplayer reference at https://github.com/JasonTheKitten/custom-ggd-server. The current Alpha 14 single-page game does not bundle this repository or claim its source code was incorporated. Check its exact license and requirements before reusing any code in the planned multiplayer server.
+- No code from community multiplayer projects is bundled. The multiplayer Worker in `multiplayer/` is this project's own implementation.
 - An earlier [Lovable prototype](https://lovable.dev/projects/1a3002c4-6a10-4152-a534-f9e98a2cdf23) helped inform project exploration. It is cited as project history, not as proof of copied code in the current file.
 
 ## Music and sound currently shipped
