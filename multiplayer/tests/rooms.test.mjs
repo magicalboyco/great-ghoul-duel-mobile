@@ -892,3 +892,25 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
   assert.equal((await response.json()).rematchVoting,true);
 });
 
+
+test('Alpha 35 menu: color comes first, one big Play button, extras live in drawers',()=>{
+  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  const at=id=>html.indexOf('id="'+id+'"');
+  assert.ok(at('palettePicker')>0&&at('palettePicker')<at('booCrewGrid'),'Color picker precedes the character picker');
+  assert.ok(at('booCrewGrid')<at('startBtn'),'Play follows the two quick choices');
+  assert.ok(at('startBtn')<at('playerDisplayName'),'Nickname is not in the way of Play');
+  // Nickname, difficulty and server settings are tucked inside Settings.
+  const settings=html.slice(at('settingsDetails'),at('gameGuide'));
+  for(const id of ['playerDisplayName','difficultyWrap','onlineServer'])
+    assert.ok(settings.includes('id="'+id+'"'),id+' lives in Settings');
+  // Friends flow: room controls sit in a drawer, invites use the share sheet.
+  assert.match(html,/<details id="friendsDetails"/);
+  assert.match(html,/navigator\.share\(\{title:'Spooktacular Showdown'/);
+  assert.match(html,/\?room=/);
+  // Ghosts are see-through, but high contrast keeps them solid.
+  assert.match(html,/const GHOST_BODY_ALPHA=\.74/);
+  assert.match(html,/ctx\.globalAlpha=highContrast\?1:GHOST_BODY_ALPHA/);
+  // Nickname stays optional and falls back to the ghost's own name in rooms.
+  assert.match(html,/\|\|GHOST_CHARACTER_NAMES\[selectedCharacter\]\.slice\(0,13\)/);
+  assert.equal((html.match(/id="startBtn"/g)||[]).length,1);
+});
