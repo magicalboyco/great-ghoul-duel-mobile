@@ -646,6 +646,82 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   font-size:16px;inset:3px;
 }
 
+
+/* ===== Alpha 35 menu: one decision at a time — color first, then Play. =====
+   Everything that is not needed to start a game lives in a collapsed drawer. */
+#menu>.panel{width:min(94vw,560px)}
+.srOnly{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#menu .sub{margin:6px auto 4px;font-size:15px;color:#f3e6ff}
+.menuStep{margin:14px 0 8px}
+#menu .palette-label{font-size:13px;letter-spacing:.1em;margin:6px 0 10px;color:#ffe9b6}
+#menu .swatches{max-width:430px;gap:9px;grid-template-columns:repeat(7,minmax(0,1fr))}
+#menu .swatch{width:100%;max-width:50px;height:auto;aspect-ratio:1;justify-self:center;border-width:3px}
+#menu #teamPreview{margin:8px auto 2px;font-size:14px;min-height:20px}
+#contrastChoice{display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:.85;margin-top:4px;cursor:pointer}
+#booCrewGrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:2px auto 6px;max-width:100%}
+.crewCard{padding:4px 1px}
+.crewCard svg{width:40px;height:45px}
+.crewCard span{font-size:10px}
+.crewPortrait{min-height:45px}
+#crewSelection{font-size:12px;color:#ffe6ad;opacity:.9}
+/* The long character blurb is optional reading, not a gate to playing. */
+#crewLore{display:none}
+.crewCard .ghostSkin{fill-opacity:.82}
+body.highContrast .crewCard .ghostSkin{fill-opacity:1}
+#menu #onlinePanel{max-width:none;margin:12px auto 6px;padding:0;background:none;border:none}
+#menu #previewGameActions{margin:8px auto 10px;min-height:0}
+#menu #onlinePanel #previewGameActions #startBtn{width:min(100%,360px);max-width:none;min-height:66px;font-size:24px;border-radius:20px;letter-spacing:.04em}
+#modeChooser{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto 10px}
+#modeChooser .modeCard{width:auto;min-height:42px;padding:8px 14px 8px 10px;border-radius:999px;gap:7px;flex:0 1 auto}
+#modeChooser .modeCard small{display:none}
+#modeChooser .modeCard .modeIcon{font-size:18px;width:auto}
+#modeChooser .modeCard b{font-size:14px}
+#modeChooser .modeCard[aria-checked="true"]::after{display:none}
+#modeChooser .modeCard[aria-checked="true"]{border:2px solid #ffedb7}
+.menuDrawer{margin:8px auto;max-width:520px;border:1px solid #dfc9f550;border-radius:15px;background:#21172f70;text-align:left}
+.menuDrawer>summary{cursor:pointer;list-style-position:inside;text-align:center;color:#f7e3c5;font-weight:800;font-size:14px;padding:11px 14px;border-radius:15px}
+.menuDrawer>summary:focus-visible{outline:3px solid #b7ffe4;outline-offset:2px}
+.menuDrawer .drawerBody{padding:2px 14px 14px;text-align:center}
+.drawerHint{font-size:12px;color:#e9dafa;margin:4px 0 10px;line-height:1.45}
+.friendsDrawer{background:#3a2a5a80;border-color:#e8c5f35a}
+.friendsDrawer .onlineControls{justify-content:center}
+#menuMore{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
+#menuMore>.menuDrawer{flex:1 1 150px;margin:0;max-width:none}
+#menuMore>.menuDrawer[open]{flex-basis:100%}
+#menuMore .menuChip{margin:0;padding:11px 14px;border-radius:15px;border:1px solid #dfc9f550;background:#21172f70;color:#f7e3c5;font-weight:800;font-size:14px;cursor:pointer;flex:1 1 120px}
+#menuMore .gameGuide .bullets{grid-template-columns:1fr 1fr;margin:6px 0 0}
+#playerIdentity{margin:6px auto 12px}
+#menu #onlineStatus{min-height:0;font-size:12px;opacity:.9}
+/* A friend who arrives from an invite link sees Join as the main action. */
+body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#183928;border-color:#e2ffe4;min-height:48px;font-size:16px}
+.menuDrawer>summary{list-style:none;display:flex;align-items:center;justify-content:center;min-height:46px}
+.menuDrawer>summary::-webkit-details-marker{display:none}
+#menuMore{align-items:stretch}
+#menuMore .menuChip{min-height:46px}
+@media(max-width:560px){
+  #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .crewCard svg{width:46px;height:52px}
+  #menuMore .gameGuide .bullets{grid-template-columns:1fr}
+  #menu .swatches{gap:6px}
+}
+/* Compact ghost picker on every screen size (older phone rules made tall 2-column cards). */
+#menu #menuPanel #booCrewGrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+#menu #menuPanel .crewCard{min-height:0;padding:4px 1px;gap:2px;border-radius:12px}
+#menu #menuPanel .crewCard svg{width:40px;height:45px}
+#menu #menuPanel .crewCard span{font-size:10px;min-height:0}
+#menu #menuPanel .crewPortrait{min-height:45px}
+.menuDrawer.gameGuide{padding:0;max-width:none;margin:0}
+#menuMore{align-items:flex-start}
+@media(max-width:560px){
+  #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #menu #menuPanel .crewCard svg{width:42px;height:47px}
+}
+@media(max-width:560px){
+  #modeChooser{gap:6px}
+  #modeChooser .modeCard{padding:7px 10px 7px 8px;gap:5px}
+  #modeChooser .modeCard b{font-size:13px}
+  #modeChooser .modeCard .modeIcon{font-size:16px}
+}
 </style>
 </head>
 <body>
@@ -667,81 +743,107 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   </div>
 </div>
 <div id="menu">
-  <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 34 PREVIEW</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
-    
-    <p class="sub" id="menuText">✨ FOUR-WAY HAUNT PREVIEW: Try four teams and a larger cemetery against bots, or play the existing Classic Duel and Boo Crew Co-op modes online below.</p>
+  <div class="panel" id="menuPanel">
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 34 PREVIEW</div>
+    <div class="title">SPOOKTACULAR<br>SHOWDOWN</div>
+    <p class="sub" id="menuText">Collect spirit flames. Steal them back. Boo!</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
-    <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
-<label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast ghost colors</span></label>
-<div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
-<div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
-<div id="playerIdentity">
-  <label for="playerDisplayName">👻 Your ghost name <span>(optional · up to 13 characters)</span></label>
-  <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Choose a spooky nickname" aria-describedby="playerNameHint">
-  <div id="playerNameHint">Your name appears above your ghost and on the high-score board if you qualify.</div>
-</div>
-<div id="difficultyWrap">
-  <div class="palette-label">Computer opponent difficulty</div>
-  <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
-    <button type="button" class="difficultyBtn" data-difficulty="easy" aria-pressed="false">🌙 Easy</button>
-    <button type="button" class="difficultyBtn" data-difficulty="normal" aria-pressed="true">👻 Normal</button>
-    <button type="button" class="difficultyBtn" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
-  </div>
-  <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
-</div>
-<div id="onlinePanel">
-  <p id="previewModeNotice" role="status">Alpha 34 multiplayer test: Classic Duel, Boo Crew Co-op and Four-Way Haunt rooms. Invite friends with a private room code; solo play is available too.</p>
-  <div class="palette-label">👻 CHOOSE YOUR HAUNT!</div>
-  <p class="onlineIntro">Choose a mode, then press Play or invite friends.</p>
-  <div id="modeChooser" role="radiogroup" aria-label="Multiplayer game mode">
-    <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
-      <span class="modeIcon">🤝</span><span><b>Boo Crew Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
-    </button>
-    <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
-      <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
-    </button>
-    <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
-      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
-    </button>
-  </div>
-  <div id="modeNotice" class="onlineIntro" aria-live="polite">✓ Four-Way Haunt selected · Play solo or create a room</div>
-  <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
-  <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
-    <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
-    <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
-    <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
-    <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
-  </details>
-  <div class="onlineControls"><button type="button" id="onlineCreate">✨ CREATE ROOM</button><button type="button" id="onlineJoin" aria-expanded="false" aria-controls="joinCodeWrap">👻 JOIN FRIENDS</button></div>
-  <div id="joinCodeWrap" hidden>
-    <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Enter your friend's room code</label>
-    <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
-  </div>
-  <div id="previewGameActions" aria-label="Start your selected game">
-    <button id="startBtn" type="button">✨ PLAY FOUR-WAY (BOTS)</button>
-  </div>
-  <div id="onlineStatus" role="status" aria-live="polite">Online play uses our Ghost Duel Cloudflare server. The host must keep their game open.</div>
-  <div id="onlineInvite" hidden></div>
-  <div id="onlineRoleCard" role="status" aria-live="polite" hidden></div>
-  <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 START MATCH FOR EVERYONE</button>
-  <div id="onlineWaiting" role="status" aria-live="polite" hidden></div>
-  <div id="onlineRoster" hidden aria-label="Eight room seats"></div>
-  <div class="onlineControls">
-    <button type="button" id="onlineCopy" hidden>🔗 Copy invite link</button>
-    <button type="button" id="onlineLeave" hidden>Leave room</button>
-  </div>
-</div>
-<details id="gameGuide" class="gameGuide">
-      <summary>👻 How to play · Powers</summary>
-      <div class="bullets">
-        <div><b>Upgrades</b><br>Speed at 8, Glow at 23, Magnet at 53, Phase at 113 carried flames. Powers reset after a deposit or loss.</div>
-        <div><b>How to play</b><br>Move using the joystick or drag on the arena. Use Test Sound if audio is silent.</div>
+
+    <section class="menuStep" aria-labelledby="colorStepLabel">
+      <div class="palette-label" id="colorStepLabel">Pick your color</div>
+      <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
+      <div id="teamPreview" aria-live="polite"><b id="selectedName">Ghostly Green</b></div>
+      <label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast colors</span></label>
+    </section>
+
+    <section class="menuStep" aria-labelledby="ghostStepLabel">
+      <div class="palette-label" id="ghostStepLabel">Pick your ghost</div>
+      <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
+      <div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div>
+      <div id="crewLore" aria-live="polite"></div>
+    </section>
+
+    <div id="onlinePanel">
+      <div id="previewGameActions" aria-label="Start your selected game">
+        <button id="startBtn" type="button">▶ PLAY</button>
       </div>
-    </details>
-    <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
-  <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
-    <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
+      <div id="modeChooser" role="radiogroup" aria-label="Game mode">
+        <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
+          <span class="modeIcon">✨</span><span><b>Four-Way</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
+        </button>
+        <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
+          <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
+        </button>
+        <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
+          <span class="modeIcon">🤝</span><span><b>Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
+        </button>
+      </div>
+      <div id="modeNotice" class="srOnly" aria-live="polite">✓ Four-Way Haunt selected · Play solo or create a room</div>
+
+      <details id="friendsDetails" class="menuDrawer friendsDrawer">
+        <summary>👥 Play with friends</summary>
+        <div class="drawerBody">
+          <p class="drawerHint">Make a room, share the link, and friends join with one tap.</p>
+          <div class="onlineControls"><button type="button" id="onlineCreate">✨ CREATE ROOM</button><button type="button" id="onlineJoin" aria-expanded="false" aria-controls="joinCodeWrap">👻 JOIN FRIENDS</button></div>
+          <div id="joinCodeWrap" hidden>
+            <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Enter your friend's room code</label>
+            <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
+          </div>
+          <div id="onlineStatus" role="status" aria-live="polite">Keep this tab open while your friends play.</div>
+          <div id="onlineInvite" hidden></div>
+          <div id="onlineRoleCard" role="status" aria-live="polite" hidden></div>
+          <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 START MATCH FOR EVERYONE</button>
+          <div id="onlineWaiting" role="status" aria-live="polite" hidden></div>
+          <div id="onlineRoster" hidden aria-label="Eight room seats"></div>
+          <div class="onlineControls">
+            <button type="button" id="onlineCopy" hidden>📤 Invite friends</button>
+            <button type="button" id="onlineLeave" hidden>Leave room</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div id="menuMore">
+      <details id="settingsDetails" class="menuDrawer">
+        <summary>⚙️ Settings</summary>
+        <div class="drawerBody">
+          <div id="playerIdentity">
+            <label for="playerDisplayName">Nickname <span>(optional)</span></label>
+            <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
+            <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
+          </div>
+          <div id="difficultyWrap">
+            <div class="palette-label">Computer opponent difficulty</div>
+            <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
+              <button type="button" class="difficultyBtn" data-difficulty="easy" aria-pressed="false">🌙 Easy</button>
+              <button type="button" class="difficultyBtn" data-difficulty="normal" aria-pressed="true">👻 Normal</button>
+              <button type="button" class="difficultyBtn" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
+            </div>
+            <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
+          </div>
+          <details id="onlineServerAdvanced" style="margin:8px auto;max-width:390px">
+            <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">Server (advanced)</summary>
+            <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
+            <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
+            <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
+          </details>
+          <p class="drawerHint">📱 On iPhone: <b>Share → Add to Home Screen</b> for a full-screen, app-like game.</p>
+        </div>
+      </details>
+      <details id="gameGuide" class="menuDrawer gameGuide">
+        <summary>❓ How to play</summary>
+        <div class="drawerBody">
+          <div class="bullets">
+            <div><b>Goal</b><br>Collect spirit flames, then carry them back to your base to score. Rivals can steal the flames trailing behind you, and you can steal theirs!</div>
+            <div><b>Move</b><br>Drag the joystick or the arena. Use Test Sound if audio is silent.</div>
+            <div><b>Powers</b><br>Speed at 8 flames, Glow at 23, Magnet at 53, Phase at 113. Powers reset after a deposit or loss.</div>
+            <div><b>Teams</b><br>Each team has one matching color. In Co-op, the host chooses the human team's color.</div>
+          </div>
+        </div>
+      </details>
+      <button type="button" id="hallMenuBtn" class="menuChip">🏆 Top 13</button>
+      <button type="button" id="menuCreditsBtn" class="menuChip">💗 Credits</button>
+    </div>
   </div>
 </div>
 <div id="difficultyHud" hidden>👻 NORMAL OPPONENTS</div>
@@ -952,8 +1054,9 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     results.classList.remove('open');
     menu.classList.remove('hidden');
     menuText.textContent=purpose==='difficulty'
-      ?'Choose your opponent difficulty for the next match. Your selected ghost color is saved.'
-      :'Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
+      ?'Pick a difficulty in Settings, then play again.'
+      :'Pick a color for the next match.';
+    if(purpose==='difficulty')document.getElementById('settingsDetails').open=true;
     showOnlineLobby(null);
     if(purpose==='difficulty')difficultyButtons.querySelector('[aria-pressed="true"]').focus();
     else palettePicker.children[selectedIndex].focus();
@@ -1178,8 +1281,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     }
     // Selection controls both the highlighted card and the PLAY action.
     previewSoloMode=mode==='fourway'?'fourway':'classic';
-    startBtn.textContent=mode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':
-      mode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY CLASSIC SOLO';
+    startBtn.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
     startBtn.hidden=!!online||onlinePending;
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=false;
@@ -1188,8 +1290,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
       :mode==='fourway'?'✓ Four-Way Haunt selected · Play solo or create a room'
       :'✓ Classic Duel selected · Play solo or invite friends';
     onlineCreateEl.hidden=false;
-    onlineCreateEl.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':
-      mode==='fourway'?'✨ CREATE FOUR-WAY ROOM':'✨ CREATE CLASSIC ROOM';
+    onlineCreateEl.textContent='✨ CREATE ROOM';
   }
   function selectOnlineMode(mode){
     if(!MODE_NAMES[mode]||online||onlinePending)return;
@@ -1339,7 +1440,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   }
   function lobbyPlayerProfile(){
     return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex,
-      name:sanitizePlayerName(playerDisplayNameEl.value)};
+      name:sanitizePlayerName(playerDisplayNameEl.value)||GHOST_CHARACTER_NAMES[selectedCharacter].slice(0,13)};
   }
   // First connected human on each team chooses the team body color.
   // The guest's chosen color takes effect for the second team.
@@ -1440,6 +1541,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     }
   }
   function showOnlineLobby(onlineRoom){
+    if(onlineRoom||onlinePending)document.getElementById('friendsDetails').open=true;
     if(onlineRoom?.mode&&MODE_NAMES[onlineRoom.mode])displayOnlineMode(onlineRoom.mode);
     for(const button of modeChooser.querySelectorAll('[data-mode]')){
       button.disabled=!!onlineRoom||onlinePending;
@@ -1467,8 +1569,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     // The host's dedicated Start Match button takes over inside a room.
     startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
-    startBtn.textContent=selectedOnlineMode==='fourway'?'✨ PLAY FOUR-WAY (BOTS)':
-      selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY CLASSIC SOLO';
+    startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom;
@@ -1493,7 +1594,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
       difficultyHud.hidden=true;hud.hidden=true;carried.hidden=true;hint.classList.add('hidden');
       results.classList.remove('open');
       menu.classList.remove('hidden');
-      startBtn.textContent='✨ PLAY FOUR-WAY (BOTS)';
+      startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
       document.getElementById('againBtn').textContent='👻 PLAY AGAIN';
     }
   }
@@ -1807,7 +1908,10 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     if(invited&&/^[A-Z2-9]{6}$/.test(invited.toUpperCase())){
       onlineCodeEl.value=invited.toUpperCase();
       setJoinCodeVisible(true);
-      setOnlineStatus('Invite ready! Tap JOIN WITH CODE to enter your friend\'s room.');
+      document.getElementById('friendsDetails').open=true;
+      document.body.classList.add('invited');
+      onlineJoinEl.textContent='👻 JOIN THE GAME';
+      setOnlineStatus('You\'re invited! Pick your color, then tap JOIN THE GAME.');
     }
   }catch{}
   onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
@@ -1830,7 +1934,11 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
     const link=location.origin+location.pathname+'?room='+online.code;
-    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend only needs this link (or room code '+online.code+').');}
+    if(navigator.share){
+      try{await navigator.share({title:'Spooktacular Showdown',text:'Join my ghost room! Room '+online.code,url:link});return}
+      catch(err){if(err&&err.name==='AbortError')return}
+    }
+    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite link copied! Paste it to your friends (room code '+online.code+').');}
     catch{setOnlineStatus('Share the game link or this room code: '+online.code);}
   });
 
@@ -3353,6 +3461,9 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   });
   refreshCrewCards();
 
+  // Ghosts are slightly see-through; outline, face and accessories stay solid
+  // so every player still reads clearly over flames and bases.
+  const GHOST_BODY_ALPHA=.74;
   function drawGhost(g) {
     const carried=levelFor(g);
     const progress=g.reactionTime>0?1-g.reactionTime/Math.max(.001,g.reactionDuration):1;
@@ -3410,7 +3521,9 @@ body.highContrast .swatch[aria-pressed="true"]::after{
     ctx.quadraticCurveTo(3,9,-3,18-flutter2);
     ctx.quadraticCurveTo(-11,8,-17,18+flutter*.5);
     ctx.quadraticCurveTo(-22,9,-24,12);
-    ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.closePath();
+    ctx.globalAlpha=highContrast?1:GHOST_BODY_ALPHA;ctx.fill();
+    ctx.globalAlpha=1;ctx.stroke();
 
     // Highlighting gives the pastel ghosts a translucent, soft cartoon finish.
     ctx.fillStyle='rgba(255,255,255,.26)';
