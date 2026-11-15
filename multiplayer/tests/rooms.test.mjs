@@ -201,7 +201,7 @@ test('Every match ghost uses team uniform, not its personal pastel',()=>{
   }
   assert.match(html,/const baseColor=ghostBodyColor\(g\),edge=/,
     'Canvas ghost body and glow use uniform');
-  assert.match(html,/const fill=previewColor\?\?ghostBodyColor\(g\),accent=/,
+  assert.match(html,/const fill=previewColor\?visualHex\(previewColor\):ghostBodyColor\(g\),\s*accent=/,
     'Results and match portraits use uniform unless explicit lobby preview');
   assert.match(html,/ctx\.fillStyle=g\.playerColor;ctx\.fill\(\);/,
     'Personal color is still available as a small accessory');
@@ -287,7 +287,7 @@ test('Alpha 24: team uniform follows each team captain and guest sees own base',
 
 test('Alpha 24: guest unlocks sound by tapping Join and can hear local scoring',()=>{
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
-  assert.match(html,/onlineJoinEl\.addEventListener\('click',\(\)=>\{GhostAudio\.unlock\(\);startOnlineConnection\(false\)\}/);
+  assert.match(html,/onlineJoinEl\.addEventListener\('click',[\s\S]{0,200}GhostAudio\.unlock\(\);startOnlineConnection\(false\)/);
   assert.match(html,/onlineCreateEl\.addEventListener\('click',\(\)=>\{GhostAudio\.unlock\(\);startOnlineConnection\(true\)\}/);
   assert.match(html,/function unlock\(\)\{/);
   assert.match(html,/if\(!s\.compact&&isOnlineGuest\(\)/);
@@ -337,7 +337,7 @@ test('Alpha 24: official Worker is prefilled; private host token stays out of in
   assert.match(html,/const DEFAULT_ROOM_SERVER='https:\/\/ghost-duel-rooms\.jonathanjoyner\.workers\.dev'/);
   assert.match(html,/onlineServerEl\.value=DEFAULT_ROOM_SERVER/);
   assert.match(html,/id="onlineServerAdvanced"/);
-  assert.match(html,/only needs this link/);
+  assert.match(html,/Paste it to your friends/);
   assert.doesNotMatch(html,/hostToken[^;\n]*localStorage/);
 });
 
@@ -347,7 +347,7 @@ test('Alpha 25: every team gets a readable engraved nameplate, including pale co
   const end=html.indexOf('  function drawEnvironment() {',start);
   assert.ok(start>0&&end>start,'Illustrated base nameplate exists');
   const segment=html.slice(start,end);
-  assert.match(segment,/const title=teamColors\[team\]\.name\.toUpperCase\(\)/);
+  assert.match(segment,/const title=visualEntry\(teamColors\[team\]\)\.name\.toUpperCase\(\)/);
   assert.match(segment,/team===ownTeam\?'YOUR BASE':'OTHER TEAM BASE'/);
   assert.match(segment,/ctx\.fillStyle='#20152ff0'/,'Opaque dark plaque supports light team colors');
   assert.match(segment,/ctx\.strokeStyle=color\(team\)/,'Accent outline identifies team');
@@ -378,7 +378,7 @@ test('Alpha 25: illustrated cobblestones are cached, seeded and rendered below s
   const envEnd=html.indexOf('  function drawParticles() {',envStart);
   const env=html.slice(envStart,envEnd);
   const pathDraw=env.indexOf('ctx.drawImage(graveyardPathLayer,0,550-88)');
-  const propsDraw=env.indexOf('for (const p of props)');
+  const propsDraw=env.indexOf('for (const p of (isFourWay()?fourwayProps:props))');
   const baseDraw=env.indexOf('drawBaseNameplate(ctx,b,team)');
   assert.ok(pathDraw>=0&&propsDraw>pathDraw&&baseDraw>propsDraw,
     'Cached path sits underneath scenery and the base plaques');
@@ -556,16 +556,16 @@ test('Alpha 27: new modes and old Worker fallback remain explicit and safe',()=>
   assert.match(html,/data-mode="coop"/);
   assert.match(html,/data-mode="classic"/);
   assert.match(html,/Four-Way Haunt/);
-  assert.match(html,/fourwayPreviewLink/,'Four-Way Haunt opens the dedicated playable preview');
+  assert.match(html,/data-mode="fourway"/,'Four-Way Haunt is a first-class mode in the main game');
   assert.match(html,/function selectOnlineMode\(mode\)/);
   assert.match(html,/roomCapacity=mode=>mode==='coop'\?4:8/);
   assert.match(html,/mode:selectedOnlineMode/);
   assert.match(html,/JSON\.stringify\(\{mode:selectedOnlineMode\}\)/);
-  assert.match(html,/includes\('coop'\)/);
+  assert.match(html,/serverFeatures\.modes\.includes\(selectedOnlineMode\)/,'Old Workers are detected per mode');
   assert.match(html,/The server does not support the selected mode yet/);
   assert.match(html,/if\(MODE_NAMES\[msg\.mode\]\)session\.mode=msg\.mode/);
   assert.match(html,/room\.mode==='coop'\?\(team===0\?'Friendly Bot':'Rival Bot'\)/);
-  assert.match(html,/mode==='coop'\?'BOO CREW CO-OP':'CLASSIC DUEL'/);
+  assert.match(html,/coop:'Boo Crew Co-op'/);
   assert.match(html,/const POWER_STEPS=\[8,23,53,113\]/);
   assert.match(html,/humanInput\?\?botDirection\(g,dt\)/);
 });
@@ -712,7 +712,7 @@ test('Alpha 29: room nicknames are sanitized and synchronized to host and guests
 
 test('Alpha 29: player name field, lobby, match and mobile sizing stay integrated',()=>{
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
-  assert.match(html,/<input id="playerDisplayName"[^>]+maxlength="16"/,
+  assert.match(html,/<input id="playerDisplayName"[^>]+maxlength="13"/,
     'Every player can type a name before creating or joining');
   assert.match(html,/function sanitizePlayerName\(value\)/);
   assert.match(html,/name:sanitizePlayerName\(playerDisplayNameEl\.value\)/,
@@ -743,7 +743,7 @@ test('Alpha 29: player name field, lobby, match and mobile sizing stay integrate
 });
 
 test('Alpha 34 preview UX regression checks',()=>{
-  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   assert.match(html,/id="modeChooser"/);
   assert.match(html,/modeCard\[aria-checked="true"\]::after/);
   assert.match(html,/id="joinCodeWrap" hidden/);
@@ -759,7 +759,7 @@ test('Alpha 34 preview UX regression checks',()=>{
 });
 
 test('Alpha 34 high contrast colors remain optional and do not change multiplayer wire colors',()=>{
-  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   const colors=['ED1B24','F6871E','F0EA0C','00944A','00B5B8','4D2E8E','93288F'];
   colors.forEach(hex=>assert.ok(html.includes('#'+hex),'Missing supplied color '+hex));
   assert.match(html,/id="highContrastToggle" type="checkbox"/);
@@ -894,7 +894,7 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
 
 
 test('Alpha 35 menu: color comes first, one big Play button, extras live in drawers',()=>{
-  const html=readFileSync(new URL('../../preview/fourway/index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   const at=id=>html.indexOf('id="'+id+'"');
   assert.ok(at('palettePicker')>0&&at('palettePicker')<at('booCrewGrid'),'Color picker precedes the character picker');
   assert.ok(at('booCrewGrid')<at('startBtn'),'Play follows the two quick choices');

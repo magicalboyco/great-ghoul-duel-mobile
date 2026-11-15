@@ -6,10 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Boo Crew">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="assets/boo-crew-icon.svg">
 <meta name="theme-color" content="#141127">
-<title>Spooktacular Showdown — The Boo Crew (Alpha 33)</title>
+<title>Spooktacular Showdown — The Boo Crew (Alpha 35)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,6 +37,16 @@ button{font:inherit}
 .pill{padding:9px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.18);background:rgba(16,14,36,.76);box-shadow:0 8px 18px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.06);font-weight:800;backdrop-filter:blur(8px)}
 #greenScore{color:#9cffc6;min-width:72px;text-align:center}
 #purpleScore{color:#e2a9ff;min-width:72px;text-align:center}
+#thirdScore,#fourthScore{min-width:56px;text-align:center}
+#hud .pill[hidden]{display:none}
+#hud.fourway{gap:6px}
+#hud.fourway .pill{min-width:49px;padding:7px 8px}
+@media(max-width:540px) and (orientation:portrait){
+ #hud.fourway{gap:3px;padding:calc(env(safe-area-inset-top) + 6px) 3px 0}
+ #hud.fourway .pill{min-width:45px;font-size:14px;padding:6px 5px}
+ #hud.fourway~#carried{top:calc(env(safe-area-inset-top) + 100px)}
+ #hud.fourway~#difficultyHud{top:calc(env(safe-area-inset-top) + 65px)}
+}
 #clock{color:#fff5cb;min-width:84px;text-align:center}
 #carried{position:absolute;left:12px;top:max(68px,calc(env(safe-area-inset-top) + 58px));padding:9px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(16,14,36,.76);font-size:13px;backdrop-filter:blur(8px);z-index:5;pointer-events:none}
 #carried b{color:#fff4c4}
@@ -95,6 +106,7 @@ button{font:inherit}
 .roomSeat .seatGhost svg{height:45px;width:41px;filter:drop-shadow(0 4px 3px #12091f55)}
 .roomSeat .seatTitle{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0e2ff}
 .roomSeat .seatTeam{display:block;font-size:9px;margin-top:2px;font-weight:800;color:#b8efcc}
+.roomSeat .seatReady{display:block;font-size:9px;font-weight:850;margin-top:3px;color:#c7f5d6}
 .roomSeat.rival .seatTeam{color:#ffc8d0}
 #modeChooser{display:grid;gap:8px;margin:11px auto;max-width:415px}
 .modeCard{display:flex;gap:11px;align-items:center;width:100%;min-height:65px;padding:11px 12px;text-align:left;color:#fff2e4;border:1.5px solid #bda2d57d;border-radius:14px;background:linear-gradient(115deg,#614581b0,#2c254a);cursor:pointer;touch-action:manipulation}
@@ -488,16 +500,229 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   line-height:1.45;
 }
 #zoomNotice[hidden]{display:none}
-/* Four-way preview is a genuine navigable choice, not a disabled card. */
-#modeChooser a.fourwayPreviewLink{
-  text-decoration:none;box-sizing:border-box;display:flex;align-items:center;
-  color:#fff2e4;opacity:1;border:1.5px solid #bda2d57d;
-  background:linear-gradient(115deg,#614581b0,#2c254a);
-  cursor:pointer;
-}
-#modeChooser a.fourwayPreviewLink:hover{background:linear-gradient(110deg,#725292,#4c376a)}
-#modeChooser a.fourwayPreviewLink:focus-visible{outline:3px solid #c4ffda;outline-offset:3px}
+/* Isolated pre-release demo: bots only, no rooms until Worker is deployed. */
+#previewModeNotice{margin:10px auto;padding:10px 12px;max-width:480px;border:1px solid #ffe7ad88;border-radius:12px;background:#433155;color:#fff4cc;font-size:13px;line-height:1.4}
+#previewGameActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 
+
+/* Alpha 34 HUD polish: large countdown on top, four team scores underneath.
+   This is scoped to Four-Way Haunt: Classic Duel and Co-op keep their HUD. */
+#hud.fourway{
+  position:absolute;inset:0 auto auto 50%;transform:translateX(-50%);
+  width:min(430px,calc(100vw - 20px));
+  max-width:calc(100vw - 20px);
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  justify-items:stretch;align-items:center;
+  column-gap:7px;row-gap:6px;
+  padding:max(10px,env(safe-area-inset-top)) 0 0;
+}
+#hud.fourway[hidden]{display:none}
+#hud.fourway .pill{
+  width:100%;min-width:0;max-width:none;
+  font-size:clamp(16px,2.4vw,20px);
+  padding:7px 5px;text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+#hud.fourway #clock{
+  grid-column:1/-1;grid-row:1;justify-self:center;
+  width:min(205px,64vw);
+  min-height:54px;padding:7px 14px;
+  font-size:clamp(30px,5vw,39px);
+  line-height:1.12;
+  border:2px solid #ffe6ad99;
+  background:rgba(18,14,40,.94);
+  box-shadow:0 6px 23px #0007;
+}
+#hud.fourway #greenScore{grid-column:1;grid-row:2}
+#hud.fourway #purpleScore{grid-column:2;grid-row:2}
+#hud.fourway #thirdScore{grid-column:3;grid-row:2}
+#hud.fourway #fourthScore{grid-column:4;grid-row:2}
+/* Keep the mode badge below the score row, never over the countdown. */
+#hud.fourway~#difficultyHud{
+  top:calc(env(safe-area-inset-top) + 121px);
+  max-width:calc(100vw - 20px);
+  text-align:center;
+  white-space:normal;
+}
+/* Keep the carried-flames panel clear of the header and mode badge. */
+#hud.fourway~#carried{
+  top:calc(env(safe-area-inset-top) + 160px);
+}
+@media(max-width:540px) and (orientation:portrait){
+  #hud.fourway{
+    width:calc(100vw - 16px);max-width:calc(100vw - 16px);
+    column-gap:4px;row-gap:5px;
+    padding:calc(env(safe-area-inset-top) + 6px) 0 0;
+  }
+  #hud.fourway .pill{font-size:clamp(13px,3.8vw,17px);padding:7px 3px}
+  #hud.fourway #clock{
+    font-size:34px;min-height:51px;width:min(185px,60vw);
+    padding:6px 10px;
+  }
+  #hud.fourway~#difficultyHud{top:calc(env(safe-area-inset-top) + 112px)}
+  #hud.fourway~#carried{top:calc(env(safe-area-inset-top) + 150px)}
+}
+
+/* Keep the primary action visible in the setup menu for all modes;
+   never rely on a prior mode's hidden attribute. */
+#previewGameActions{min-height:62px;align-items:center}
+#previewGameActions #startBtn:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-height:54px}
+
+/* Alpha 34 menu: group the primary action with the room-code controls. */
+#onlinePanel #previewGameActions{margin:16px auto 8px;min-height:60px;display:flex;justify-content:center;align-items:center}
+#onlinePanel #previewGameActions #startBtn{max-width:min(100%,390px);margin:0}
+#onlinePanel #previewGameActions #startBtn[hidden]{display:none!important}
+.gameGuide{margin:12px auto;max-width:780px;border:1px solid #dfc9f550;border-radius:15px;background:#21172f70;padding:10px 14px}
+.gameGuide>summary{cursor:pointer;list-style-position:inside;text-align:center;color:#f7e3c5;font-weight:800;font-size:13px}
+.gameGuide .bullets{margin-top:12px}
+
+
+
+/* Clear, keyboard-accessible mutually exclusive haunt choices. */
+#modeChooser .modeCard{position:relative;padding-right:63px;transition:border-color .12s,background .12s,box-shadow .12s}
+#modeChooser .modeCard[aria-checked="true"]{
+  background:linear-gradient(110deg,#76529a,#4a3469);
+  border:3px solid #ffedb7;box-shadow:0 0 0 3px #f5dabb40,0 5px 17px #110b2255;
+}
+#modeChooser .modeCard[aria-checked="true"]::after{
+  content:"✓";position:absolute;right:13px;top:50%;transform:translateY(-50%);
+  width:31px;height:31px;display:grid;place-items:center;border-radius:50%;
+  background:#ffe9ae;color:#3a2545;font-weight:1000;font-size:21px;
+}
+#modeChooser .modeCard:focus-visible{outline:3px solid #b7ffe4;outline-offset:3px}
+#modeNotice{font-size:13px!important;font-weight:900!important;color:#fff1c7!important;min-height:20px}
+#joinCodeWrap[hidden]{display:none!important}
+#onlinePanel #onlineCreate[hidden]{display:none!important}
+
+
+#rematchPanel[hidden],#rematchChoices[hidden],#rematchStart[hidden],#rematchInviteButton[hidden]{display:none!important}
+#rematchPanel{margin:14px auto;max-width:520px;padding:16px 12px;border:2px solid #e8c99b;
+ border-radius:17px;background:#392950;color:#fff7e4;text-align:center}
+#rematchHeading{font-weight:950;font-size:19px;color:#ffe8b5;margin:0 0 7px}
+#rematchPrompt{font-size:13px;line-height:1.5}
+#rematchCountdown{font-size:clamp(27px,6vw,40px);font-weight:1000;color:#ffe7af;
+ font-variant-numeric:tabular-nums;min-height:35px}
+#rematchReady{font-size:12px;color:#d6fbe1;margin:5px 0}
+#rematchChoices{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:12px}
+#rematchChoices button,#rematchStart,#rematchInviteButton{min-height:47px;padding:10px 16px;border-radius:13px;
+ border:1px solid #ffe6b6;font-weight:900;cursor:pointer;touch-action:manipulation}
+#rematchYes,#rematchStart,#rematchInviteButton{background:#c9f7d5;color:#22442d}
+#rematchNo{background:#58496c;color:#fff3fa}
+#rematchPanel button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+
+#rematchRoundCountdown[hidden]{display:none!important}
+#rematchRoundCountdown{position:fixed;inset:0;display:grid;place-items:center;z-index:9;
+ background:#180f2dd1;color:#fff0bd;text-shadow:0 9px 25px #12091d;
+ font:1000 clamp(80px,22vw,160px) 'Caprasimo',Georgia,serif;pointer-events:none}
+
+
+/* An opt-in accessibility setting, directly in the existing setup screen. */
+#contrastChoice{display:flex;align-items:center;justify-content:center;gap:9px;
+  margin:10px auto 9px;padding:8px 12px;width:fit-content;max-width:100%;
+  border:1px solid #c4acd999;border-radius:12px;background:#3d2d55;
+  font-size:13px;font-weight:850;color:#fff3e2;cursor:pointer}
+#highContrastToggle{appearance:auto;accent-color:#beeccf;width:20px;height:20px;
+  flex:none;cursor:pointer}
+#highContrastToggle:focus-visible{outline:3px solid #fff0bb;outline-offset:3px}
+
+
+/* Contrast mode: white-readable numbers and distinct colored score outlines.
+   All seven colors remain visible even if a player cannot discriminate hue. */
+body.highContrast #hud .pill:not(#clock){
+  border:2px solid var(--score-accent,#fff);
+  box-shadow:0 0 0 2px #120e27,0 6px 14px #0009;
+  color:#fff9e9!important;
+  text-shadow:0 1px 4px #000;
+}
+body.highContrast #hud .pill:not(#clock)::before{
+  content:attr(data-team-name);display:block;font:800 9px/1.1 system-ui;
+  color:#fff9e9;margin-bottom:3px;letter-spacing:.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body.highContrast #hud.fourway .pill:not(#clock)::before{font-size:8px}
+body.highContrast .swatch{border:2px solid #fff;box-shadow:0 0 0 2px #1b1330,0 4px 8px #0007}
+body.highContrast .swatch[aria-pressed="true"]::after{
+  color:#fff;background:#211733dd;border-radius:50%;
+  font-size:16px;inset:3px;
+}
+
+
+/* ===== Alpha 35 menu: one decision at a time — color first, then Play. =====
+   Everything that is not needed to start a game lives in a collapsed drawer. */
+#menu>.panel{width:min(94vw,560px)}
+.srOnly{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#menu .sub{margin:6px auto 4px;font-size:15px;color:#f3e6ff}
+.menuStep{margin:14px 0 8px}
+#menu .palette-label{font-size:13px;letter-spacing:.1em;margin:6px 0 10px;color:#ffe9b6}
+#menu .swatches{max-width:430px;gap:9px;grid-template-columns:repeat(7,minmax(0,1fr))}
+#menu .swatch{width:100%;max-width:50px;height:auto;aspect-ratio:1;justify-self:center;border-width:3px}
+#menu #teamPreview{margin:8px auto 2px;font-size:14px;min-height:20px}
+#contrastChoice{display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:.85;margin-top:4px;cursor:pointer}
+#booCrewGrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:2px auto 6px;max-width:100%}
+.crewCard{padding:4px 1px}
+.crewCard svg{width:40px;height:45px}
+.crewCard span{font-size:10px}
+.crewPortrait{min-height:45px}
+#crewSelection{font-size:12px;color:#ffe6ad;opacity:.9}
+/* The long character blurb is optional reading, not a gate to playing. */
+#crewLore{display:none}
+.crewCard .ghostSkin{fill-opacity:.82}
+body.highContrast .crewCard .ghostSkin{fill-opacity:1}
+#menu #onlinePanel{max-width:none;margin:12px auto 6px;padding:0;background:none;border:none}
+#menu #previewGameActions{margin:8px auto 10px;min-height:0}
+#menu #onlinePanel #previewGameActions #startBtn{width:min(100%,360px);max-width:none;min-height:66px;font-size:24px;border-radius:20px;letter-spacing:.04em}
+#modeChooser{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto 10px}
+#modeChooser .modeCard{width:auto;min-height:42px;padding:8px 14px 8px 10px;border-radius:999px;gap:7px;flex:0 1 auto}
+#modeChooser .modeCard small{display:none}
+#modeChooser .modeCard .modeIcon{font-size:18px;width:auto}
+#modeChooser .modeCard b{font-size:14px}
+#modeChooser .modeCard[aria-checked="true"]::after{display:none}
+#modeChooser .modeCard[aria-checked="true"]{border:2px solid #ffedb7}
+.menuDrawer{margin:8px auto;max-width:520px;border:1px solid #dfc9f550;border-radius:15px;background:#21172f70;text-align:left}
+.menuDrawer>summary{cursor:pointer;list-style-position:inside;text-align:center;color:#f7e3c5;font-weight:800;font-size:14px;padding:11px 14px;border-radius:15px}
+.menuDrawer>summary:focus-visible{outline:3px solid #b7ffe4;outline-offset:2px}
+.menuDrawer .drawerBody{padding:2px 14px 14px;text-align:center}
+.drawerHint{font-size:12px;color:#e9dafa;margin:4px 0 10px;line-height:1.45}
+.friendsDrawer{background:#3a2a5a80;border-color:#e8c5f35a}
+.friendsDrawer .onlineControls{justify-content:center}
+#menuMore{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
+#menuMore>.menuDrawer{flex:1 1 150px;margin:0;max-width:none}
+#menuMore>.menuDrawer[open]{flex-basis:100%}
+#menuMore .menuChip{margin:0;padding:11px 14px;border-radius:15px;border:1px solid #dfc9f550;background:#21172f70;color:#f7e3c5;font-weight:800;font-size:14px;cursor:pointer;flex:1 1 120px}
+#menuMore .gameGuide .bullets{grid-template-columns:1fr 1fr;margin:6px 0 0}
+#playerIdentity{margin:6px auto 12px}
+#menu #onlineStatus{min-height:0;font-size:12px;opacity:.9}
+/* A friend who arrives from an invite link sees Join as the main action. */
+body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#183928;border-color:#e2ffe4;min-height:48px;font-size:16px}
+.menuDrawer>summary{list-style:none;display:flex;align-items:center;justify-content:center;min-height:46px}
+.menuDrawer>summary::-webkit-details-marker{display:none}
+#menuMore{align-items:stretch}
+#menuMore .menuChip{min-height:46px}
+@media(max-width:560px){
+  #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .crewCard svg{width:46px;height:52px}
+  #menuMore .gameGuide .bullets{grid-template-columns:1fr}
+  #menu .swatches{gap:6px}
+}
+/* Compact ghost picker on every screen size (older phone rules made tall 2-column cards). */
+#menu #menuPanel #booCrewGrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+#menu #menuPanel .crewCard{min-height:0;padding:4px 1px;gap:2px;border-radius:12px}
+#menu #menuPanel .crewCard svg{width:40px;height:45px}
+#menu #menuPanel .crewCard span{font-size:10px;min-height:0}
+#menu #menuPanel .crewPortrait{min-height:45px}
+.menuDrawer.gameGuide{padding:0;max-width:none;margin:0}
+#menuMore{align-items:flex-start}
+@media(max-width:560px){
+  #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #menu #menuPanel .crewCard svg{width:42px;height:47px}
+}
+@media(max-width:560px){
+  #modeChooser{gap:6px}
+  #modeChooser .modeCard{padding:7px 10px 7px 8px;gap:5px}
+  #modeChooser .modeCard b{font-size:13px}
+  #modeChooser .modeCard .modeIcon{font-size:16px}
+}
 </style>
 </head>
 <body>
@@ -505,10 +730,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 <div id="hud" hidden>
   <div id="greenScore" class="pill">0</div>
   <div id="clock" class="pill">2:00</div>
-  <div id="purpleScore" class="pill">0</div>
+  <div id="purpleScore" class="pill">0</div><div id="thirdScore" class="pill" hidden>0</div><div id="fourthScore" class="pill" hidden>0</div>
 </div>
 <div id="carried" hidden>✨ Spirit flames carried: <b id="carryValue">0</b><span id="upgrade">No upgrade yet</span><div id="abilities">Trail powers: ⚡ 8 · ✨ 23 · 🧲 53 · 👻 113</div></div>
 <div id="last15" role="alert" aria-live="off">⏰ FINAL 15 SECONDS!</div>
+<div id="rematchRoundCountdown" hidden role="status" aria-live="polite">3</div>
 <div id="controls">
   <div id="joystick"><div id="knob"></div></div>
   <div class="controlStack">
@@ -518,74 +744,107 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   </div>
 </div>
 <div id="menu">
-  <div class="panel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 33</div><div class="title">SPOOKTACULAR<br>SHOWDOWN</div><div style="font-family:'Caprasimo',Georgia,serif;font-size:clamp(21px,4vw,30px);color:#ffd0ec">Meet The Boo Crew! 👻</div>
-    <div class="studioSignature">A JOY HAUS GAME</div>
-    <p class="sub" id="menuText">Little ghosts. Big competition! Choose a Boo Crew ghost, pick your pastel-goth color, and collect spirit flames to win.</p>
+  <div class="panel" id="menuPanel">
+    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 35</div>
+    <div class="title">SPOOKTACULAR<br>SHOWDOWN</div>
+    <p class="sub" id="menuText">Collect spirit flames. Steal them back. Boo!</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
-    <div class="palette-label">Choose your Boo Crew character</div><div id="booCrewGrid" role="group" aria-label="Choose your character"></div><div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div><div id="crewLore" aria-live="polite"></div><div class="palette-label">Choose your spooky pastel colorway</div>
-<div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
-<div id="teamPreview" aria-live="polite">All Boo Crew ghosts previewed in <b id="selectedName">Ghostly Green</b> · Rival team: random different pastel</div>
-<div id="playerIdentity">
-  <label for="playerDisplayName">👻 Your ghost name <span>(optional · up to 16 characters)</span></label>
-  <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="16" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Choose a spooky nickname" aria-describedby="playerNameHint">
-  <div id="playerNameHint">Friends will see this name in the lobby and above your ghost. Each friend chooses their own.</div>
-</div>
-<div id="difficultyWrap">
-  <div class="palette-label">Computer opponent difficulty</div>
-  <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
-    <button type="button" class="difficultyBtn" data-difficulty="easy" aria-pressed="false">🌙 Easy</button>
-    <button type="button" class="difficultyBtn" data-difficulty="normal" aria-pressed="true">👻 Normal</button>
-    <button type="button" class="difficultyBtn" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
-  </div>
-  <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
-</div>
-<div id="onlinePanel">
-  <div class="palette-label">👻 CHOOSE YOUR HAUNT!</div>
-  <p class="onlineIntro">Choose how you want to play. The host chooses a mode when creating a room; friends join with the six-character code.</p>
-  <div id="modeChooser" role="radiogroup" aria-label="Multiplayer game mode">
-    <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
-      <span class="modeIcon">🤝</span><span><b>Boo Crew Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
-    </button>
-    <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="true" aria-label="Classic Duel, two opposing teams and up to eight players">
-      <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
-    </button>
-    <a class="modeCard fourwayPreviewLink" href="preview/fourway/?v=alpha34-modes-fixed" aria-label="Play Four-Way Haunt preview with bots">
-      <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams · larger cemetery · play the bots preview</small></span>
-    </a>
-  </div>
-  <div id="modeNotice" class="onlineIntro" aria-live="polite">Classic Duel selected · Friends compete on opposing teams.</div>
-  <p class="onlineIntro">Each team has one matching color. In Co-op, the host chooses the human team's color; personal colors remain on costume pins.</p>
-  <details id="onlineServerAdvanced" style="margin:5px auto 9px;max-width:390px">
-    <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">⚙️ Server settings (advanced)</summary>
-    <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
-    <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
-    <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
-  </details>
-  <div class="onlineControls"><button type="button" id="onlineCreate">✨ Create room</button><button type="button" id="onlineJoin">👻 Join room</button></div>
-  <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Your friend's room code</label>
-  <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
-  <div id="onlineStatus" role="status" aria-live="polite">Online play uses our Ghost Duel Cloudflare server. The host must keep their game open.</div>
-  <div id="onlineInvite" hidden></div>
-  <div id="onlineRoleCard" role="status" aria-live="polite" hidden></div>
-  <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 START MATCH FOR EVERYONE</button>
-  <div id="onlineWaiting" role="status" aria-live="polite" hidden></div>
-  <div id="onlineRoster" hidden aria-label="Eight room seats"></div>
-  <div class="onlineControls">
-    <button type="button" id="onlineCopy" hidden>🔗 Copy invite link</button>
-    <button type="button" id="onlineLeave" hidden>Leave room</button>
-  </div>
-</div>
-<div class="bullets">
-      <div><b>New this build</b><br>Alpha 33: the gold locator fades after five seconds while the YOU name label stays visible. Alpha 30 repaired startup; Alpha 29 added player names, a smaller iPhone-friendly layout, and improved multiplayer lobby labels. The Top 13 high scores remain.</div>
-      <div><b>Online test</b><br>Private game rooms are an experiment. The host runs game physics. Reconnecting and anti-cheat features are still in development.</div>
-      <div><b>Upgrades</b><br>Carried flames grant temporary abilities: Speed at 8, Glow at 23, Magnet at 53, Phase at 113. They reset when you deposit or lose flames.</div>
-      <div><b>How to play</b><br>Drag the joystick on the left or the arena itself. Tap Test Sound if your iPhone is silent.</div>
+
+    <section class="menuStep" aria-labelledby="colorStepLabel">
+      <div class="palette-label" id="colorStepLabel">Pick your color</div>
+      <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
+      <div id="teamPreview" aria-live="polite"><b id="selectedName">Ghostly Green</b></div>
+      <label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast colors</span></label>
+    </section>
+
+    <section class="menuStep" aria-labelledby="ghostStepLabel">
+      <div class="palette-label" id="ghostStepLabel">Pick your ghost</div>
+      <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
+      <div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div>
+      <div id="crewLore" aria-live="polite"></div>
+    </section>
+
+    <div id="onlinePanel">
+      <div id="previewGameActions" aria-label="Start your selected game">
+        <button id="startBtn" type="button">▶ PLAY</button>
+      </div>
+      <div id="modeChooser" role="radiogroup" aria-label="Game mode">
+        <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
+          <span class="modeIcon">✨</span><span><b>Four-Way</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
+        </button>
+        <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
+          <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
+        </button>
+        <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
+          <span class="modeIcon">🤝</span><span><b>Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
+        </button>
+      </div>
+      <div id="modeNotice" class="srOnly" aria-live="polite">✓ Four-Way Haunt selected · Play solo or create a room</div>
+
+      <details id="friendsDetails" class="menuDrawer friendsDrawer">
+        <summary>👥 Play with friends</summary>
+        <div class="drawerBody">
+          <p class="drawerHint">Make a room, share the link, and friends join with one tap.</p>
+          <div class="onlineControls"><button type="button" id="onlineCreate">✨ CREATE ROOM</button><button type="button" id="onlineJoin" aria-expanded="false" aria-controls="joinCodeWrap">👻 JOIN FRIENDS</button></div>
+          <div id="joinCodeWrap" hidden>
+            <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Enter your friend's room code</label>
+            <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
+          </div>
+          <div id="onlineStatus" role="status" aria-live="polite">Keep this tab open while your friends play.</div>
+          <div id="onlineInvite" hidden></div>
+          <div id="onlineRoleCard" role="status" aria-live="polite" hidden></div>
+          <button type="button" id="onlineStart" class="onlineHost" hidden>🎮 START MATCH FOR EVERYONE</button>
+          <div id="onlineWaiting" role="status" aria-live="polite" hidden></div>
+          <div id="onlineRoster" hidden aria-label="Eight room seats"></div>
+          <div class="onlineControls">
+            <button type="button" id="onlineCopy" hidden>📤 Invite friends</button>
+            <button type="button" id="onlineLeave" hidden>Leave room</button>
+          </div>
+        </div>
+      </details>
     </div>
-    <button id="startBtn">👻 PLAY SOLO</button>
-    <div><button type="button" id="hallMenuBtn">🏆 TOP 13 HIGH SCORES</button></div>
-  <p class="onlineIntro" style="margin:10px auto;max-width:45ch">📱 On iPhone, choose <b>Share → Add to Home Screen</b> to play in an app-like, edge-to-edge window without Safari's address bars.</p>
-    <div><button type="button" id="menuCreditsBtn">💗 WITH GRATITUDE · CREDITS</button></div>
+
+    <div id="menuMore">
+      <details id="settingsDetails" class="menuDrawer">
+        <summary>⚙️ Settings</summary>
+        <div class="drawerBody">
+          <div id="playerIdentity">
+            <label for="playerDisplayName">Nickname <span>(optional)</span></label>
+            <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
+            <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
+          </div>
+          <div id="difficultyWrap">
+            <div class="palette-label">Computer opponent difficulty</div>
+            <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
+              <button type="button" class="difficultyBtn" data-difficulty="easy" aria-pressed="false">🌙 Easy</button>
+              <button type="button" class="difficultyBtn" data-difficulty="normal" aria-pressed="true">👻 Normal</button>
+              <button type="button" class="difficultyBtn" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
+            </div>
+            <div id="difficultyDescription" aria-live="polite">Classic opponent ghosts: regular speed, collecting and stealing.</div>
+          </div>
+          <details id="onlineServerAdvanced" style="margin:8px auto;max-width:390px">
+            <summary style="cursor:pointer;font-size:12px;color:#e7d6ff">Server (advanced)</summary>
+            <label for="onlineServer" style="display:block;font-size:12px;margin-top:8px">Multiplayer server address</label>
+            <input id="onlineServer" type="url" autocomplete="url" autocapitalize="none" spellcheck="false" aria-label="Multiplayer server HTTPS URL">
+            <p class="onlineIntro">Only change this if you're running a different server. Never enter a password or private token.</p>
+          </details>
+          <p class="drawerHint">📱 On iPhone: <b>Share → Add to Home Screen</b> for a full-screen, app-like game.</p>
+        </div>
+      </details>
+      <details id="gameGuide" class="menuDrawer gameGuide">
+        <summary>❓ How to play</summary>
+        <div class="drawerBody">
+          <div class="bullets">
+            <div><b>Goal</b><br>Collect spirit flames, then carry them back to your base to score. Rivals can steal the flames trailing behind you, and you can steal theirs!</div>
+            <div><b>Move</b><br>Drag the joystick or the arena. Use Test Sound if audio is silent.</div>
+            <div><b>Powers</b><br>Speed at 8 flames, Glow at 23, Magnet at 53, Phase at 113. Powers reset after a deposit or loss.</div>
+            <div><b>Teams</b><br>Each team has one matching color. In Co-op, the host chooses the human team's color.</div>
+          </div>
+        </div>
+      </details>
+      <button type="button" id="hallMenuBtn" class="menuChip">🏆 Top 13</button>
+      <button type="button" id="menuCreditsBtn" class="menuChip">💗 Credits</button>
+    </div>
   </div>
 </div>
 <div id="difficultyHud" hidden>👻 NORMAL OPPONENTS</div>
@@ -599,10 +858,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 <div id="myStats"></div>
     <form id="highScoreEntry" hidden>
       <h3>🏆 A WINNING BOO CREW GHOST!</h3>
-      <p class="scoreTip">Put your personal banked score in contention for the Top 13. Choose a nickname and flag. Only these display details are public. Scores are currently unverified.</p>
-      <label for="highScoreName">Ghostly name · 13 characters maximum</label>
-      <input id="highScoreName" type="text" maxlength="13" minlength="1" autocomplete="nickname" placeholder="Your spooky name" required>
-      <label for="highScoreCountry">Your country flag · chosen by you</label>
+      <p class="scoreTip" id="qualifiedGhostName">Your ghost name is ready for the scoreboard.</p>
+      <input id="highScoreName" type="hidden">
+      <label for="highScoreCountry">Choose your flag</label>
       <select id="highScoreCountry" required><option value="">Choose your flag…</option></select>
       <p class="scoreTip" id="highScorePreview"></p>
       <button type="submit" id="submitHighScore">🏆 ENTER THE TOP 13</button>
@@ -616,6 +874,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     </div>
 <div class="eyebrow" style="margin-top:15px">ALL EIGHT GHOSTS</div>
 <div id="awardGrid" class="awardGrid"></div>
+<section id="rematchPanel" hidden aria-live="polite">
+  <div id="rematchHeading">👻 Another round together?</div>
+  <div id="rematchPrompt">Stay with your Boo Crew for another match.</div>
+  <div id="rematchCountdown" aria-live="off"></div>
+  <div id="rematchReady"></div>
+  <div id="rematchChoices" hidden>
+    <button type="button" id="rematchYes">✓ YES, I'M IN!</button>
+    <button type="button" id="rematchNo">NO, THANKS</button>
+  </div>
+  <button type="button" id="rematchInviteButton" hidden>👻 PLAY AGAIN WITH FRIENDS</button>
+  <button type="button" id="rematchStart" hidden>🎮 START NEXT ROUND</button>
+</section>
 <div class="resultsActions"><button id="againBtn">👻 PLAY AGAIN</button><button id="colorBtn">🎨 CHANGE COLOR</button><button id="resultDifficultyBtn">🎚️ DIFFICULTY</button><button id="hallResultsBtn">🏆 TOP 13</button><button id="resultsCreditsBtn">💗 CREDITS</button></div>
 </div></div>
 <section id="hallOfFame" role="dialog" aria-modal="true" aria-labelledby="hallHeading" hidden>
@@ -785,9 +1055,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     results.classList.remove('open');
     menu.classList.remove('hidden');
     menuText.textContent=purpose==='difficulty'
-      ?'Choose your opponent difficulty for the next match. Your selected ghost color is saved.'
-      :'Choose your pastel ghost for another match. Your rival will receive a different pastel at random.';
-    startBtn.textContent='START GAME';
+      ?'Pick a difficulty in Settings, then play again.'
+      :'Pick a color for the next match.';
+    if(purpose==='difficulty')document.getElementById('settingsDetails').open=true;
+    showOnlineLobby(null);
     if(purpose==='difficulty')difficultyButtons.querySelector('[aria-pressed="true"]').focus();
     else palettePicker.children[selectedIndex].focus();
   }
@@ -829,6 +1100,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   const menuText = document.getElementById('menuText');
   const greenScoreEl = document.getElementById('greenScore');
   const purpleScoreEl = document.getElementById('purpleScore');
+  const thirdScoreEl=document.getElementById('thirdScore');
+  const fourthScoreEl=document.getElementById('fourthScore');
+  const scoreEls=[greenScoreEl,purpleScoreEl,thirdScoreEl,fourthScoreEl];
   const clockEl = document.getElementById('clock');
   const carried = document.getElementById('carried');
   const carryValue = document.getElementById('carryValue');
@@ -847,8 +1121,45 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     {name:'Bewitching Blue',hex:'#A7D3EA'}, {name:'Lifeless Lavender',hex:'#C9B9E5'},
     {name:'Poltergeist Pink',hex:'#F1B4D5'}
   ];
+  // The seven vibrant colors from the playtester's reference image.
+  // Accessibility mapping is display-only: multiplayer wires still transmit
+  // accepted pastel hex values, so mixed client versions remain compatible.
+  const HIGH_CONTRAST=[
+    {name:'Vivid Red',hex:'#ED1B24'},{name:'Bright Orange',hex:'#F6871E'},
+    {name:'Electric Yellow',hex:'#F0EA0C'},{name:'Emerald Green',hex:'#00944A'},
+    {name:'Bright Teal',hex:'#00B5B8'},{name:'Deep Purple',hex:'#4D2E8E'},
+    {name:'Vivid Magenta',hex:'#93288F'}
+  ];
+  const highContrastToggle=document.getElementById('highContrastToggle');
+  let highContrast=false;
+  try{highContrast=localStorage.getItem('boo-crew-high-contrast')==='true'}catch{}
+  highContrastToggle.checked=highContrast;
+  document.body.classList.toggle('highContrast',highContrast);
+  const visualPalette=()=>highContrast?HIGH_CONTRAST:PASTELS;
+  const visualEntry=entry=>{
+    const index=PASTELS.findIndex(p=>p.hex.toUpperCase()===String(entry?.hex||'').toUpperCase());
+    return index<0?(entry||PASTELS[3]):visualPalette()[index];
+  };
+  const visualHex=hex=>visualEntry({hex}).hex;
   let selectedIndex=3,selectedCharacter=0,teamColors=[PASTELS[3],PASTELS[5]];
-  const color=team=>teamColors[team].hex;
+  const color=team=>visualEntry(teamColors[team]||PASTELS[3]).hex;
+  const teamForSeat=(seat,mode)=>mode==='fourway'?Math.floor(seat/2):seat<4?0:1;
+  const isFourWay=()=>game?.mode==='fourway';
+  const FOUR_WAY_COLORS=[PASTELS[3],PASTELS[6],PASTELS[4],PASTELS[2]];
+  function syncScoreColors(){
+    scoreEls.forEach((el,i)=>{
+      el.hidden=i>=teamColors.length;
+      if(teamColors[i]){
+        const visual=visualEntry(teamColors[i]);
+        el.style.color=highContrast?'#fff9e9':visual.hex;
+        el.style.borderColor=highContrast?visual.hex:'rgba(255,255,255,.18)';
+        el.style.setProperty('--score-accent',visual.hex);
+        el.dataset.teamName=visual.name;
+        el.title=visual.name+' team';
+      }
+    });
+    hud.classList.toggle('fourway',teamColors.length===4);
+  }
   // Team color is the only source of a ghost's body color in an arena.
   // playerColor is a PERSONAL preference for lobby previews and a small pin,
   // not an override of the uniform. This keeps both teams distinguishable.
@@ -858,24 +1169,41 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function selectBooCrewColor(index){
     if(!PASTELS[index])return;
     selectedIndex=index;
-    selectedNameEl.textContent=PASTELS[index].name;
+    selectedNameEl.textContent=visualPalette()[index].name;
     [...palettePicker.children].forEach((el,i)=>el.setAttribute('aria-pressed',String(i===index)));
     // The selected color is independent of costume. All eight ghosts must
     // immediately preview the same named pastel-goth skin, not their match team.
     refreshCrewCards();
   }
   PASTELS.forEach((entry,index)=>{
-    const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=entry.hex;
-    b.setAttribute('aria-label','Preview the Boo Crew in '+entry.name);
+    const shown=visualPalette()[index];
+    const b=document.createElement('button');b.className='swatch';b.type='button';b.style.background=shown.hex;
+    b.setAttribute('aria-label','Preview the Boo Crew in '+shown.name);
     b.setAttribute('aria-pressed',String(index===selectedIndex));
     b.addEventListener('click',()=>selectBooCrewColor(index));
     palettePicker.appendChild(b);
   });
 
+  highContrastToggle.addEventListener('change',()=>{
+    highContrast=highContrastToggle.checked;
+    document.body.classList.toggle('highContrast',highContrast);
+    try{localStorage.setItem('boo-crew-high-contrast',String(highContrast))}catch{}
+    [...palettePicker.children].forEach((button,i)=>{
+      const shown=visualPalette()[i];
+      button.style.background=shown.hex;
+      button.setAttribute('aria-label','Preview the Boo Crew in '+shown.name);
+    });
+    selectedNameEl.textContent=visualPalette()[selectedIndex].name;
+    syncScoreColors();
+    refreshCrewCards();
+    if(online?.seat!==null)renderOnlineRoster(online);
+  });
   const joy = document.getElementById('joystick');
   const knob = document.getElementById('knob');
 
   const WORLD = { w: 1840, h: 1100 };
+  const CLASSIC_WORLD={w:1840,h:1100};
+  const FOURWAY_WORLD={w:2400,h:1500};
   const BASES = [{ x: 160, y: 550, r: 115, name: 'GREEN BASE' }, { x: 1680, y: 550, r: 115, name: 'PURPLE BASE' }];
   const walls = [
     { x: 420, y: 160, w: 140, h: 160, type: 'mausoleum' },
@@ -888,6 +1216,29 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     { x: 962, y: 570, w: 68, h: 110, type: 'pillar' }
   ];
 
+  const classicBases=BASES.map(b=>({...b}));
+  const classicWalls=walls.map(w=>({...w}));
+  function configureArena(mode){
+    const fourway=mode==='fourway';
+    Object.assign(WORLD,fourway?FOURWAY_WORLD:CLASSIC_WORLD);
+    BASES.splice(0,BASES.length,...(fourway?[
+      {x:235,y:230,r:108,name:'TEAM ONE'},
+      {x:2165,y:230,r:108,name:'TEAM TWO'},
+      {x:235,y:1270,r:108,name:'TEAM THREE'},
+      {x:2165,y:1270,r:108,name:'TEAM FOUR'}
+    ]:classicBases).map(b=>({...b})));
+    walls.splice(0,walls.length,...(fourway?[
+      {x:610,y:320,w:145,h:150,type:'mausoleum'},
+      {x:1650,y:320,w:145,h:150,type:'mausoleum'},
+      {x:610,y:1030,w:145,h:150,type:'mausoleum'},
+      {x:1650,y:1030,w:145,h:150,type:'mausoleum'},
+      {x:1100,y:220,w:200,h:95,type:'crypt'},
+      {x:1100,y:1185,w:200,h:95,type:'crypt'},
+      {x:1115,y:585,w:70,h:105,type:'pillar'},
+      {x:1240,y:810,w:70,h:105,type:'pillar'}
+    ]:classicWalls).map(w=>({...w})));
+    graveyardPathLayer=null;
+  }
   let DPR = 1, W = 1, H = 1, scale = 1, camX = 0, camY = 0, last = 0, t = 0, accumulator = 0;
   let pointer = { x: 0, y: 0, active: false }, joyPointer = null, dragPointer = null, dragOrigin = null;
   let keys = {};
@@ -919,8 +1270,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   const modeChooser=document.getElementById('modeChooser');
   const modeNotice=document.getElementById('modeNotice');
-  let selectedOnlineMode='classic';
-  const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op'};
+  let selectedOnlineMode='fourway';
+  let previewSoloMode='fourway';
+  const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op',fourway:'Four-Way Haunt'};
   function displayOnlineMode(mode){
     if(!MODE_NAMES[mode])return;
     selectedOnlineMode=mode;
@@ -928,9 +1280,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       button.setAttribute('aria-checked',String(button.dataset.mode===mode));
       button.disabled=!!online||onlinePending;
     }
+    // Selection controls both the highlighted card and the PLAY action.
+    previewSoloMode=mode==='fourway'?'fourway':'classic';
+    startBtn.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
+    startBtn.hidden=!!online||onlinePending;
+    if(!online&&!onlinePending&&onlineCreateEl)
+      onlineCreateEl.disabled=false;
     modeNotice.textContent=mode==='coop'
-      ?'Boo Crew Co-op · Four friendly seats (1–4 humans) against four rival bots.'
-      :'Classic Duel · Up to eight humans on opposing teams.';
+      ?'✓ Boo Crew Co-op selected · Create a room to play together'
+      :mode==='fourway'?'✓ Four-Way Haunt selected · Play solo or create a room'
+      :'✓ Classic Duel selected · Play solo or invite friends';
+    onlineCreateEl.hidden=false;
+    onlineCreateEl.textContent='✨ CREATE ROOM';
   }
   function selectOnlineMode(mode){
     if(!MODE_NAMES[mode]||online||onlinePending)return;
@@ -941,7 +1302,98 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const button=e.target.closest('[data-mode]');
     if(button)selectOnlineMode(button.dataset.mode);
   });
+  modeChooser.addEventListener('keydown',e=>{
+    if(!['ArrowDown','ArrowRight','ArrowUp','ArrowLeft'].includes(e.key))return;
+    const items=[...modeChooser.querySelectorAll('[data-mode]:not([disabled])')];
+    const index=items.indexOf(document.activeElement);
+    if(index<0||!items.length)return;
+    e.preventDefault();
+    const delta=['ArrowDown','ArrowRight'].includes(e.key)?1:-1;
+    const next=items[(index+delta+items.length)%items.length];
+    selectOnlineMode(next.dataset.mode);
+    next.focus();
+  });
   const onlineCodeEl=document.getElementById('onlineCode');
+  const rematchPanel=document.getElementById('rematchPanel');
+  const rematchHeading=document.getElementById('rematchHeading');
+  const rematchPrompt=document.getElementById('rematchPrompt');
+  const rematchCountdown=document.getElementById('rematchCountdown');
+  const rematchReady=document.getElementById('rematchReady');
+  const rematchChoices=document.getElementById('rematchChoices');
+  const rematchYes=document.getElementById('rematchYes');
+  const rematchNo=document.getElementById('rematchNo');
+  const rematchStart=document.getElementById('rematchStart');
+  const rematchInviteButton=document.getElementById('rematchInviteButton');
+  const againBtn=document.getElementById('againBtn');
+  let rematchVote=null,rematchDisplayTimer=null,rematchReadyToStart=false;
+  function stopRematchDisplay(){
+    if(rematchDisplayTimer){clearInterval(rematchDisplayTimer);rematchDisplayTimer=null}
+  }
+  function showRematchState(){
+    rematchPanel.hidden=!online||!game||game.phase!=='finished';
+    if(rematchPanel.hidden){stopRematchDisplay();return}
+    againBtn.hidden=false;
+    againBtn.textContent='👻 PLAY SOLO INSTEAD';
+    const host=online.host;
+    const voting=!!rematchVote;
+    const seconds=voting?Math.max(0,Math.ceil((rematchVote.deadline-Date.now())/1000)):0;
+    rematchHeading.textContent=voting?'👑 HOST REQUESTED A REMATCH':
+      rematchReadyToStart?'🎉 EVERYBODY IS READY!':'👻 KEEP HAUNTING TOGETHER?';
+    rematchPrompt.textContent=voting?'Another round with your friends?':
+      rematchReadyToStart?(host?'Everyone said YES. Start the next match!':'Everyone said YES. Waiting for the host to start!'):
+      host?(online.rematchSupported?'Keep your room and invite everyone to play again.':'Rematch invitations need the updated multiplayer server.'):
+      'Your host can invite everyone to play again.';
+    rematchCountdown.textContent=voting?('0:'+String(seconds).padStart(2,'0')):'';
+    const accepted=voting?rematchVote.yesSeats.includes(online.seat):false;
+    rematchChoices.hidden=!voting||accepted||seconds<=0;
+    rematchReady.textContent=voting?
+      rematchVote.yesSeats.length+' of '+rematchVote.seats.length+' friends ready'+(accepted?' · ✓ You said YES':''):'';
+    rematchStart.hidden=!rematchReadyToStart||!host;
+    rematchStart.disabled=false;
+    rematchInviteButton.hidden=!host||voting||rematchReadyToStart||!online.rematchSupported;
+    againBtn.hidden=false;
+    againBtn.textContent='👻 PLAY SOLO INSTEAD';
+    if(!voting)stopRematchDisplay();
+    else if(!rematchDisplayTimer)rematchDisplayTimer=setInterval(()=>{
+      showRematchState();
+      if(rematchVote&&Date.now()>=rematchVote.deadline){
+        rematchHeading.textContent='⌛ INVITATION EXPIRED';
+        rematchPrompt.textContent='Not everyone responded. The host can invite everyone again.';
+        rematchVote=null;
+        showRematchState();
+      }
+    },250);
+  }
+  rematchInviteButton.addEventListener('click',()=>{
+    if(!online?.host||!online.rematchSupported||game?.phase!=='finished')return;
+    GhostAudio.unlock();
+    sendOnline({type:'rematchInvite'});
+    rematchInviteButton.disabled=true;
+    rematchPrompt.textContent='Inviting your friends…';
+  });
+  rematchYes.addEventListener('click',()=>{
+    if(!online||!rematchVote)return;
+    GhostAudio.unlock();
+    sendOnline({type:'rematchVote',id:rematchVote.id,accept:true});
+    rematchYes.disabled=true;rematchNo.disabled=true;
+  });
+  rematchNo.addEventListener('click',()=>{
+    if(!online||!rematchVote)return;
+    sendOnline({type:'rematchVote',id:rematchVote.id,accept:false});
+    rematchNo.disabled=true;rematchYes.disabled=true;
+  });
+  rematchStart.addEventListener('click',()=>{
+    if(!online?.host||!rematchReadyToStart||online.ws.readyState!==WebSocket.OPEN)return;
+    rematchStart.disabled=true;
+    rematchPrompt.textContent='Getting everyone ready…';
+    sendOnline({type:'start'});
+  });
+  const joinCodeWrap=document.getElementById('joinCodeWrap');
+  function setJoinCodeVisible(visible){
+    joinCodeWrap.hidden=!visible;
+    onlineJoinEl.setAttribute('aria-expanded',String(visible));
+    onlineJoinEl.textContent=visible?'👻 JOIN WITH CODE':'👻 JOIN FRIENDS';
+  }
   const onlineCreateEl=document.getElementById('onlineCreate');
   const onlineJoinEl=document.getElementById('onlineJoin');
   const onlineStartEl=document.getElementById('onlineStart');
@@ -960,7 +1412,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   // never submitted to the public high-score list automatically.
   function sanitizePlayerName(value){
     const name=typeof value==='string'?value.trim().replace(/\s+/g,' '):'';
-    return name.length<=16&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
+    return name.length<=13&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
       (!name||/[\p{L}\p{N}]/u.test(name))?name:'';
   }
   try{
@@ -970,7 +1422,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }catch{}
   playerDisplayNameEl.addEventListener('input',()=>{
     const next=playerDisplayNameEl.value
-      .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,16);
+      .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,13);
     if(next!==playerDisplayNameEl.value)playerDisplayNameEl.value=next;
     try{localStorage.setItem('boo-crew-player-name',
       sanitizePlayerName(playerDisplayNameEl.value))}catch{}
@@ -989,16 +1441,26 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function lobbyPlayerProfile(){
     return {styleId:selectedCharacter,color:PASTELS[selectedIndex].hex,
-      name:sanitizePlayerName(playerDisplayNameEl.value)};
+      name:sanitizePlayerName(playerDisplayNameEl.value)||GHOST_CHARACTER_NAMES[selectedCharacter].slice(0,13)};
   }
   // First connected human on each team chooses the team body color.
   // The guest's chosen color takes effect for the second team.
-  function resolveOnlineTeamColors(profiles,seats,defaultHex){
+  function resolveOnlineTeamColors(profiles,seats,defaultHex,mode='classic'){
     const pick=(team)=>{
-      const pref=seats.filter(seat=>(seat<4?0:1)===team).sort((a,b)=>a-b)
+      const pref=seats.filter(seat=>(mode==='fourway'?Math.floor(seat/2):seat<4?0:1)===team).sort((a,b)=>a-b)
         .map(seat=>profiles.get(seat)?.color).find(hex=>PASTELS.some(p=>p.hex===hex));
       return PASTELS.find(p=>p.hex===(pref||defaultHex))||PASTELS[3];
     };
+    if(mode==='fourway'){
+      const used=new Set();
+      return Array.from({length:4},(_,team)=>{
+        const wished=pick(team);
+        const selected=(!used.has(wished.hex)?wished:null)||
+          FOUR_WAY_COLORS.find(c=>!used.has(c.hex))||
+          PASTELS.find(c=>!used.has(c.hex));
+        used.add(selected.hex);return selected;
+      });
+    }
     const a=pick(0),b=pick(1);
     return [a,a.hex!==b.hex?b:
       PASTELS.find(p=>p.hex==='#D98A91'&&p.hex!==a.hex)||
@@ -1006,18 +1468,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function syncOnlineTeamColors(){
     if(!online||!game)return;
-    if(!online.host&&online.teamColors?.length===2){
-      teamColors=online.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
+    if(!online.host&&online.teamColors?.length===(online.mode==='fourway'?4:2)){
+      teamColors=online.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||FOUR_WAY_COLORS[i]);
     }else{
       // The PREPARE packet already contains everybody's chosen color.
       // Guests can show their true team color on the very first frame,
       // rather than briefly rendering the host's team with their own pastel.
       const hostColor=online.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
-      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,hostColor);
+      teamColors=resolveOnlineTeamColors(online.profiles,online.seats,hostColor,online.mode);
       if(online.host)online.teamColors=teamColors.map(p=>p.hex);
     }
-    greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
-    greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
+    syncScoreColors();
   }
   function applyHumanProfiles(){
     if(!game||!online)return;
@@ -1038,7 +1499,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       online.lastAckAt>0&&performance.now()-online.lastAckAt<1800?'· Controls connected':
       online.lastSnapshot>0&&performance.now()-online.lastSnapshot<1800?'· Receiving game':
       '· Waiting for updates';
-    difficultyHud.textContent='🌐 '+(online.mode==='coop'?'CO-OP':'CLASSIC')+' · '+role+' · '+players+
+    difficultyHud.textContent='🌐 '+(online.mode==='coop'?'CO-OP':online.mode==='fourway'?'FOUR-WAY':'CLASSIC')+' · '+role+' · '+players+
       ' HUMAN'+(players===1?'':'S')+' + '+(8-players)+' BOTS '+health;
   }
   const isOnlineGuest=()=>online?.host===false&&online?.started===true;
@@ -1055,16 +1516,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     onlineInviteEl.textContent=MODE_NAMES[room.mode]+' · Room '+room.code+' · '+
       room.seats.length+'/'+roomCapacity(room.mode)+' humans';
     const hostColor=room.profiles.get(0)?.color||PASTELS[selectedIndex].hex;
-    const colors=resolveOnlineTeamColors(room.profiles,room.seats,hostColor);
+    const colors=resolveOnlineTeamColors(room.profiles,room.seats,hostColor,room.mode);
     for(let seat=0;seat<8;seat++){
-      const occupied=room.seats.includes(seat),team=seat<4?0:1;
+      const occupied=room.seats.includes(seat),team=teamForSeat(seat,room.mode);
       const tile=document.createElement('div');
       tile.className='roomSeat'+(occupied?' full':'')+(seat===0?' host':'')+(team===1?' rival':'');
-      tile.style.borderColor=colors[team].hex;
+      tile.style.borderColor=visualHex(colors[team].hex);
       const portrait=document.createElement('div');portrait.className='seatGhost';
       const profile=room.profiles.get(seat);
       const styleId=occupied?(profile?.styleId??(seat===room.seat?selectedCharacter:seat)):seat;
-      const fill=occupied?(profile?.color||colors[team].hex):colors[team].hex;
+      const fill=visualHex(occupied?(profile?.color||colors[team].hex):colors[team].hex);
       portrait.innerHTML=ghostPortrait({id:seat,styleId,team},fill);
       const title=document.createElement('span');title.className='seatTitle';
       const displayName=sanitizePlayerName(profile?.name);
@@ -1072,11 +1533,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         (displayName||(seat===0?'Host':'Friend '+(seat+1)))):
         room.mode==='coop'?(team===0?'Friendly Bot':'Rival Bot'):'Bot / Open';
       const teamLabel=document.createElement('span');teamLabel.className='seatTeam';
-      teamLabel.textContent=team===0?'✦ TEAM ONE':'✦ TEAM TWO';
-      tile.append(portrait,title,teamLabel);onlineRosterEl.appendChild(tile);
+      teamLabel.textContent='✦ TEAM '+['ONE','TWO','THREE','FOUR'][team];
+      teamLabel.style.color=visualHex(colors[team].hex);
+      const ready=document.createElement('span');ready.className='seatReady';
+      ready.textContent=!occupied?'OPEN':room.preparing?
+        (room.readySeats?.includes(seat)?'✓ READY':'WAITING…'):'✓ CONNECTED';
+      tile.append(portrait,title,teamLabel,ready);onlineRosterEl.appendChild(tile);
     }
   }
   function showOnlineLobby(onlineRoom){
+    if(onlineRoom||onlinePending)document.getElementById('friendsDetails').open=true;
     if(onlineRoom?.mode&&MODE_NAMES[onlineRoom.mode])displayOnlineMode(onlineRoom.mode);
     for(const button of modeChooser.querySelectorAll('[data-mode]')){
       button.disabled=!!onlineRoom||onlinePending;
@@ -1100,16 +1566,22 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       '⏳ Host is starting the match. Getting all players ready…':
       '⏳ Waiting for the HOST to press “START MATCH FOR EVERYONE” on their device.';
     // Never present solo Start as the main CTA in an online lobby.
+    // Always offer a primary action for every selected game mode.
+    // The host's dedicated Start Match button takes over inside a room.
     startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
-    startBtn.textContent='👻 PLAY SOLO';
+    startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom;
+    onlineCreateEl.hidden=!!onlineRoom;
     onlineJoinEl.disabled=onlinePending||!!onlineRoom;
+    if(onlineRoom)setJoinCodeVisible(false);
     renderOnlineRoster(onlineRoom);
   }
   function leaveOnline(reason='Left the online room. Solo mode is available.'){
+    rematchVote=null;rematchReadyToStart=false;stopRematchDisplay();rematchPanel.hidden=true;
+    rematchInviteButton.disabled=false;
     const old=online;
     online=null;
     if(old){try{old.ws.close(1000,'Leaving')}catch{}}
@@ -1123,7 +1595,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       difficultyHud.hidden=true;hud.hidden=true;carried.hidden=true;hint.classList.add('hidden');
       results.classList.remove('open');
       menu.classList.remove('hidden');
-      startBtn.textContent='START GAME';
+      startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
       document.getElementById('againBtn').textContent='👻 PLAY AGAIN';
     }
   }
@@ -1131,7 +1603,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(onlinePending)return;
     if(online)leaveOnline('Switching rooms…');
     onlinePending=true;showOnlineLobby(null);
-    let code=onlineCodeEl.value.trim().toUpperCase(),hostToken=null,ws;
+    let code=onlineCodeEl.value.trim().toUpperCase(),hostToken=null,ws,serverFeatures=null;
     try{
       const server=safeWebSocketServer();
       const endpoint='https://'+new URL(server).host;
@@ -1141,12 +1613,13 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       // Co-op needs the mode-aware Worker (Alpha 27). If the old Worker is
       // still deployed, fail clearly instead of silently placing friends
       // on opposing teams or giving a fifth person a co-op seat.
-      if(makeNew&&selectedOnlineMode==='coop'){
+      try{
         const health=await fetch(endpoint+'/health',{cache:'no-store'});
-        const service=health.ok?await health.json().catch(()=>null):null;
-        if(!Array.isArray(service?.modes)||!service.modes.includes('coop'))
-          throw Error('Boo Crew Co-op needs the updated multiplayer server. Classic Duel still works while that update is deployed.');
-      }
+        if(health.ok)serverFeatures=await health.json();
+      }catch{}
+      if(makeNew&&selectedOnlineMode!=='classic'&&
+         (!Array.isArray(serverFeatures?.modes)||!serverFeatures.modes.includes(selectedOnlineMode)))
+        throw Error(MODE_NAMES[selectedOnlineMode]+' needs an updated multiplayer server. Classic Duel is still available.');
       const response=await fetch(makeNew?endpoint+'/rooms':endpoint+'/rooms/'+code,{
         method:makeNew?'POST':'GET',
         headers:makeNew?{'Content-Type':'application/json'}:{},
@@ -1185,6 +1658,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const session={ws,code,hostToken,seat:null,host:false,started:false,preparing:false,roundId:null,
       mode:selectedOnlineMode,seats:[],profiles:new Map(),inputs:new Map(),lastInput:0,lastSnapshot:0,lastAckAt:0,
       lastFullSnapshot:-Infinity,inputSeq:0,receivedSeq:-1,teamColors:null};
+    session.rematchSupported=serverFeatures?.rematchVoting===true;
     online=session;
     onlineCodeEl.value=code;
     showOnlineLobby(session);
@@ -1221,6 +1695,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
           session.seats.length+'/'+roomCapacity(session.mode)+' humans connected. '+
           (session.host?'Tap START MATCH FOR EVERYONE when ready.':'Waiting for the host to start.'));
       }else if(msg.type==='prepare'){
+        session.readySeats=[];
         if(MODE_NAMES[msg.mode])session.mode=msg.mode;
         if(Array.isArray(msg.profiles)){
           session.profiles=new Map(msg.profiles
@@ -1238,12 +1713,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         sendOnline({type:'ready',roundId:msg.roundId});
       }else if(msg.type==='readyStatus'){
         if(session.preparing&&msg.roundId===session.roundId){
-          const ready=Array.isArray(msg.readySeats)?msg.readySeats.length:0;
+          session.readySeats=Array.isArray(msg.readySeats)?msg.readySeats:[];
+          const ready=session.readySeats.length;
           const total=Array.isArray(msg.seats)?msg.seats.length:session.seats.length;
+          renderOnlineRoster(session);
           setOnlineStatus('Preparing online match: '+ready+'/'+total+' players ready…');
         }
       }else if(msg.type==='start'){
         if(MODE_NAMES[msg.mode])session.mode=msg.mode;
+        rematchVote=null;rematchReadyToStart=false;stopRematchDisplay();
+        rematchStart.disabled=false;againBtn.hidden=false;
         if(session.started)return;
         if(!session.preparing||msg.roundId!==session.roundId){
           // Only accept the confirmed round that this browser prepared.
@@ -1253,6 +1732,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         session.preparing=false;
         session.started=true;
         reset();game.online=true;
+        rematchVote=null;rematchReadyToStart=false;
+        const delay=Number(msg.launchAt)-Date.now();
+        if(Number.isFinite(delay)&&delay>0){
+          game.phase='countdown';
+          game.roundStartsAt=performance.now()+delay;
+          rematchRoundCountdown.hidden=false;
+          rematchRoundCountdown.textContent=String(Math.max(1,Math.min(3,Math.ceil(delay/1000))));
+        }else rematchRoundCountdown.hidden=true;
         // The host's button tap and the guest's Join tap unlocked Web Audio
         // before this asynchronous start packet; both now play the soundtrack.
         syncOnlineTeamColors();
@@ -1297,6 +1784,35 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         session.profiles.delete(msg.seat);
         session.seats=session.seats.filter(seat=>seat!==msg.seat);
         if(game?.online){if(session.host)syncOnlineTeamColors();applyHumanProfiles();refreshOnlineBadge();}
+      }else if(msg.type==='rematchInvite'){
+        rematchInviteButton.disabled=false;
+        if(game?.phase==='finished'&&typeof msg.id==='string'&&Number.isFinite(msg.deadline)){
+          rematchVote={id:msg.id,deadline:msg.deadline,yesSeats:[],seats:msg.seats||session.seats};
+          rematchReadyToStart=false;
+          rematchYes.disabled=false;rematchNo.disabled=false;
+          showRematchState();
+        }
+      }else if(msg.type==='rematchStatus'){
+        if(rematchVote&&msg.id===rematchVote.id){
+          rematchVote.yesSeats=Array.isArray(msg.yesSeats)?msg.yesSeats:[];
+          rematchVote.seats=Array.isArray(msg.seats)?msg.seats:session.seats;
+          showRematchState();
+        }
+      }else if(msg.type==='rematchAccepted'){
+        rematchInviteButton.disabled=false;
+        if(game?.phase==='finished'){
+          rematchVote=null;rematchReadyToStart=true;showRematchState();
+          setOnlineStatus('Everyone accepted! Host can start the next round.');
+        }
+      }else if(msg.type==='rematchCancelled'){
+        rematchInviteButton.disabled=false;
+        rematchVote=null;rematchReadyToStart=false;
+        rematchYes.disabled=false;rematchNo.disabled=false;
+        showRematchState();
+        if(game?.phase==='finished')
+          rematchPrompt.textContent=msg.reason==='declined'?
+            'A friend declined. You can invite everyone again.':
+            'The invitation expired. You can invite everyone again.';
       }else if(msg.type==='finish'){
         if(!session.host&&game?.phase==='playing')finish();
         session.started=false;
@@ -1343,7 +1859,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function receiveOnlineSnapshot(s){
     if(!s||!game||!Array.isArray(s.ghosts)||s.ghosts.length!==8||
-      !Array.isArray(s.scores)||s.scores.length!==2||
+      !Array.isArray(s.scores)||s.scores.length!==(isFourWay()?4:2)||
       (!s.compact&&!Array.isArray(s.flames)))return;
     game.remaining=Math.max(0,Math.min(120,Number(s.remaining)||0));
     game.scores=s.scores;
@@ -1352,11 +1868,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     }
     if(Array.isArray(s.flames))game.flames=s.flames;
     if(s.difficulty&&DIFFICULTIES[s.difficulty])game.difficulty=s.difficulty;
-    if(Array.isArray(s.teamColors)&&s.teamColors.length===2){
+    if(Array.isArray(s.teamColors)&&s.teamColors.length===(isFourWay()?4:2)){
       teamColors=s.teamColors.map((hex,i)=>PASTELS.find(p=>p.hex===hex)||PASTELS[i]);
       online.teamColors=teamColors.map(p=>p.hex);
-      greenScoreEl.style.color=color(0);
-      purpleScoreEl.style.color=color(1);
+      syncScoreColors();
     }
     const before=game.ghosts[localGhostId()];
     const beforeTrail=before?.trail.length||0,beforeScore=before?.score||0,
@@ -1364,7 +1879,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     for(const snap of s.ghosts){
       if(!Number.isInteger(snap.id)||snap.id<0||snap.id>7)continue;
       const g=game.ghosts[snap.id];
-      for(const field of ['x','y','heading','styleId','trail','trailPos','score','face',
+      for(const field of ['x','y','team','heading','styleId','trail','trailPos','score','face',
         'reaction','reactionTime','reactionDuration','bounce','blink','moveAmount','stats','playerColor','playerName','human']){
         if(snap[field]!==undefined)g[field]=snap[field];
       }
@@ -1393,11 +1908,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const invited=new URLSearchParams(location.search).get('room');
     if(invited&&/^[A-Z2-9]{6}$/.test(invited.toUpperCase())){
       onlineCodeEl.value=invited.toUpperCase();
-      setOnlineStatus('Invite code ready. Tap Join room to play with your friend.');
+      setJoinCodeVisible(true);
+      document.getElementById('friendsDetails').open=true;
+      document.body.classList.add('invited');
+      onlineJoinEl.textContent='👻 JOIN THE GAME';
+      setOnlineStatus('You\'re invited! Pick your color, then tap JOIN THE GAME.');
     }
   }catch{}
   onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
-  onlineJoinEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(false)});
+  onlineJoinEl.addEventListener('click',()=>{
+    if(joinCodeWrap.hidden){setJoinCodeVisible(true);onlineCodeEl.focus();return}
+    GhostAudio.unlock();startOnlineConnection(false);
+  });
   onlineLeaveEl.addEventListener('click',()=>leaveOnline());
   onlineStartEl.addEventListener('click',()=>{
     if(online?.host&&!online.started&&!online.preparing&&online.seat===0&&
@@ -1408,16 +1930,29 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       sendOnline({type:'start'});
     }
   });
+  // Host invitation is only available after a completed online round and on
+  // an updated Worker. Never mistake the existing solo action for a rematch.
   onlineCopyEl.addEventListener('click',async()=>{
     if(!online)return;
     const link=location.origin+location.pathname+'?room='+online.code;
-    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite copied! Your friend only needs this link (or room code '+online.code+').');}
+    if(navigator.share){
+      try{await navigator.share({title:'Spooktacular Showdown',text:'Join my ghost room! Room '+online.code,url:link});return}
+      catch(err){if(err&&err.name==='AbortError')return}
+    }
+    try{await navigator.clipboard.writeText(link);setOnlineStatus('Invite link copied! Paste it to your friends (room code '+online.code+').');}
     catch{setOnlineStatus('Share the game link or this room code: '+online.code);}
   });
 
 
   const stars = Array.from({ length: 110 }, () => ({ x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, r: Math.random() * 1.7 + 0.2, twinkle: Math.random() * 7 }));
   const props = makeProps();
+  // The larger four-team cemetery has additional layered scenery on its
+  // eastern and southern grounds. Classic mode keeps its original props.
+  const fourwayProps=[
+    ...props,
+    ...props.map(p=>({...p,x:Math.min(2320,p.x+520),y:Math.min(1410,p.y+340),
+      phase:(p.phase||0)+1.7,variant:(p.variant||0)+1}))
+  ];
   const ambientMotes = Array.from({ length: 65 }, () => ({ x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, r: Math.random() * 2 + .6, s: Math.random() * .6 + .2, p: Math.random() * 6.28 }));
 
   function status(msg) { audioStatus.textContent = 'Audio: ' + msg; }
@@ -1612,7 +2147,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
         playSafariMusic(cue,forceRestart);
         return;
       }
-      // A finished/faded or Safari-interrupted source cannot be reused.
+      // A finished or Safari-interrupted source must not block a fresh soundtrack.
       if(active&&currentCue===cue&&!forceRestart)return;
       currentCue=cue;
       const now=ctx.currentTime;
@@ -1860,8 +2395,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       if(safariMediaMusic)status('Safari audio test · HTML audio + Web Audio '+(ctx?.state||'not started'));
       if(!wantsMusic)wantsMusic=true;
       if(setup()){
-        // Test Sound is an explicit user gesture: restart the soundtrack
-        // even when its previous source still exists but became silent.
         resume();playCue(currentCue,true);
       }
       if(master&&ctx)master.gain.setTargetAtTime(.7,ctx.currentTime,.02);
@@ -1869,8 +2402,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     }
     function pause(){
       if('speechSynthesis' in window)try{window.speechSynthesis.cancel()}catch(e){}
-      // Safari can permanently silence a manually suspended context after
-      // tab/background transitions. Fade output instead of suspending it.
+      // Avoid leaving Web Audio manually suspended after Safari tab changes.
       if(ctx&&master)master.gain.setTargetAtTime(0,ctx.currentTime,.02);
     }
     function onVisible(){
@@ -1930,7 +2462,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function randomPoint() {
     for (let i = 0; i < 150; i++) {
       const p = { x: randRange(250, WORLD.w - 250), y: randRange(105, WORLD.h - 105) };
-      if (!collides(p.x, p.y, 40) && distance(p, BASES[0]) > 170 && distance(p, BASES[1]) > 170) return p;
+      if (!collides(p.x, p.y, 40) && BASES.every(base=>distance(p,base)>base.r+55)) return p;
     }
     return { x: WORLD.w / 2, y: WORLD.h / 2 };
   }
@@ -1963,23 +2495,25 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
 
   function reset() {
+    const matchMode=online?.started?online.mode:previewSoloMode;
+    configureArena(matchMode);
     seed = 7321;
     const choices=PASTELS.filter((_,i)=>i!==selectedIndex);
     teamColors=[PASTELS[selectedIndex],choices[Math.floor(Math.random()*choices.length)]];
-    greenScoreEl.style.color=color(0);purpleScoreEl.style.color=color(1);
-    greenScoreEl.title=teamColors[0].name+' team';purpleScoreEl.title=teamColors[1].name+' team';
+    if(matchMode==='fourway')teamColors=[PASTELS[selectedIndex],...FOUR_WAY_COLORS.filter(c=>c.hex!==PASTELS[selectedIndex].hex)].slice(0,4);
+    syncScoreColors();
     const ghosts = [];
     const roster=[selectedCharacter,...Array.from({length:8},(_,i)=>i).filter(i=>i!==selectedCharacter)];
     for (let i = 0; i < 8; i++) {
-      const team = i < 4 ? 0 : 1;
+      const team = teamForSeat(i,matchMode);
       const base = BASES[team];
       const ghost=newGhost(i, team, { x: base.x + randRange(-50, 50), y: base.y + randRange(-50, 50) });
       ghost.styleId=roster[i];
       ghost.playerName=i===0?sanitizePlayerName(playerDisplayNameEl.value):'';
       ghosts.push(ghost);
     }
-    const flames = Array.from({ length: 72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
-    game = { localLocatorUntil:performance.now()+5000, ghosts, flames, particles: [], popups: [], remaining: 120, scores: [0, 0], difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
+    const flames = Array.from({ length: matchMode==='fourway'?108:72 }, () => ({ ...randomPoint(), phase: randRange(0, Math.PI * 2), personality: randRange(0, 6.28) }));
+    game = { mode:matchMode, localLocatorUntil:performance.now()+5000, ghosts, flames, particles: [], popups: [], remaining: 120, scores: Array(matchMode==='fourway'?4:2).fill(0), difficulty:selectedDifficulty, lastWarningSecond:16, nextAmbientAt:96, toast: 'You are '+GHOST_CHARACTER_NAMES[selectedCharacter]+' in '+teamColors[0].name+'! Rivals are '+teamColors[1].name+' ('+DIFFICULTIES[selectedDifficulty].name+')!', toastLeft: 5, phase: 'playing', online:false };
     document.getElementById('againBtn').textContent=online?.started?'👻 PLAY AGAIN (SOLO)':'👻 PLAY AGAIN';
     difficultyHud.textContent='👻 '+DIFFICULTIES[selectedDifficulty].name.toUpperCase()+' OPPONENTS';
     difficultyHud.hidden=false;
@@ -2041,6 +2575,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     return game?.online?!online?.seats.includes(g.id):g.id!==0;
   }
   function botDifficultyConfig(g){
+    // In Four-Way Haunt every team's bots need equal AI strength.
+    if(game?.mode==='fourway')return DIFFICULTIES[game.difficulty]||DIFFICULTIES.normal;
     return g.team===0?FRIENDLY_BOT_CONFIG:
       DIFFICULTIES[game.difficulty]||DIFFICULTIES.normal;
   }
@@ -2049,7 +2585,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
   function botDirection(g, dt) {
     // Bot decisions use explicit AI profiles; human controls never do.
-    const mode=g.team===1?game.difficulty:'normal';
+    const mode=game?.mode==='fourway'||g.team!==0?game.difficulty:'normal';
     const config=botDifficultyConfig(g);
     g.targetTimer-=dt;
     const home=BASES[g.team];
@@ -2244,7 +2780,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   }
 
   function update(dt) {
-    if (!game || game.phase !== 'playing') return;
+    if(!game)return;
+    if(game.phase==='countdown'){
+      const remain=(game.roundStartsAt||0)-performance.now();
+      if(remain>0){
+        rematchRoundCountdown.hidden=false;
+        rematchRoundCountdown.textContent=String(Math.max(1,Math.min(3,Math.ceil(remain/1000))));
+        return;
+      }
+      rematchRoundCountdown.hidden=true;
+      game.phase='playing';
+    }
+    if(game.phase!=='playing')return;
     if(isOnlineGuest()){
       game.toastLeft=Math.max(0,game.toastLeft-dt);
       if(performance.now()-online.lastInput>=50){
@@ -2344,8 +2891,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(!game)return;
     const you=game.ghosts[localGhostId()];
     if(!you)return;
-    greenScoreEl.textContent=game.scores[0];
-    purpleScoreEl.textContent=game.scores[1];
+    game.scores.forEach((score,i)=>{scoreEls[i].textContent=score;});
     const sec=Math.ceil(game.remaining);
     clockEl.textContent=Math.floor(sec/60)+':'+('0'+sec%60).slice(-2);
     carryValue.textContent=you.trail.length;
@@ -2374,7 +2920,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     highScoreCountry.appendChild(option);
   });
   try{
-    highScoreName.value=localStorage.getItem('boo-crew-score-name')||'';
+    highScoreName.value='';
     highScoreCountry.value=localStorage.getItem('boo-crew-score-country')||'';
   }catch{}
   const nicknameIsValid=value=>value.length>=1&&value.length<=13&&
@@ -2576,20 +3122,23 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     submitButton.textContent='🏆 ENTER THE TOP 13';
     if(!game)return;
     const player=game.ghosts[localGhostId()];
-    if(!player||game.scores[player.team]<=game.scores[1-player.team]||player.score<=0)return;
+    if(!player||game.scores.some((score,i)=>i!==player.team&&score>=game.scores[player.team])||player.score<=0)return;
     const chosen=GHOST_CHARACTER_NAMES[player.styleId??player.id];
-    highScorePreview.textContent=chosen+' · '+player.score+' banked spirit flames · '+(game.online?'Online':'Solo')+' victory';
+    const ghostName=sanitizePlayerName(player.playerName)||chosen.slice(0,13);
+     highScoreName.value=ghostName;
+     document.getElementById('qualifiedGhostName').textContent='🏆 '+ghostName+', choose your flag to join the Top 13!';
+     highScorePreview.textContent=player.score+' banked spirit flames · '+(game.online?'Online':'Solo')+' victory';
     scoreEntry.hidden=false;
   }
   scoreEntry.addEventListener('submit',async event=>{
     event.preventDefault();
     if(!game||game.phase!=='finished'||game.scoreSubmitted)return;
     const player=game.ghosts[localGhostId()];
-    if(!player||game.scores[player.team]<=game.scores[1-player.team]||player.score<=0)return;
+    if(!player||game.scores.some((score,i)=>i!==player.team&&score>=game.scores[player.team])||player.score<=0)return;
     const name=highScoreName.value.trim();
     const country=highScoreCountry.value;
     if(!nicknameIsValid(name)||!COUNTRY_SET.has(country)){
-      highScoreStatus.textContent='Choose a nickname of 1–13 letters/numbers and a country flag.';return;
+      highScoreStatus.textContent='Please choose your flag to enter the Top 13.';return;
     }
     const entry={name,country,styleId:player.styleId??player.id,color:color(player.team),score:player.score};
     const button=document.getElementById('submitHighScore');
@@ -2701,13 +3250,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     return awards;
   }
   function buildResults(){
-    const [a,b]=game.scores;
     const myTeam=game.ghosts[localGhostId()].team;
-    resultHeading.textContent=(a===b?'A SPOOKY DRAW!':(game.scores[myTeam]>game.scores[1-myTeam]?
+    const maxScore=Math.max(...game.scores);
+    const winners=game.scores.filter(score=>score===maxScore).length;
+    resultHeading.textContent=(winners>1&&game.scores[myTeam]===maxScore?'A SPOOKY DRAW!':
+      game.scores[myTeam]===maxScore?
       (game.online&&online?.mode==='coop'?'YOUR CREW WINS!':'YOUR TEAM WINS!'):
-      'THE RIVALS WIN!'))+' · '+(game.online?(online?.mode==='coop'?'BOO CREW CO-OP':'CLASSIC DUEL'):
-      DIFFICULTIES[game.difficulty].name.toUpperCase());
-    resultScore.innerHTML='<span style="color:'+color(0)+'">'+a+'</span> — <span style="color:'+color(1)+'">'+b+'</span>';
+      'THE RIVALS WIN!')+' · '+(game.online?(MODE_NAMES[online?.mode]||'CLASSIC DUEL').toUpperCase():
+      (isFourWay()?'FOUR-WAY HAUNT':DIFFICULTIES[game.difficulty].name.toUpperCase()));
+    resultScore.innerHTML=game.scores.map((score,i)=>
+      '<span style="color:'+color(i)+'">'+score+'</span>').join(' — ');
     const awardMap=assignAwards(game.ghosts),you=game.ghosts[localGhostId()],mine=awardMap.get(localGhostId());
     myAwardEmoji.innerHTML=ghostPortrait(you);
     myAwardName.textContent=mine.title;
@@ -2736,11 +3288,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       content.append(who,title,why);tile.append(avatar,content);awardGrid.appendChild(tile);
     });
     results.classList.add('open');
+    againBtn.hidden=!!game.online;
+    if(game.online)showRematchState();
+    else rematchPanel.hidden=true;
     prepareWinningHighScore();
     results.querySelector('.resultsPanel').scrollTop=0;
   }
   function finish() {
     game.phase='finished';
+    rematchRoundCountdown.hidden=true;
     if(isOnlineHost()){
       publishOnlineSnapshot();
       sendOnline({type:'finish'});
@@ -2749,7 +3305,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     }
     warningEl.classList.remove('visible');
     const you=game.ghosts[localGhostId()];
-    GhostAudio.endRound(game.scores[you.team]>=game.scores[1-you.team]);
+    GhostAudio.endRound(game.scores[you.team]===Math.max(...game.scores));
     hud.hidden=true;carried.hidden=true;difficultyHud.hidden=true;hint.classList.add('hidden');
     buildResults();
   }
@@ -2825,7 +3381,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     // always reflect the actual team's match color.
     // Explicit previews (lobby, icon, Top 13) may show personal color.
     // Match portraits and awards must match the authoritative team color.
-    const fill=previewColor??ghostBodyColor(g),accent=INDIVIDUAL_ACCENTS[styleId],edge=darken(fill,.52);
+    const fill=previewColor?visualHex(previewColor):ghostBodyColor(g),
+      accent=INDIVIDUAL_ACCENTS[styleId],
+      edge=highContrast?'#fff7e7':darken(fill,.52);
     const ink='#272038';
     const faces=[
       '<path d="M28 52Q40 66 52 52" fill="none" stroke="'+ink+'" stroke-width="3.8" stroke-linecap="round"/>',
@@ -2873,8 +3431,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     if(online&&online.seat!==null&&!online.started&&online.ws.readyState===WebSocket.OPEN){
       sendOnline({type:'profile',...lobbyPlayerProfile()});
     }
-    const swatch=PASTELS[selectedIndex];
-    const skinEdge=darken(swatch.hex,.52);
+    const swatch=visualPalette()[selectedIndex];
+    const skinEdge=highContrast?'#fff7e7':darken(swatch.hex,.52);
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
       button.setAttribute('aria-label','Choose '+GHOST_CHARACTER_NAMES[id]+' in '+swatch.name);
@@ -2904,6 +3462,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   });
   refreshCrewCards();
 
+  // Ghosts are slightly see-through; outline, face and accessories stay solid
+  // so every player still reads clearly over flames and bases.
+  const GHOST_BODY_ALPHA=.74;
   function drawGhost(g) {
     const carried=levelFor(g);
     const progress=g.reactionTime>0?1-g.reactionTime/Math.max(.001,g.reactionDuration):1;
@@ -2925,7 +3486,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     const tilt=celebrating?Math.sin(progress*Math.PI*5)*.18:
       stolen?Math.sin(progress*Math.PI*12)*.18:
       moving?Math.sin(g.heading)*.085:Math.sin(motion)*.035;
-    const baseColor=ghostBodyColor(g),edge=darken(baseColor,.56);
+    const baseColor=ghostBodyColor(g),edge=highContrast?'#fff7e7':darken(baseColor,.56);
     if(carried>=23){
       const halo=88+Math.sin(t*5+g.bounce)*7;
       drawGlow(x,y-3,halo,alpha(baseColor,.59));
@@ -2951,7 +3512,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     ctx.scale(1+squash+pulse,1-squash+pulse);
     // Natural trailing shape has three soft waving tails, rather than a rigid bottom.
     const flutter=Math.sin(t*6+g.bounce)*3,flutter2=Math.cos(t*7+g.bounce)*3;
-    ctx.fillStyle=baseColor;ctx.strokeStyle=edge;ctx.lineWidth=2.6;
+    ctx.fillStyle=baseColor;ctx.strokeStyle=edge;ctx.lineWidth=highContrast?4:2.6;
     ctx.beginPath();
     ctx.moveTo(-24,12);
     ctx.lineTo(-24,-2);
@@ -2961,7 +3522,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     ctx.quadraticCurveTo(3,9,-3,18-flutter2);
     ctx.quadraticCurveTo(-11,8,-17,18+flutter*.5);
     ctx.quadraticCurveTo(-22,9,-24,12);
-    ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.closePath();
+    ctx.globalAlpha=highContrast?1:GHOST_BODY_ALPHA;ctx.fill();
+    ctx.globalAlpha=1;ctx.stroke();
 
     // Highlighting gives the pastel ghosts a translucent, soft cartoon finish.
     ctx.fillStyle='rgba(255,255,255,.26)';
@@ -3522,7 +4085,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   function drawBaseNameplate(ctx,base,team){
     const ownTeam=game.online?game.ghosts[localGhostId()].team:0;
     const subtitle=game.online?(team===ownTeam?'YOUR BASE':'OTHER TEAM BASE'):'BOO CREW BASE';
-    const title=teamColors[team].name.toUpperCase();
+    const title=visualEntry(teamColors[team]).name.toUpperCase();
     const x=base.x,y=base.y+67,width=262,height=57;
     ctx.save();
     ctx.shadowColor='#110b20bf';ctx.shadowBlur=12;ctx.shadowOffsetY=4;
@@ -3574,9 +4137,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     // One cached, illustrated cobblestone-and-grass walkway, beneath
     // scenery, ghosts, spirit flames and scoring zones.
     if(!graveyardPathLayer)graveyardPathLayer=buildGraveyardPathLayer();
-    ctx.drawImage(graveyardPathLayer,0,550-88);
+    if(isFourWay()){
+      ctx.drawImage(graveyardPathLayer,0,420-88);
+      ctx.drawImage(graveyardPathLayer,0,1080-88);
+    }else ctx.drawImage(graveyardPathLayer,0,550-88);
 
-    for (const p of props) {
+    for (const p of (isFourWay()?fourwayProps:props)) {
       ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.s,p.s);
       if(p.kind==='grave')drawGravestone(ctx,p);
       else if(p.kind==='pumpkin')drawPumpkin(ctx,p);
@@ -3599,8 +4165,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       }
     }
 
-    for (const b of BASES) {
-      const team = b === BASES[0] ? 0 : 1;
+    for (const [team,b] of BASES.entries()) {
       drawGlow(b.x, b.y, b.r + 74, alpha(color(team),.16));
       ctx.lineWidth = 9; ctx.strokeStyle = color(team); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
       ctx.strokeStyle = alpha(color(team),.45); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r - 18, 0, Math.PI * 2); ctx.stroke();
@@ -3756,12 +4321,23 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       setOnlineStatus('You are in an online room. The host must press Start online match, or choose Leave room for solo play.');
       return;
     }
+    if(selectedOnlineMode==='coop'){
+      GhostAudio.unlock();
+      startOnlineConnection(true);
+      return;
+    }
+    previewSoloMode=selectedOnlineMode==='fourway'?'fourway':'classic';
     GhostAudio.unlock();reset();GhostAudio.thunder();
   });
-  document.getElementById('againBtn').addEventListener('click',()=>{if(online)leaveOnline();reset()});
+  againBtn.addEventListener('click',()=>{
+    if(online)leaveOnline('Left the room. Starting solo play.');
+    rematchRoundCountdown.hidden=true;
+    reset();
+  });
   document.getElementById('colorBtn').addEventListener('click',()=>returnToMenu('colors'));
   document.getElementById('resultDifficultyBtn').addEventListener('click',()=>returnToMenu('difficulty'));
 })();
 </script>
+
 </body>
 </html>
