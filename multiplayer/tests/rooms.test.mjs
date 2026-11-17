@@ -893,7 +893,7 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
 });
 
 
-test('Alpha 35: three-step menu, team-color cards, accurate modes and preserved game',()=>{
+test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   const at=id=>html.indexOf('id="'+id+'"');
   for(const id of ['booCrewGrid','selectedGhostPortrait','chosenCharacter','crewLore',
@@ -903,38 +903,33 @@ test('Alpha 35: three-step menu, team-color cards, accurate modes and preserved 
     assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' must be unique');
   }
   assert.ok(at('booCrewGrid')>0&&at('booCrewGrid')<at('selectedGhostPortrait'),
-    'Ghost selection precedes selected-ghost preview');
+    'Ghost selection precedes chosen-ghost preview');
   assert.ok(at('selectedGhostPortrait')<at('playerDisplayName')&&at('playerDisplayName')<at('palettePicker'),
-    'Customization contains ghost preview, nickname and swatches');
-  assert.ok(at('palettePicker')<at('modeChooser')&&at('modeChooser')<at('startBtn'),
-    'Game mode precedes the Play action');
-  for(const heading of ['1. CHOOSE YOUR GHOST','YOUR GHOST','2. CHOOSE YOUR HAUNT &amp; PLAY'])
-    assert.ok(html.includes(heading),heading);
-  const menuCss=html.slice(html.indexOf('/* Alpha 35: consolidated Joy Haus three-step menu.'),html.indexOf('</style>'));
-  assert.match(menuCss,/#menu #menuPanel #booCrewGrid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(menuCss,/@media\(max-width:520px\)\{[\s\S]*?#menu #menuPanel #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.doesNotMatch(menuCss,/\.crewCard:nth-child\(\d+\)\{background/,'No character-specific card backgrounds');
-  assert.match(html,/#menu #menuPanel \.crewCard\{min-height:132px;/);
+    'Preview, nickname and color controls remain in one section');
+  assert.ok(at('palettePicker')<at('modeChooser')&&at('modeChooser')<at('startBtn'));
+  const polished=html.slice(html.indexOf('/* Alpha 35 visual polish'),html.indexOf('</style>'));
+  assert.ok(polished.length>10000,'Polish stylesheet is present');
+  assert.ok(polished.includes('url("assets/boo-crew-night.svg")'),'Reuse the original moonlit cemetery SVG');
+  assert.ok(polished.includes('#menu::before{display:none}'),'Disable the placeholder background');
+  assert.ok(polished.includes('grid-template-columns:repeat(4,minmax(0,1fr))'),'Desktop selection is 4 x 2');
+  assert.ok(polished.includes('grid-template-columns:repeat(2,minmax(0,1fr))'),'Phone selection is 2 x 4');
+  assert.ok(polished.includes('#menu #menuPanel .crewCard span{'),'Ghost names have a consistent cream nameplate');
+  assert.ok(polished.includes('background:linear-gradient(#fff5d3,#f2cfa5)'),'Cards use high-contrast nameplates');
+  assert.ok(polished.includes('#menu #menuPanel .crewCard[aria-pressed="true"]'),'Selected character has clear border');
+  assert.ok(polished.includes('#menu #modeChooser .modeCard small{'),'Mode descriptions remain visible');
+  assert.ok(polished.includes('#menu #menuPanel #crewLore{display:none}'),'Biography stays hidden');
+  assert.ok(polished.includes('prefers-reduced-motion:reduce'));
   assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
-  assert.match(html,/booCrewGrid\.style\.setProperty\('--crew-label-color',labelColor\)/);
   assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
-  assert.match(html,/crewLore\.textContent=GHOST_CHARACTER_LORE\[selectedCharacter\]/);
   assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
-  assert.match(html,/id="crewLore" class="srOnly"/);
-  assert.ok(html.includes('#menu #characterSelectLayout{display:grid;grid-template-columns:'));
-  assert.ok(html.includes('#menu #characterSelectLayout:before{content:"✦  1. CHOOSE YOUR GHOST'));
-  assert.ok(html.includes('#menu #menuPanel .crewCard{min-height:132px;'));
-  assert.ok(html.includes('background:linear-gradient(165deg,#755081'));
-  assert.ok(html.includes('#menu .title span:last-child{color:#dfc1ff'));
-  assert.match(html,/prefers-reduced-motion:reduce/);
-  for(const description of [
-    'Four teams compete in a larger cemetery.',
+  for(const name of ['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'])
+    assert.ok(html.includes(name),name);
+  for(const description of ['Four teams compete across a larger cemetery.',
     'Two teams race to collect and deposit spirit flames.',
-    'Friends work together against rival computer ghosts.'])
+    'Friends work together against four computer ghosts.'])
     assert.ok(html.includes(description),description);
-  assert.match(html,/quickCreateRoom\.addEventListener\('click'/);
-  assert.match(html,/quickJoinRoom\.addEventListener\('click'/);
-  assert.match(html,/mode==='coop'\?'🤝 CREATE CO-OP ROOM':'👻 PLAY SOLO'/);
+  for(const event of ['quickCreateRoom','quickJoinRoom'])
+    assert.ok(html.includes(event+".addEventListener('click'"),event+' must be connected');
   assert.match(html,/navigator\.share\(\{title:'Spooktacular Showdown'/);
   assert.match(html,/\?room=/);
   const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
