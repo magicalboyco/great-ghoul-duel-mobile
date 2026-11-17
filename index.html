@@ -1389,14 +1389,19 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     }
     // Selection controls both the highlighted card and the PLAY action.
     previewSoloMode=mode==='fourway'?'fourway':'classic';
-    startBtn.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
+    startBtn.textContent=mode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY SOLO';
     startBtn.hidden=!!online||onlinePending;
+    quickCreateRoom.textContent=mode==='fourway'?'✨ CREATE FOUR-WAY ROOM':
+      mode==='coop'?'🤝 CREATE CO-OP ROOM':'✨ CREATE CLASSIC ROOM';
+    quickRoomActions.hidden=!!online||onlinePending;
+    quickCreateRoom.disabled=!!online||onlinePending;
+    quickJoinRoom.disabled=!!online||onlinePending;
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=false;
     modeNotice.textContent=mode==='coop'
-      ?'✓ Boo Crew Co-op selected · Create a room to play together'
-      :mode==='fourway'?'✓ Four-Way Haunt selected · Play solo or create a room'
-      :'✓ Classic Duel selected · Play solo or invite friends';
+      ?'Friends team up against four rival computer ghosts.'
+      :mode==='fourway'?'Four teams compete across a larger cemetery.'
+      :'Two teams compete to collect the most spirits.';
     onlineCreateEl.hidden=false;
     onlineCreateEl.textContent='✨ CREATE ROOM';
   }
@@ -1503,6 +1508,10 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
   }
   const onlineCreateEl=document.getElementById('onlineCreate');
   const onlineJoinEl=document.getElementById('onlineJoin');
+  const quickCreateRoom=document.getElementById('quickCreateRoom');
+  const quickJoinRoom=document.getElementById('quickJoinRoom');
+  const friendsDetails=document.getElementById('friendsDetails');
+  const quickRoomActions=document.getElementById('quickRoomActions');
   const onlineStartEl=document.getElementById('onlineStart');
   const onlineLeaveEl=document.getElementById('onlineLeave');
   const onlineCopyEl=document.getElementById('onlineCopy');
@@ -1677,7 +1686,10 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     // The host's dedicated Start Match button takes over inside a room.
     startBtn.hidden=!!onlineRoom||onlinePending;
     startBtn.disabled=!!onlineRoom||onlinePending;
-    startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'▶ PLAY';
+    startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY SOLO';
+    quickRoomActions.hidden=!!onlineRoom||onlinePending;
+    quickCreateRoom.disabled=!!onlineRoom||onlinePending;
+    quickJoinRoom.disabled=!!onlineRoom||onlinePending;
     onlineLeaveEl.hidden=!onlineRoom;
     onlineCopyEl.hidden=!onlineRoom||!seated;
     onlineCreateEl.disabled=onlinePending||!!onlineRoom;
@@ -2022,6 +2034,17 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
       setOnlineStatus('You\'re invited! Pick your color, then tap JOIN THE GAME.');
     }
   }catch{}
+  quickCreateRoom.addEventListener('click',()=>{
+    friendsDetails.open=true;
+    GhostAudio.unlock();
+    startOnlineConnection(true);
+  });
+  quickJoinRoom.addEventListener('click',()=>{
+    friendsDetails.open=true;
+    setJoinCodeVisible(true);
+    onlineCodeEl.focus();
+    friendsDetails.scrollIntoView({block:'nearest',behavior:'auto'});
+  });
   onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
   onlineJoinEl.addEventListener('click',()=>{
     if(joinCodeWrap.hidden){setJoinCodeVisible(true);onlineCodeEl.focus();return}
@@ -3531,6 +3554,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
   const booCrewGrid=document.getElementById('booCrewGrid');
   const chosenCharacter=document.getElementById('chosenCharacter');
   const crewLore=document.getElementById('crewLore');
+  const selectedGhostPortrait=document.getElementById('selectedGhostPortrait');
   function refreshCrewCards(){
     crewLore.textContent=GHOST_CHARACTER_LORE[selectedCharacter];
     // A player can change their costume or color in the lobby without
@@ -3540,6 +3564,9 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     }
     const swatch=visualPalette()[selectedIndex];
     const skinEdge=highContrast?'#fff7e7':darken(swatch.hex,.52);
+    chosenCharacter.textContent=GHOST_CHARACTER_NAMES[selectedCharacter];
+    selectedGhostPortrait.innerHTML=ghostPortrait(
+      {id:selectedCharacter,styleId:selectedCharacter,team:0},swatch.hex);
     [...booCrewGrid.children].forEach((button,id)=>{
       button.setAttribute('aria-pressed',String(id===selectedCharacter));
       button.setAttribute('aria-label','Choose '+GHOST_CHARACTER_NAMES[id]+' in '+swatch.name);
