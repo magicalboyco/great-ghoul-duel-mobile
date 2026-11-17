@@ -821,6 +821,24 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
 }
 @media(prefers-reduced-motion:reduce){#selectedGhostPortrait svg{animation:none!important}}
 
+
+/* Keep only one set of primary online actions. The drawer is for lobby state
+   and entering a room code after the player chooses Join Friends. */
+#menu #onlineCreate[hidden],#menu #onlineJoin[hidden],
+#menu #quickRoomActions button[hidden]{display:none!important}
+#menu #quickRoomActions button{touch-action:manipulation}
+#menu #characterSelectLayout .swatches{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+#menu #characterSelectLayout .swatch{width:min(100%,42px);height:auto;min-height:35px;
+ aspect-ratio:1;justify-self:center}
+#menu #characterSelectLayout .swatch:focus-visible{outline:3px solid #fff0b8;outline-offset:3px}
+#menu #characterSelectLayout .crewCard:focus-visible{outline:3px solid #ffeba9;outline-offset:3px}
+#menu #menuMore{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
+#menu #menuMore>*{flex:0 1 auto}
+@media(max-width:360px){
+ #menu #characterSelectLayout .swatch{min-height:31px}
+ #menu #quickRoomActions button{width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -859,7 +877,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
           </div>
         </div>
         <div id="playerIdentity">
-          <label for="playerDisplayName">Nickname <span>(optional)</span></label>
+          <label for="playerDisplayName">Your ghost name <span>(optional)</span></label>
           <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
           <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
         </div>
@@ -902,7 +920,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
         <summary>👥 Play with friends</summary>
         <div class="drawerBody">
           <p class="drawerHint">Make a room, share the link, and friends join with one tap.</p>
-          <div class="onlineControls"><button type="button" id="onlineCreate">✨ CREATE ROOM</button><button type="button" id="onlineJoin" aria-expanded="false" aria-controls="joinCodeWrap">👻 JOIN FRIENDS</button></div>
+          <div class="onlineControls"><button type="button" id="onlineCreate" hidden>✨ CREATE ROOM</button><button type="button" id="onlineJoin" hidden aria-expanded="false" aria-controls="joinCodeWrap">👻 JOIN FRIENDS</button></div>
           <div id="joinCodeWrap" hidden>
             <label for="onlineCode" style="display:block;font-size:12px;margin-top:8px">Enter your friend's room code</label>
             <input id="onlineCode" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE" aria-label="Six-character private room code">
@@ -1396,6 +1414,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     quickRoomActions.hidden=!!online||onlinePending;
     quickCreateRoom.disabled=!!online||onlinePending;
     quickJoinRoom.disabled=!!online||onlinePending;
+    quickCreateRoom.hidden=mode==='coop';
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=false;
     modeNotice.textContent=mode==='coop'
@@ -1503,6 +1522,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
   const joinCodeWrap=document.getElementById('joinCodeWrap');
   function setJoinCodeVisible(visible){
     joinCodeWrap.hidden=!visible;
+    onlineJoinEl.hidden=!visible;
     onlineJoinEl.setAttribute('aria-expanded',String(visible));
     onlineJoinEl.textContent=visible?'👻 JOIN WITH CODE':'👻 JOIN FRIENDS';
   }
@@ -1688,6 +1708,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     startBtn.disabled=!!onlineRoom||onlinePending;
     startBtn.textContent=selectedOnlineMode==='coop'?'🤝 CREATE CO-OP ROOM':'👻 PLAY SOLO';
     quickRoomActions.hidden=!!onlineRoom||onlinePending;
+    quickCreateRoom.hidden=selectedOnlineMode==='coop'||!!onlineRoom;
     quickCreateRoom.disabled=!!onlineRoom||onlinePending;
     quickJoinRoom.disabled=!!onlineRoom||onlinePending;
     onlineLeaveEl.hidden=!onlineRoom;
@@ -2042,7 +2063,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
   quickJoinRoom.addEventListener('click',()=>{
     friendsDetails.open=true;
     setJoinCodeVisible(true);
-    onlineCodeEl.focus();
+    onlineCodeEl.focus({preventScroll:true});
     friendsDetails.scrollIntoView({block:'nearest',behavior:'auto'});
   });
   onlineCreateEl.addEventListener('click',()=>{GhostAudio.unlock();startOnlineConnection(true)});
