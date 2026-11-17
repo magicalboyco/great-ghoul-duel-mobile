@@ -1406,19 +1406,6 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   #menu #modeChooser .modeCard .modeIcon{flex-basis:30px;width:30px;font-size:24px}
 }
 @media(max-width:660px){
-  #menu #characterSelectLayout{align-items:center;gap:6px}
-  #menu #characterSelectLayout .characterShowcase{padding-top:8px}
-  #menu #characterSelectLayout .characterShowcase{display:grid;grid-template-columns:80px minmax(0,1fr);column-gap:10px;align-items:center}
-  #menu #selectedGhostStage{grid-column:1;grid-row:1 / span 2;flex-direction:row;align-items:center;gap:0;margin:0}
-  #menu #selectedGhostCopy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-  #menu #selectedGhostPortrait{width:72px;height:74px;flex:0 0 74px}
-  #menu #selectedGhostPortrait svg{width:69px;height:73px}
-  #menu #playerIdentity{grid-column:2;grid-row:1;min-width:0}
-  #menu #characterSelectLayout .characterShowcase>.menuStep{grid-column:2;grid-row:2;min-width:0}
-  #menu #characterSelectLayout .swatch{min-height:27px}
-  #menu #onlinePanel{padding-bottom:9px}
-  #menu #quickRoomActions{gap:6px;margin:4px auto 5px}
-  #menu #quickRoomActions button{min-width:0}
 
   #menu{padding:5px}
   #menu>.panel{max-width:100%;width:100%;padding:8px 6px 25px;max-height:calc(100dvh - 10px)}
@@ -1446,6 +1433,21 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   #menu #modeChooser .modeCard small{font-size:10px;line-height:1.2}
   #menu #onlinePanel #previewGameActions #startBtn{min-height:59px;font-size:21px}
   #menu #quickRoomActions button{font-size:12px;padding:9px 12px}
+  /* Keep compact mobile geometry after the base phone declarations. */
+  #menu #characterSelectLayout{align-items:center;gap:6px}
+  #menu #characterSelectLayout .characterShowcase{padding-top:8px}
+  #menu #characterSelectLayout .characterShowcase{display:grid;grid-template-columns:80px minmax(0,1fr);column-gap:10px;align-items:center}
+  #menu #selectedGhostStage{grid-column:1;grid-row:1 / span 2;flex-direction:row;align-items:center;gap:0;margin:0}
+  #menu #selectedGhostCopy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  #menu #selectedGhostPortrait{width:72px;height:74px;flex:0 0 74px}
+  #menu #selectedGhostPortrait svg{width:69px;height:73px}
+  #menu #playerIdentity{grid-column:2;grid-row:1;min-width:0}
+  #menu #characterSelectLayout .characterShowcase>.menuStep{grid-column:2;grid-row:2;min-width:0}
+  #menu #characterSelectLayout .swatch{min-height:27px}
+  #menu #onlinePanel{padding-bottom:9px}
+  #menu #quickRoomActions{gap:6px;margin:4px auto 5px}
+  #menu #quickRoomActions button{min-width:0}
+
 }
 @media(max-width:360px){
   #menu #characterSelectLayout .swatch{min-height:30px}
