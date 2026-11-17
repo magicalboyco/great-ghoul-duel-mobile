@@ -649,285 +649,160 @@ body.highContrast .swatch[aria-pressed="true"]::after{
 }
 
 
-/* ===== Alpha 35 menu: one decision at a time — color first, then Play. =====
-   Everything that is not needed to start a game lives in a collapsed drawer. */
-#menu>.panel{width:min(94vw,560px)}
-.srOnly{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-#menu .sub{margin:6px auto 4px;font-size:15px;color:#f3e6ff}
-.menuStep{margin:14px 0 8px}
-#menu .palette-label{font-size:13px;letter-spacing:.1em;margin:6px 0 10px;color:#ffe9b6}
-#menu .swatches{max-width:430px;gap:9px;grid-template-columns:repeat(7,minmax(0,1fr))}
-#menu .swatch{width:100%;max-width:50px;height:auto;aspect-ratio:1;justify-self:center;border-width:3px}
-#menu #teamPreview{margin:8px auto 2px;font-size:14px;min-height:20px}
-#contrastChoice{display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:.85;margin-top:4px;cursor:pointer}
-#booCrewGrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:2px auto 6px;max-width:100%}
-.crewCard{padding:4px 1px}
-.crewCard svg{width:40px;height:45px}
-.crewCard span{font-size:10px}
-.crewPortrait{min-height:45px}
-#crewSelection{font-size:12px;color:#ffe6ad;opacity:.9}
-/* The long character blurb is optional reading, not a gate to playing. */
-#crewLore{display:none}
-.crewCard .ghostSkin{fill-opacity:.82}
-body.highContrast .crewCard .ghostSkin{fill-opacity:1}
-#menu #onlinePanel{max-width:none;margin:12px auto 6px;padding:0;background:none;border:none}
-#menu #previewGameActions{margin:8px auto 10px;min-height:0}
-#menu #onlinePanel #previewGameActions #startBtn{width:min(100%,360px);max-width:none;min-height:66px;font-size:24px;border-radius:20px;letter-spacing:.04em}
-#modeChooser{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 auto 10px}
-#modeChooser .modeCard{width:auto;min-height:42px;padding:8px 14px 8px 10px;border-radius:999px;gap:7px;flex:0 1 auto}
-#modeChooser .modeCard small{display:none}
-#modeChooser .modeCard .modeIcon{font-size:18px;width:auto}
-#modeChooser .modeCard b{font-size:14px}
-#modeChooser .modeCard[aria-checked="true"]::after{display:none}
-#modeChooser .modeCard[aria-checked="true"]{border:2px solid #ffedb7}
-.menuDrawer{margin:8px auto;max-width:520px;border:1px solid #dfc9f550;border-radius:15px;background:#21172f70;text-align:left}
-.menuDrawer>summary{cursor:pointer;list-style-position:inside;text-align:center;color:#f7e3c5;font-weight:800;font-size:14px;padding:11px 14px;border-radius:15px}
-.menuDrawer>summary:focus-visible{outline:3px solid #b7ffe4;outline-offset:2px}
-.menuDrawer .drawerBody{padding:2px 14px 14px;text-align:center}
-.drawerHint{font-size:12px;color:#e9dafa;margin:4px 0 10px;line-height:1.45}
-.friendsDrawer{background:#3a2a5a80;border-color:#e8c5f35a}
-.friendsDrawer .onlineControls{justify-content:center}
-#menuMore{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
-#menuMore>.menuDrawer{flex:1 1 150px;margin:0;max-width:none}
-#menuMore>.menuDrawer[open]{flex-basis:100%}
-#menuMore .menuChip{margin:0;padding:11px 14px;border-radius:15px;border:1px solid #dfc9f550;background:#21172f70;color:#f7e3c5;font-weight:800;font-size:14px;cursor:pointer;flex:1 1 120px}
-#menuMore .gameGuide .bullets{grid-template-columns:1fr 1fr;margin:6px 0 0}
-#playerIdentity{margin:6px auto 12px}
-#menu #onlineStatus{min-height:0;font-size:12px;opacity:.9}
-/* A friend who arrives from an invite link sees Join as the main action. */
-body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#183928;border-color:#e2ffe4;min-height:48px;font-size:16px}
-.menuDrawer>summary{list-style:none;display:flex;align-items:center;justify-content:center;min-height:46px}
-.menuDrawer>summary::-webkit-details-marker{display:none}
-#menuMore{align-items:stretch}
-#menuMore .menuChip{min-height:46px}
-@media(max-width:560px){
-  #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .crewCard svg{width:46px;height:52px}
-  #menuMore .gameGuide .bullets{grid-template-columns:1fr}
-  #menu .swatches{gap:6px}
-}
-/* Compact ghost picker on every screen size (older phone rules made tall 2-column cards). */
-#menu #menuPanel #booCrewGrid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
-#menu #menuPanel .crewCard{min-height:0;padding:4px 1px;gap:2px;border-radius:12px}
-#menu #menuPanel .crewCard svg{width:40px;height:45px}
-#menu #menuPanel .crewCard span{font-size:10px;min-height:0}
-#menu #menuPanel .crewPortrait{min-height:45px}
-.menuDrawer.gameGuide{padding:0;max-width:none;margin:0}
-#menuMore{align-items:flex-start}
-@media(max-width:560px){
-  #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
-  #menu #menuPanel .crewCard svg{width:42px;height:47px}
-}
-@media(max-width:560px){
-  #modeChooser{gap:6px}
-  #modeChooser .modeCard{padding:7px 10px 7px 8px;gap:5px}
-  #modeChooser .modeCard b{font-size:13px}
-  #modeChooser .modeCard .modeIcon{font-size:16px}
-}
 
-/* Joy Haus selection screen overhaul: existing real character SVGs, not new art.
-   Desktop is a two-column showcase; small screens stay touch-friendly. */
-#menu>.panel{max-width:min(1060px,100%);flex:0 1 1060px;width:100%}
-#characterSelectLayout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.28fr);
-  gap:14px;align-items:stretch;margin:15px 0 12px;text-align:center}
-#characterSelectLayout>.menuStep{min-width:0;margin:0;border:1px solid #b594c577;
-  border-radius:19px;background:linear-gradient(140deg,#51366599,#28193e99);padding:14px}
-#characterSelectLayout .palette-label{margin:0 0 10px;font-weight:900;font-size:12px;letter-spacing:.08em}
-#selectedGhostStage{display:flex;align-items:center;justify-content:center;gap:12px;text-align:left;
-  min-height:116px;margin-bottom:8px}
-#selectedGhostPortrait{display:grid;place-items:center;flex:0 0 112px;height:124px;
-  background:radial-gradient(ellipse at center,#a784c344,#31204022 70%);border-radius:22px}
-#selectedGhostPortrait svg{display:block;width:102px;height:116px;max-width:100%;
+/* Alpha 35: consolidated Joy Haus three-step menu. All game sprites and modes
+   remain the original gameplay implementations; no global arena styles change. */
+.srOnly{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#menu>.panel{flex:0 1 1060px;width:100%;max-width:min(1060px,100%);min-width:0;
+  max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
+  -webkit-overflow-scrolling:touch}
+#menu .sub{margin:6px auto 7px;font-size:15px;color:#f3e6ff}
+#menu .palette-label{font-size:13px;letter-spacing:.09em;margin:6px 0 10px;color:#ffe9b6;font-weight:900}
+#menu .menuStep{min-width:0;margin:13px auto;padding:13px;
+  border:1px solid #b594c577;border-radius:18px;
+  background:linear-gradient(140deg,#51366599,#28193e99)}
+#characterSelectLayout{display:flex;flex-direction:column;gap:0;margin:3px auto}
+#characterSelectLayout .characterGridSection{order:0;width:100%}
+#characterSelectLayout .characterShowcase{order:1;width:100%}
+#menu #menuPanel #booCrewGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;max-width:770px;width:100%;margin:0 auto;align-content:start;padding:0}
+#menu #menuPanel .crewCard{position:relative;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;min-width:0;min-height:138px;
+  gap:5px;padding:9px 5px;border:2px solid var(--card-border,#d8c4ee);
+  border-radius:14px;overflow:hidden;
+  background:linear-gradient(160deg,var(--selected-team-color,#a78fc0),var(--selected-team-color-dark,#665080));
+  box-shadow:inset 0 0 0 2px #ffffff18,0 5px 12px #0e082e77;
+  color:var(--crew-label-color,#fff8eb);font-family:'Fredoka',sans-serif;
+  cursor:pointer;touch-action:manipulation}
+#menu #menuPanel .crewCard::before{content:"";position:absolute;inset:4px;
+  border:1px solid #ffffff35;border-radius:10px;pointer-events:none}
+#menu #menuPanel .crewCard .crewPortrait{display:grid;place-items:center;
+  min-height:85px;width:100%;background:none;filter:drop-shadow(0 4px 7px #06071d66)}
+#menu #menuPanel .crewCard svg{width:min(100%,86px);height:88px;overflow:visible}
+#menu #menuPanel .crewCard span{font-size:clamp(12px,1.4vw,15px);min-height:18px;
+  line-height:1.15;text-align:center;overflow-wrap:anywhere;
+  color:var(--crew-label-color,#fff8eb);text-shadow:0 1px 4px #1e112955}
+#menu #menuPanel .crewCard[aria-pressed="true"]{border:3px solid #ffe5ad;
+  box-shadow:0 0 0 2px #2e1a41,0 0 0 4px #f9dfa899,0 0 20px #f3c58a66}
+#menu #menuPanel .crewCard[aria-pressed="true"]::after{content:"✓";position:absolute;
+  top:5px;right:5px;width:22px;height:22px;border-radius:50%;
+  display:grid;place-items:center;background:#ffe7b4;color:#392543;font-size:14px;font-weight:900}
+#menu #menuPanel .crewCard:focus-visible{outline:3px solid #ffeba9;outline-offset:3px}
+#selectedGhostStage{display:flex;align-items:center;justify-content:center;gap:14px;
+  margin:0 auto 8px;text-align:left;min-height:116px;max-width:570px}
+#selectedGhostPortrait{display:grid;place-items:center;flex:0 0 116px;height:125px;
+  background:radial-gradient(ellipse,#a784c344,#31204022 70%);border-radius:20px}
+#selectedGhostPortrait svg{display:block;width:104px;height:116px;max-width:100%;
   filter:drop-shadow(0 6px 9px #100c2e77);animation:showcase-float 3.2s ease-in-out infinite}
 @keyframes showcase-float{0%,100%{transform:translateY(2px) rotate(-2deg)}
   50%{transform:translateY(-5px) rotate(2deg)}}
 #selectedGhostCopy{flex:1;min-width:0}
-#characterSelectLayout #crewSelection{font-size:14px;color:#ffebbb;margin-bottom:5px}
-#characterSelectLayout #chosenCharacter{font-size:22px;display:block;line-height:1.1;color:#fff3db}
-#characterSelectLayout #crewLore{min-height:0;max-width:none;margin:0;padding:0;
-  border:0;background:none;text-align:left;line-height:1.35;font-size:12px;color:#edddf6}
-#characterSelectLayout #playerIdentity{max-width:100%;margin:10px 0 12px;
-  text-align:left;padding:10px}
+#characterSelectLayout #crewSelection{font-size:14px;color:#ffebbb;margin:0 0 5px}
+#characterSelectLayout #chosenCharacter{font-size:24px;display:block;color:#fff3db;line-height:1.1}
+#menu #menuPanel #crewLore{display:block;min-height:32px;max-width:none;
+  margin:0;padding:0;border:0;background:none;text-align:left;
+  font-size:13px;line-height:1.35;color:#edddf6;overflow-wrap:anywhere}
+#characterSelectLayout #playerIdentity{max-width:540px;margin:8px auto 10px;text-align:left;padding:10px}
 #characterSelectLayout #playerIdentity label{font-size:12px}
-#characterSelectLayout #playerNameHint{font-size:10px}
-#characterSelectLayout #playerDisplayName{text-align:left;margin:6px 0 3px;min-height:44px}
-#characterSelectLayout .swatches{margin:4px auto 5px;max-width:100%;gap:5px}
-#characterSelectLayout .swatch{width:clamp(28px,3.6vw,37px);height:clamp(28px,3.6vw,37px)}
-#characterSelectLayout #teamPreview{font-size:11px;margin:3px auto}
-#characterSelectLayout #contrastChoice{margin:6px auto 2px;padding:5px 9px;font-size:12px}
-#characterSelectLayout #booCrewGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-  max-width:none;width:100%;gap:10px;margin:0}
-#characterSelectLayout .crewCard{min-height:117px;padding:10px 4px 7px;gap:5px;
-  border-radius:14px;position:relative}
-#characterSelectLayout .crewCard svg{width:clamp(51px,5.4vw,76px);height:76px}
-#characterSelectLayout .crewCard span{font-size:clamp(11px,1.15vw,14px);line-height:1.15}
-#characterSelectLayout .crewCard[aria-pressed="true"]{border:3px solid #ffe9b9;
-  box-shadow:0 0 0 2px #2e1a41,0 0 0 4px #f8e3b994;background:#785497}
-#characterSelectLayout .crewCard[aria-pressed="true"]::after{content:"✓";position:absolute;
-  right:5px;top:5px;background:#ffe7b4;color:#392543;border-radius:50%;
-  display:grid;place-items:center;width:22px;height:22px;font-weight:1000;font-size:14px}
-#menu #onlinePanel{max-width:920px;margin:8px auto;padding:12px 14px}
-#menu #modeChooser{max-width:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#menu #modeChooser .modeCard{min-height:60px;line-height:1.2;justify-content:center;padding:8px 12px;
-  text-align:center;flex-direction:column;gap:4px}
+#characterSelectLayout #playerDisplayName{min-height:44px;text-align:left;margin:6px 0 3px}
+#characterSelectLayout #playerNameHint{font-size:11px}
+#menu #characterSelectLayout .swatches{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));
+  max-width:450px;width:100%;gap:5px;margin:4px auto 5px}
+#menu #characterSelectLayout .swatch{width:100%;max-width:44px;aspect-ratio:1;
+  height:auto;min-height:35px;justify-self:center}
+#menu #characterSelectLayout .swatch:focus-visible{outline:3px solid #fff0b8;outline-offset:3px}
+#menu #teamPreview{margin:4px auto;font-size:12px;min-height:16px}
+#contrastChoice{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  margin:7px auto 3px;padding:7px 10px;border:1px solid #c4acd999;
+  border-radius:12px;background:#3d2d55;color:#fff3e2;font-size:12px;cursor:pointer}
+#menu #onlinePanel{max-width:920px;margin:10px auto;padding:12px 14px}
+#menu #modeChooser{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  max-width:750px;width:100%;gap:9px;margin:0 auto 8px}
+#menu #modeChooser .modeCard{width:100%;min-width:0;min-height:58px;
+  border-radius:14px;flex-direction:row;justify-content:center;gap:5px;
+  padding:9px;text-align:center}
 #menu #modeChooser .modeCard small{display:none}
 #menu #modeChooser .modeCard .modeIcon{font-size:19px}
-#menu #modeChooser .modeCard[aria-checked="true"]{background:#76518d;border:2px solid #ffedb7;
-  box-shadow:0 0 0 2px #ddc7f159}
-#menu .modeDescription{font-weight:650;min-height:17px;font-size:12px;
-  text-align:center;color:#ebd5f5;margin:8px auto}
-#menu #previewGameActions{margin:12px auto 8px;display:flex;justify-content:center}
-#menu #previewGameActions #startBtn{width:min(100%,380px);min-height:57px;font-size:19px;
-  border-radius:16px;letter-spacing:.02em}
-#menu #quickRoomActions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:5px auto 8px}
-#menu #quickRoomActions button{min-height:44px;background:#4d3766;color:#fff4ed;
-  border:1px solid #c5a6d9;border-radius:11px;padding:9px 15px;font-size:13px;font-weight:900}
-#menu #quickRoomActions button:hover{background:#6b4a86}
-#menu #quickRoomActions button:focus-visible{outline:3px solid #ffe9b6;outline-offset:2px}
+#menu #modeChooser .modeCard b{font-size:13px}
+#menu #modeChooser .modeCard[aria-checked="true"]{background:#76518d;
+  border:2px solid #ffedb7;box-shadow:0 0 0 2px #ddc7f159}
+#menu #modeChooser .modeCard[aria-checked="true"]::after{display:none}
+#menu .modeDescription{font-size:13px;min-height:18px;
+  color:#ebd5f5;margin:8px auto;text-align:center}
+#menu #previewGameActions{display:flex;justify-content:center;margin:12px auto 8px}
+#menu #onlinePanel #previewGameActions #startBtn{width:min(100%,410px);
+  min-height:60px;font-size:21px;border-radius:17px;
+  background:linear-gradient(#ffe6b7,#f6b5dc);color:#3a2343}
+#menu #quickRoomActions{display:flex;justify-content:center;gap:10px;
+  flex-wrap:wrap;margin:5px auto 8px}
 #menu #quickRoomActions[hidden]{display:none!important}
+#menu #quickRoomActions button{min-height:44px;padding:9px 15px;
+  background:#4d3766;color:#fff4ed;border:1px solid #c5a6d9;
+  border-radius:11px;font-size:13px;font-weight:900;touch-action:manipulation}
+#menu #quickRoomActions button[hidden]{display:none!important}
+#menu #quickRoomActions button:focus-visible{outline:3px solid #ffe9b6;outline-offset:2px}
+#menu #onlineCreate[hidden],#menu #onlineJoin[hidden]{display:none!important}
 #menu #friendsDetails{max-width:600px;margin:7px auto}
-#menu #menuMore{max-width:900px;margin:12px auto 0}
-#menu #menuMore .menuDrawer,#menu #menuMore .menuChip{font-size:12px}
+#menu .menuDrawer{margin:8px auto;border:1px solid #dfc9f550;
+  border-radius:15px;background:#21172f70;text-align:left}
+#menu .menuDrawer>summary{cursor:pointer;list-style:none;display:flex;align-items:center;
+  justify-content:center;min-height:46px;padding:11px 14px;
+  color:#f7e3c5;font-weight:800;font-size:14px}
+#menu .menuDrawer>summary::-webkit-details-marker{display:none}
+#menu .menuDrawer>summary:focus-visible{outline:3px solid #b7ffe4;outline-offset:2px}
+#menu .menuDrawer .drawerBody{padding:2px 14px 14px;text-align:center}
+#menu .drawerHint{font-size:12px;color:#e9dafa;margin:4px 0 10px;line-height:1.45}
+#menu .friendsDrawer{background:#3a2a5a80;border-color:#e8c5f35a}
+#menu #menuMore{display:flex;justify-content:center;align-items:center;
+  flex-wrap:wrap;gap:8px;max-width:900px;margin:12px auto 0}
+#menu #menuMore>*{flex:0 1 auto}
+#menu #menuMore>.menuDrawer{margin:0}
+#menu #menuMore>.menuDrawer[open]{flex-basis:100%}
+#menu #menuMore .menuChip{margin:0;padding:11px 14px;min-height:46px;
+  border:1px solid #dfc9f550;border-radius:15px;background:#21172f70;
+  color:#f7e3c5;font-size:12px;font-weight:800;cursor:pointer}
+#menuMore .gameGuide .bullets{grid-template-columns:1fr 1fr;margin:6px 0 0}
+#menu #onlineStatus{min-height:0;font-size:12px}
+body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
+  color:#183928;border-color:#e2ffe4;min-height:48px;font-size:16px}
 @media(max-width:700px){
- #characterSelectLayout{grid-template-columns:1fr;gap:10px}
- #characterSelectLayout .characterShowcase{order:0}
- #characterSelectLayout .characterGridSection{order:1}
- #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
- #characterSelectLayout .crewCard{min-height:105px}
- #characterSelectLayout .crewCard svg{height:66px}
- #characterSelectLayout .swatch{width:clamp(29px,7vw,38px);height:clamp(29px,7vw,38px)}
+  #menu #menuPanel #booCrewGrid{gap:8px}
+  #menu #menuPanel .crewCard{min-height:112px;padding:7px 3px}
+  #menu #menuPanel .crewCard .crewPortrait{min-height:63px}
+  #menu #menuPanel .crewCard svg{width:min(100%,68px);height:68px}
 }
 @media(max-width:520px){
- #menu #characterSelectLayout{gap:8px;margin:9px 0}
- #characterSelectLayout>.menuStep{padding:10px}
- #selectedGhostStage{min-height:92px;gap:7px}
- #selectedGhostPortrait{flex-basis:85px;height:96px}
- #selectedGhostPortrait svg{width:79px;height:91px}
- #characterSelectLayout #chosenCharacter{font-size:18px}
- #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- #characterSelectLayout .crewCard{min-height:96px;padding:7px;gap:3px}
- #characterSelectLayout .crewCard svg{width:56px;height:63px}
- #characterSelectLayout .crewCard span{font-size:12px}
- #menu #modeChooser .modeCard{padding:7px 5px;min-height:56px;font-size:12px}
- #menu #modeChooser .modeCard .modeIcon{font-size:17px}
- #menu #quickRoomActions button{min-height:44px}
+  #menu{align-items:stretch}
+  #menu>.panel{width:100%;max-width:100%;flex:none;margin:auto;
+    padding:12px 10px 17px}
+  #menu .title{font-size:clamp(25px,7.5vw,35px);line-height:1.05;letter-spacing:0}
+  #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #menu #menuPanel .crewCard{min-height:105px;padding:7px 3px;gap:3px}
+  #menu #menuPanel .crewCard .crewPortrait{min-height:63px}
+  #menu #menuPanel .crewCard svg{width:min(100%,67px);height:68px}
+  #menu #menuPanel .crewCard span{font-size:12px}
+  #menu .menuStep{padding:10px;margin:9px auto}
+  #selectedGhostStage{min-height:92px;gap:8px}
+  #selectedGhostPortrait{flex-basis:85px;height:95px}
+  #selectedGhostPortrait svg{width:78px;height:91px}
+  #characterSelectLayout #chosenCharacter{font-size:19px}
+  #menu #modeChooser .modeCard{min-height:51px;padding:6px 3px;gap:3px}
+  #menu #modeChooser .modeCard b{font-size:11px}
+  #menu #modeChooser .modeCard .modeIcon{font-size:17px}
+  #menu #quickRoomActions button{min-height:44px}
+  #menuMore .gameGuide .bullets{grid-template-columns:1fr}
 }
-#menu.phoneView #characterSelectLayout{grid-template-columns:1fr}
-#menu.phoneView #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#menu.phoneView #menuPanel #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:360px){
+  #menu #characterSelectLayout .swatch{min-height:31px}
+  #menu #quickRoomActions button{width:100%}
+}
 @media(min-width:521px) and (max-height:570px) and (orientation:landscape){
- #characterSelectLayout{grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr)}
- #characterSelectLayout .crewCard{min-height:88px}
- #characterSelectLayout .crewCard svg{height:53px}
+  #menu #menuPanel .crewCard{min-height:95px}
+  #menu #menuPanel .crewCard svg{height:60px}
 }
 @media(prefers-reduced-motion:reduce){#selectedGhostPortrait svg{animation:none!important}}
-
-
-/* Keep only one set of primary online actions. The drawer is for lobby state
-   and entering a room code after the player chooses Join Friends. */
-#menu #onlineCreate[hidden],#menu #onlineJoin[hidden],
-#menu #quickRoomActions button[hidden]{display:none!important}
-#menu #quickRoomActions button{touch-action:manipulation}
-#menu #characterSelectLayout .swatches{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
-#menu #characterSelectLayout .swatch{width:min(100%,42px);height:auto;min-height:35px;
- aspect-ratio:1;justify-self:center}
-#menu #characterSelectLayout .swatch:focus-visible{outline:3px solid #fff0b8;outline-offset:3px}
-#menu #characterSelectLayout .crewCard:focus-visible{outline:3px solid #ffeba9;outline-offset:3px}
-#menu #menuMore{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
-#menu #menuMore>*{flex:0 1 auto}
-@media(max-width:360px){
- #menu #characterSelectLayout .swatch{min-height:31px}
- #menu #quickRoomActions button{width:100%}
-}
-
-
-/* Alpha 35 correction: later Alpha 35 compact selectors have greater ID
-   specificity than the original redesign, so explicitly supersede them. */
-#menu #menuPanel #characterSelectLayout #booCrewGrid{
- display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
- width:100%;max-width:none;margin:0;padding:0;align-content:start
-}
-#menu #menuPanel #characterSelectLayout .crewCard{
- position:relative;display:flex;flex-direction:column;align-items:center;
- justify-content:center;min-width:0;min-height:152px;
- padding:11px 5px 9px;gap:6px;border-radius:13px;
- border:2px solid #b59cc9;
- overflow:hidden;
- background:linear-gradient(170deg,#674a87 0%,#332248 74%);
- box-shadow:inset 0 0 0 2px #ffffff12,0 5px 12px #0e082e77;
-}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(1){background:linear-gradient(160deg,#723b74,#351e43);border-color:#ce92c0}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(2){background:linear-gradient(160deg,#247d65,#193c43);border-color:#86d9b9}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(3){background:linear-gradient(160deg,#574382,#2c2051);border-color:#ab90d5}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(4){background:linear-gradient(160deg,#8c6b48,#41304a);border-color:#e6c18c}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(5){background:linear-gradient(160deg,#405579,#242b52);border-color:#9bbde0}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(6){background:linear-gradient(160deg,#843c54,#381d39);border-color:#e59c99}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(7){background:linear-gradient(160deg,#876143,#3e2755);border-color:#f3d28a}
-#menu #menuPanel #characterSelectLayout .crewCard:nth-child(8){background:linear-gradient(160deg,#377c94,#283a69);border-color:#a9dcec}
-#menu #menuPanel #characterSelectLayout .crewCard::before{
- content:"";position:absolute;inset:4px;border:1px solid #ffffff2d;
- border-radius:9px;pointer-events:none
-}
-#menu #menuPanel #characterSelectLayout .crewCard .crewPortrait{
- display:grid;place-items:center;min-height:91px;width:100%;
- filter:drop-shadow(0 4px 8px #06071d88)
-}
-#menu #menuPanel #characterSelectLayout .crewCard svg{
- width:min(100%,87px);height:94px;overflow:visible
-}
-#menu #menuPanel #characterSelectLayout .crewCard span{
- font-size:clamp(11px,1.1vw,14px);min-height:17px;
- line-height:1.12;text-align:center;overflow-wrap:anywhere;
- color:#fff8df;text-shadow:0 2px 2px #1e1129
-}
-#menu #menuPanel #characterSelectLayout .crewCard[aria-pressed="true"]{
- background:linear-gradient(160deg,#9167aa,#553875);
- border:3px solid #ffe5ad;
- box-shadow:0 0 0 2px #2e1a41,0 0 0 4px #f9dfa899,0 0 20px #f3c58a66
-}
-#menu #menuPanel #characterSelectLayout #crewLore{
- display:block;min-height:32px;opacity:1;overflow-wrap:anywhere
-}
-#menu #menuPanel #characterSelectLayout .characterGridSection{
- display:flex;flex-direction:column;justify-content:flex-start;
-}
-#menu #menuPanel #characterSelectLayout .characterShowcase{
- align-self:stretch
-}
-#menu #menuPanel #modeChooser{
- display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
- max-width:750px;width:100%;gap:9px;margin:0 auto 8px
-}
-#menu #menuPanel #modeChooser .modeCard{
- width:100%;min-width:0;min-height:58px;border-radius:15px;
- flex-direction:row;justify-content:center;padding:9px;
-}
-#menu #menuPanel #modeChooser .modeCard b{font-size:13px}
-#menu #menuPanel #modeChooser .modeCard[aria-checked="true"]{
- border:2px solid #ffe2a0;box-shadow:0 0 0 3px #ead39b50
-}
-#menu #menuPanel #previewGameActions #startBtn{
- width:min(100%,410px);min-height:60px;font-size:21px;
- background:linear-gradient(#ffe6b7,#f6b5dc);
- color:#3a2343
-}
-#menu #menuPanel #menuMore{display:flex;align-items:center;justify-content:center}
-@media(max-width:700px){
- #menu #menuPanel #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
- #menu #menuPanel #characterSelectLayout .crewCard{min-height:118px;padding:7px 3px;gap:4px}
- #menu #menuPanel #characterSelectLayout .crewCard .crewPortrait{min-height:66px}
- #menu #menuPanel #characterSelectLayout .crewCard svg{width:min(100%,66px);height:69px}
- #menu #menuPanel #characterSelectLayout .crewCard span{font-size:11px}
-}
-@media(max-width:520px){
- #menu #menuPanel #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- #menu #menuPanel #characterSelectLayout .crewCard{min-height:100px;padding:6px 3px}
- #menu #menuPanel #characterSelectLayout .crewCard .crewPortrait{min-height:56px}
- #menu #menuPanel #characterSelectLayout .crewCard svg{width:min(100%,62px);height:61px}
- #menu #menuPanel #characterSelectLayout .crewCard span{font-size:12px}
- #menu #menuPanel #modeChooser .modeCard{min-height:51px;padding:6px 3px;gap:3px}
- #menu #menuPanel #modeChooser .modeCard b{font-size:11px}
-}
-#menu.phoneView #menuPanel #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
 
 </style>
 </head>
@@ -957,8 +832,8 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
 
     <div id="characterSelectLayout">
-      <section class="menuStep characterShowcase" aria-label="Your selected ghost">
-        <div class="palette-label">YOUR GHOST</div>
+      <section class="menuStep characterShowcase" aria-labelledby="customizeStepLabel">
+        <div class="palette-label" id="customizeStepLabel">2. CUSTOMIZE YOUR GHOST</div>
         <div id="selectedGhostStage">
           <div id="selectedGhostPortrait" aria-hidden="true"></div>
           <div id="selectedGhostCopy">
@@ -979,13 +854,13 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
         </section>
       </section>
       <section class="menuStep characterGridSection" aria-labelledby="ghostStepLabel">
-        <div class="palette-label" id="ghostStepLabel">CHOOSE YOUR BOO CREW</div>
+        <div class="palette-label" id="ghostStepLabel">1. CHOOSE YOUR GHOST</div>
         <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
       </section>
     </div>
 
     <div id="onlinePanel">
-      <div class="palette-label" id="modeStepLabel">CHOOSE YOUR HAUNT</div>
+      <div class="palette-label" id="modeStepLabel">3. CHOOSE YOUR HAUNT &amp; PLAY</div>
       <div id="modeChooser" role="radiogroup" aria-label="Game mode">
         <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
           <span class="modeIcon">✨</span><span><b>Four-Way</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
@@ -1508,10 +1383,10 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     if(!online&&!onlinePending&&onlineCreateEl)
       onlineCreateEl.disabled=false;
     modeNotice.textContent=mode==='coop'
-      ?'Friends team up against four rival computer ghosts.'
-      :mode==='fourway'?'Four teams compete across a larger cemetery.'
-      :'Two teams compete to collect the most spirits.';
-    onlineCreateEl.hidden=false;
+      ?'Friends work together against rival computer ghosts.'
+      :mode==='fourway'?'Four teams compete in a larger cemetery.'
+      :'Two teams race to collect and deposit spirit flames.';
+    onlineCreateEl.hidden=true;
     onlineCreateEl.textContent='✨ CREATE ROOM';
   }
   function selectOnlineMode(mode){
@@ -3675,6 +3550,18 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     }
     const swatch=visualPalette()[selectedIndex];
     const skinEdge=highContrast?'#fff7e7':darken(swatch.hex,.52);
+    // All eight selection cards share the chosen ghost color. Distinctive
+    // accessories and asynchronous animations convey character identity.
+    const rgb=[1,3,5].map(i=>parseInt(swatch.hex.slice(i,i+2),16));
+    const luminance=rgb.map(v=>{
+      const c=v/255;
+      return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;
+    }).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+    const labelColor=luminance>.34?'#251937':'#fff8eb';
+    booCrewGrid.style.setProperty('--selected-team-color',swatch.hex);
+    booCrewGrid.style.setProperty('--selected-team-color-dark',darken(swatch.hex,.79));
+    booCrewGrid.style.setProperty('--card-border',highContrast?'#fff8eb':'#d8c4ee');
+    booCrewGrid.style.setProperty('--crew-label-color',labelColor);
     chosenCharacter.textContent=GHOST_CHARACTER_NAMES[selectedCharacter];
     selectedGhostPortrait.innerHTML=ghostPortrait(
       {id:selectedCharacter,styleId:selectedCharacter,team:0},swatch.hex);
