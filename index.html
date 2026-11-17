@@ -873,11 +873,11 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   display:grid;
   grid-template-columns:minmax(0,1.9fr) minmax(260px,.95fr);
   gap:clamp(12px,1.5vw,26px);
-  align-items:stretch;
+  align-items:center;
   width:100%;
   max-width:none;
-  margin:20px auto 28px;
-  padding:clamp(35px,3.3vw,46px) clamp(10px,2vw,28px) clamp(12px,2vw,25px);
+  margin:20px auto 23px;
+  padding:clamp(32px,2.8vw,40px) clamp(10px,2vw,28px) clamp(10px,1.2vw,16px);
   position:relative;
   background:linear-gradient(140deg,rgba(59,31,76,.96),rgba(41,24,61,.97) 69%,rgba(29,18,47,.97));
   border:3px solid #dda8ef;
@@ -942,9 +942,9 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   flex-direction:column;
   align-items:center;
   justify-content:space-between;
-  min-height:clamp(132px,12vw,165px);
+  min-height:clamp(113px,10.2vw,140px);
   min-width:0;
-  padding:12px 5px 9px;
+  padding:7px 5px 6px;
   gap:6px;
   overflow:hidden;
   border:2px solid #d4a2e2;
@@ -972,7 +972,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 #menu #menuPanel .crewCard .crewPortrait{
   width:100%;
   flex:1;
-  min-height:92px;
+  min-height:77px;
   display:grid;
   place-items:center;
   background:transparent;
@@ -980,7 +980,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 #menu #menuPanel .crewCard svg{
   width:min(100%,112px);
-  height:103px;
+  height:85px;
   max-width:100%;
   overflow:visible;
 }
@@ -1027,26 +1027,26 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:5px;
-  margin:0 auto 13px;
+  gap:0;
+  margin:0 auto 2px;
   min-height:0;
   text-align:center;
 }
 #menu #selectedGhostPortrait{
   display:grid;place-items:center;
-  width:156px;
-  height:152px;
-  flex:0 0 152px;
+  width:108px;
+  height:106px;
+  flex:0 0 106px;
   border-radius:26px;
   background:radial-gradient(circle,#8769af80 0%,#47326933 52%,transparent 70%);
 }
 #menu #selectedGhostPortrait svg{
-  width:140px;
-  height:148px;
+  width:99px;
+  height:104px;
   max-width:100%;
   filter:drop-shadow(0 5px 7px #1509259a);
 }
-#menu #selectedGhostCopy{text-align:center}
+#menu #selectedGhostCopy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 #menu #crewSelection{
   margin:0;
   color:#ffe7c8;
@@ -1063,7 +1063,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   width:100%;
   max-width:none;
   padding:0;
-  margin:8px auto 10px;
+  margin:2px auto 6px;
   border:0;
   background:none;
   text-align:left;
@@ -1075,8 +1075,8 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 #menu #playerDisplayName{
   display:block;
   width:100%;
-  min-height:48px;
-  margin:6px 0 3px;
+  min-height:43px;
+  margin:4px 0 2px;
   padding:10px 12px;
   border:2px solid #dbadf1;
   border-radius:12px;
@@ -1095,7 +1095,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 #menu #colorStepLabel{
   text-align:left;
-  margin:3px 0 8px;
+  margin:2px 0 4px;
   color:#fff1cb;
   font:900 14px/1.2 'Fredoka',sans-serif;
   text-transform:none;
@@ -1106,14 +1106,14 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   max-width:none;
   grid-template-columns:repeat(7,minmax(0,1fr));
   gap:5px;
-  margin:7px auto;
+  margin:4px auto;
 }
 #menu #characterSelectLayout .swatch{
   justify-self:center;
   width:100%;
   height:auto;
   max-width:43px;
-  min-height:32px;
+  min-height:30px;
   aspect-ratio:1;
   border:2px solid #fff8f3;
   box-shadow:0 3px 0 #291638,0 4px 8px #12091ea8;
@@ -1124,15 +1124,15 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 #menu #teamPreview{
   text-align:left;
-  margin:5px 0;
+  margin:2px 0;
   color:#f7e3ff;
   font-size:11px;
   min-height:0;
 }
 #menu #contrastChoice{
   display:flex;
-  margin:5px 0 0;
-  padding:5px 8px;
+  margin:3px 0 0;
+  padding:4px 7px;
   font-size:11px;
   width:fit-content;
   max-width:100%;
@@ -1144,8 +1144,8 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   position:relative;
   width:100%;
   max-width:1100px;
-  margin:20px auto 12px;
-  padding:39px clamp(11px,2.4vw,30px) 17px;
+  margin:18px auto 9px;
+  padding:34px clamp(10px,1.6vw,22px) 12px;
   border:3px solid #d9a7ed;
   border-radius:28px;
   background:linear-gradient(140deg,rgba(51,29,74,.97),rgba(33,22,54,.97));
@@ -1186,8 +1186,8 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   gap:12px;
   width:100%;
   min-width:0;
-  min-height:88px;
-  padding:12px;
+  min-height:78px;
+  padding:9px;
   border:2px solid #bd8ed5;
   border-radius:18px;
   background:linear-gradient(#77508c,#4c326a);
@@ -1225,16 +1225,16 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 #menu #modeChooser .modeCard[aria-checked="true"]::after{display:none}
 #menu .modeDescription{
-  min-height:16px;
-  margin:5px auto 7px;
+  min-height:0;
+  margin:3px auto 5px;
   font-size:12px;
   color:#e6d3ee;
   text-align:center;
 }
-#menu #previewGameActions{display:flex;justify-content:center;margin:10px auto}
+#menu #previewGameActions{display:flex;justify-content:center;width:100%;margin:7px auto 6px}
 #menu #onlinePanel #previewGameActions #startBtn{
-  width:min(100%,450px);
-  min-height:65px;
+  width:min(100%,740px);
+  min-height:58px;
   padding:12px 18px;
   border:2px solid #fff1bf;
   border-radius:19px;
@@ -1254,12 +1254,14 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   justify-content:center;
   gap:11px;
   flex-wrap:wrap;
-  margin:6px auto 11px;
+  margin:4px auto 6px;
+  width:min(100%,740px);
 }
 #menu #quickRoomActions[hidden]{display:none!important}
 #menu #quickRoomActions button{
-  min-height:45px;
-  padding:9px 22px;
+  min-height:43px;
+  padding:8px 16px;
+  flex:1 1 0;
   border:2px solid #cc9ae8;
   border-radius:999px;
   background:linear-gradient(#77518b,#482d67);
@@ -1275,17 +1277,14 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   border:1px solid #9f7bb9;
   box-shadow:none;
 }
-#menu #friendsDetails:not([open]){
-  max-width:300px;
-  opacity:.8;
-}
+#menu #friendsDetails:not([open]){display:none}
 #menu #menuMore{
   display:flex;
   justify-content:center;
   align-items:center;
   flex-wrap:wrap;
   gap:8px;
-  margin:11px auto 0;
+  margin:7px auto 0;
 }
 #menu #menuMore>*{flex:0 1 auto}
 #menu #menuMore .menuChip,
@@ -1385,6 +1384,16 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 
 @media(max-width:900px){
+  #menu #characterSelectLayout{align-items:center}
+  #menu #selectedGhostStage{margin-bottom:1px}
+  #menu #selectedGhostPortrait{width:94px;height:90px;flex:0 0 90px}
+  #menu #selectedGhostPortrait svg{height:90px;width:87px}
+  #menu #menuPanel .crewCard{min-height:109px}
+  #menu #menuPanel .crewCard .crewPortrait{min-height:64px}
+  #menu #menuPanel .crewCard svg{height:69px}
+  #menu #onlinePanel #previewGameActions #startBtn{width:100%}
+  #menu #quickRoomActions{width:100%}
+
   #menu #characterSelectLayout{grid-template-columns:minmax(0,1.6fr) minmax(230px,.9fr);gap:12px;padding:36px 12px 15px}
   #menu #characterSelectLayout .characterShowcase{padding-left:13px}
   #menu #menuPanel .crewCard{min-height:123px;padding:6px 4px}
@@ -1397,6 +1406,20 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   #menu #modeChooser .modeCard .modeIcon{flex-basis:30px;width:30px;font-size:24px}
 }
 @media(max-width:660px){
+  #menu #characterSelectLayout{align-items:center;gap:6px}
+  #menu #characterSelectLayout .characterShowcase{padding-top:8px}
+  #menu #characterSelectLayout .characterShowcase{display:grid;grid-template-columns:80px minmax(0,1fr);column-gap:10px;align-items:center}
+  #menu #selectedGhostStage{grid-column:1;grid-row:1 / span 2;flex-direction:row;align-items:center;gap:0;margin:0}
+  #menu #selectedGhostCopy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  #menu #selectedGhostPortrait{width:72px;height:74px;flex:0 0 74px}
+  #menu #selectedGhostPortrait svg{width:69px;height:73px}
+  #menu #playerIdentity{grid-column:2;grid-row:1;min-width:0}
+  #menu #characterSelectLayout .characterShowcase>.menuStep{grid-column:2;grid-row:2;min-width:0}
+  #menu #characterSelectLayout .swatch{min-height:27px}
+  #menu #onlinePanel{padding-bottom:9px}
+  #menu #quickRoomActions{gap:6px;margin:4px auto 5px}
+  #menu #quickRoomActions button{min-width:0}
+
   #menu{padding:5px}
   #menu>.panel{max-width:100%;width:100%;padding:8px 6px 25px;max-height:calc(100dvh - 10px)}
   #menu .title{font-size:clamp(29px,8.5vw,47px);line-height:.95}
