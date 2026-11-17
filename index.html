@@ -724,6 +724,103 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
   #modeChooser .modeCard b{font-size:13px}
   #modeChooser .modeCard .modeIcon{font-size:16px}
 }
+
+/* Joy Haus selection screen overhaul: existing real character SVGs, not new art.
+   Desktop is a two-column showcase; small screens stay touch-friendly. */
+#menu>.panel{max-width:min(1060px,100%);flex:0 1 1060px;width:100%}
+#characterSelectLayout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.28fr);
+  gap:14px;align-items:stretch;margin:15px 0 12px;text-align:center}
+#characterSelectLayout>.menuStep{min-width:0;margin:0;border:1px solid #b594c577;
+  border-radius:19px;background:linear-gradient(140deg,#51366599,#28193e99);padding:14px}
+#characterSelectLayout .palette-label{margin:0 0 10px;font-weight:900;font-size:12px;letter-spacing:.08em}
+#selectedGhostStage{display:flex;align-items:center;justify-content:center;gap:12px;text-align:left;
+  min-height:116px;margin-bottom:8px}
+#selectedGhostPortrait{display:grid;place-items:center;flex:0 0 112px;height:124px;
+  background:radial-gradient(ellipse at center,#a784c344,#31204022 70%);border-radius:22px}
+#selectedGhostPortrait svg{display:block;width:102px;height:116px;max-width:100%;
+  filter:drop-shadow(0 6px 9px #100c2e77);animation:showcase-float 3.2s ease-in-out infinite}
+@keyframes showcase-float{0%,100%{transform:translateY(2px) rotate(-2deg)}
+  50%{transform:translateY(-5px) rotate(2deg)}}
+#selectedGhostCopy{flex:1;min-width:0}
+#characterSelectLayout #crewSelection{font-size:14px;color:#ffebbb;margin-bottom:5px}
+#characterSelectLayout #chosenCharacter{font-size:22px;display:block;line-height:1.1;color:#fff3db}
+#characterSelectLayout #crewLore{min-height:0;max-width:none;margin:0;padding:0;
+  border:0;background:none;text-align:left;line-height:1.35;font-size:12px;color:#edddf6}
+#characterSelectLayout #playerIdentity{max-width:100%;margin:10px 0 12px;
+  text-align:left;padding:10px}
+#characterSelectLayout #playerIdentity label{font-size:12px}
+#characterSelectLayout #playerNameHint{font-size:10px}
+#characterSelectLayout #playerDisplayName{text-align:left;margin:6px 0 3px;min-height:44px}
+#characterSelectLayout .swatches{margin:4px auto 5px;max-width:100%;gap:5px}
+#characterSelectLayout .swatch{width:clamp(28px,3.6vw,37px);height:clamp(28px,3.6vw,37px)}
+#characterSelectLayout #teamPreview{font-size:11px;margin:3px auto}
+#characterSelectLayout #contrastChoice{margin:6px auto 2px;padding:5px 9px;font-size:12px}
+#characterSelectLayout #booCrewGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  max-width:none;width:100%;gap:10px;margin:0}
+#characterSelectLayout .crewCard{min-height:117px;padding:10px 4px 7px;gap:5px;
+  border-radius:14px;position:relative}
+#characterSelectLayout .crewCard svg{width:clamp(51px,5.4vw,76px);height:76px}
+#characterSelectLayout .crewCard span{font-size:clamp(11px,1.15vw,14px);line-height:1.15}
+#characterSelectLayout .crewCard[aria-pressed="true"]{border:3px solid #ffe9b9;
+  box-shadow:0 0 0 2px #2e1a41,0 0 0 4px #f8e3b994;background:#785497}
+#characterSelectLayout .crewCard[aria-pressed="true"]::after{content:"✓";position:absolute;
+  right:5px;top:5px;background:#ffe7b4;color:#392543;border-radius:50%;
+  display:grid;place-items:center;width:22px;height:22px;font-weight:1000;font-size:14px}
+#menu #onlinePanel{max-width:920px;margin:8px auto;padding:12px 14px}
+#menu #modeChooser{max-width:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#menu #modeChooser .modeCard{min-height:60px;line-height:1.2;justify-content:center;padding:8px 12px;
+  text-align:center;flex-direction:column;gap:4px}
+#menu #modeChooser .modeCard small{display:none}
+#menu #modeChooser .modeCard .modeIcon{font-size:19px}
+#menu #modeChooser .modeCard[aria-checked="true"]{background:#76518d;border:2px solid #ffedb7;
+  box-shadow:0 0 0 2px #ddc7f159}
+#menu .modeDescription{font-weight:650;min-height:17px;font-size:12px;
+  text-align:center;color:#ebd5f5;margin:8px auto}
+#menu #previewGameActions{margin:12px auto 8px;display:flex;justify-content:center}
+#menu #previewGameActions #startBtn{width:min(100%,380px);min-height:57px;font-size:19px;
+  border-radius:16px;letter-spacing:.02em}
+#menu #quickRoomActions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:5px auto 8px}
+#menu #quickRoomActions button{min-height:44px;background:#4d3766;color:#fff4ed;
+  border:1px solid #c5a6d9;border-radius:11px;padding:9px 15px;font-size:13px;font-weight:900}
+#menu #quickRoomActions button:hover{background:#6b4a86}
+#menu #quickRoomActions button:focus-visible{outline:3px solid #ffe9b6;outline-offset:2px}
+#menu #quickRoomActions[hidden]{display:none!important}
+#menu #friendsDetails{max-width:600px;margin:7px auto}
+#menu #menuMore{max-width:900px;margin:12px auto 0}
+#menu #menuMore .menuDrawer,#menu #menuMore .menuChip{font-size:12px}
+@media(max-width:700px){
+ #characterSelectLayout{grid-template-columns:1fr;gap:10px}
+ #characterSelectLayout .characterShowcase{order:0}
+ #characterSelectLayout .characterGridSection{order:1}
+ #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ #characterSelectLayout .crewCard{min-height:105px}
+ #characterSelectLayout .crewCard svg{height:66px}
+ #characterSelectLayout .swatch{width:clamp(29px,7vw,38px);height:clamp(29px,7vw,38px)}
+}
+@media(max-width:520px){
+ #menu #characterSelectLayout{gap:8px;margin:9px 0}
+ #characterSelectLayout>.menuStep{padding:10px}
+ #selectedGhostStage{min-height:92px;gap:7px}
+ #selectedGhostPortrait{flex-basis:85px;height:96px}
+ #selectedGhostPortrait svg{width:79px;height:91px}
+ #characterSelectLayout #chosenCharacter{font-size:18px}
+ #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #characterSelectLayout .crewCard{min-height:96px;padding:7px;gap:3px}
+ #characterSelectLayout .crewCard svg{width:56px;height:63px}
+ #characterSelectLayout .crewCard span{font-size:12px}
+ #menu #modeChooser .modeCard{padding:7px 5px;min-height:56px;font-size:12px}
+ #menu #modeChooser .modeCard .modeIcon{font-size:17px}
+ #menu #quickRoomActions button{min-height:44px}
+}
+#menu.phoneView #characterSelectLayout{grid-template-columns:1fr}
+#menu.phoneView #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(min-width:521px) and (max-height:570px) and (orientation:landscape){
+ #characterSelectLayout{grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr)}
+ #characterSelectLayout .crewCard{min-height:88px}
+ #characterSelectLayout .crewCard svg{height:53px}
+}
+@media(prefers-reduced-motion:reduce){#selectedGhostPortrait svg{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -751,24 +848,36 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
     <p class="sub" id="menuText">Collect spirit flames. Steal them back. Boo!</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
 
-    <section class="menuStep" aria-labelledby="colorStepLabel">
-      <div class="palette-label" id="colorStepLabel">Pick your color</div>
-      <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
-      <div id="teamPreview" aria-live="polite"><b id="selectedName">Ghostly Green</b></div>
-      <label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast colors</span></label>
-    </section>
-
-    <section class="menuStep" aria-labelledby="ghostStepLabel">
-      <div class="palette-label" id="ghostStepLabel">Pick your ghost</div>
-      <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
-      <div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div>
-      <div id="crewLore" aria-live="polite"></div>
-    </section>
+    <div id="characterSelectLayout">
+      <section class="menuStep characterShowcase" aria-label="Your selected ghost">
+        <div class="palette-label">YOUR GHOST</div>
+        <div id="selectedGhostStage">
+          <div id="selectedGhostPortrait" aria-hidden="true"></div>
+          <div id="selectedGhostCopy">
+            <div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div>
+            <div id="crewLore" aria-live="polite"></div>
+          </div>
+        </div>
+        <div id="playerIdentity">
+          <label for="playerDisplayName">Nickname <span>(optional)</span></label>
+          <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
+          <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
+        </div>
+        <section class="menuStep" aria-labelledby="colorStepLabel">
+          <div class="palette-label" id="colorStepLabel">GHOST COLOR</div>
+          <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
+          <div id="teamPreview" aria-live="polite"><b id="selectedName">Ghostly Green</b></div>
+          <label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast colors</span></label>
+        </section>
+      </section>
+      <section class="menuStep characterGridSection" aria-labelledby="ghostStepLabel">
+        <div class="palette-label" id="ghostStepLabel">CHOOSE YOUR BOO CREW</div>
+        <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
+      </section>
+    </div>
 
     <div id="onlinePanel">
-      <div id="previewGameActions" aria-label="Start your selected game">
-        <button id="startBtn" type="button">▶ PLAY</button>
-      </div>
+      <div class="palette-label" id="modeStepLabel">CHOOSE YOUR HAUNT</div>
       <div id="modeChooser" role="radiogroup" aria-label="Game mode">
         <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
           <span class="modeIcon">✨</span><span><b>Four-Way</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
@@ -780,7 +889,14 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
           <span class="modeIcon">🤝</span><span><b>Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
         </button>
       </div>
-      <div id="modeNotice" class="srOnly" aria-live="polite">✓ Four-Way Haunt selected · Play solo or create a room</div>
+      <div id="modeNotice" class="modeDescription" aria-live="polite">Four teams compete in a larger cemetery.</div>
+      <div id="previewGameActions" aria-label="Start your selected game">
+        <button id="startBtn" type="button">👻 PLAY SOLO</button>
+      </div>
+      <div id="quickRoomActions" class="onlineControls">
+        <button type="button" id="quickCreateRoom">✨ CREATE ROOM</button>
+        <button type="button" id="quickJoinRoom">👻 JOIN FRIENDS</button>
+      </div>
 
       <details id="friendsDetails" class="menuDrawer friendsDrawer">
         <summary>👥 Play with friends</summary>
@@ -809,11 +925,6 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
       <details id="settingsDetails" class="menuDrawer">
         <summary>⚙️ Settings</summary>
         <div class="drawerBody">
-          <div id="playerIdentity">
-            <label for="playerDisplayName">Nickname <span>(optional)</span></label>
-            <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
-            <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
-          </div>
           <div id="difficultyWrap">
             <div class="palette-label">Computer opponent difficulty</div>
             <div class="difficultyButtons" id="difficultyButtons" role="group" aria-label="Computer opponent difficulty">
