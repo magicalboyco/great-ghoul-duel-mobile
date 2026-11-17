@@ -839,6 +839,96 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);color:#1839
  #menu #quickRoomActions button{width:100%}
 }
 
+
+/* Alpha 35 correction: later Alpha 35 compact selectors have greater ID
+   specificity than the original redesign, so explicitly supersede them. */
+#menu #menuPanel #characterSelectLayout #booCrewGrid{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+ width:100%;max-width:none;margin:0;padding:0;align-content:start
+}
+#menu #menuPanel #characterSelectLayout .crewCard{
+ position:relative;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;min-width:0;min-height:152px;
+ padding:11px 5px 9px;gap:6px;border-radius:13px;
+ border:2px solid #b59cc9;
+ overflow:hidden;
+ background:linear-gradient(170deg,#674a87 0%,#332248 74%);
+ box-shadow:inset 0 0 0 2px #ffffff12,0 5px 12px #0e082e77;
+}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(1){background:linear-gradient(160deg,#723b74,#351e43);border-color:#ce92c0}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(2){background:linear-gradient(160deg,#247d65,#193c43);border-color:#86d9b9}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(3){background:linear-gradient(160deg,#574382,#2c2051);border-color:#ab90d5}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(4){background:linear-gradient(160deg,#8c6b48,#41304a);border-color:#e6c18c}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(5){background:linear-gradient(160deg,#405579,#242b52);border-color:#9bbde0}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(6){background:linear-gradient(160deg,#843c54,#381d39);border-color:#e59c99}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(7){background:linear-gradient(160deg,#876143,#3e2755);border-color:#f3d28a}
+#menu #menuPanel #characterSelectLayout .crewCard:nth-child(8){background:linear-gradient(160deg,#377c94,#283a69);border-color:#a9dcec}
+#menu #menuPanel #characterSelectLayout .crewCard::before{
+ content:"";position:absolute;inset:4px;border:1px solid #ffffff2d;
+ border-radius:9px;pointer-events:none
+}
+#menu #menuPanel #characterSelectLayout .crewCard .crewPortrait{
+ display:grid;place-items:center;min-height:91px;width:100%;
+ filter:drop-shadow(0 4px 8px #06071d88)
+}
+#menu #menuPanel #characterSelectLayout .crewCard svg{
+ width:min(100%,87px);height:94px;overflow:visible
+}
+#menu #menuPanel #characterSelectLayout .crewCard span{
+ font-size:clamp(11px,1.1vw,14px);min-height:17px;
+ line-height:1.12;text-align:center;overflow-wrap:anywhere;
+ color:#fff8df;text-shadow:0 2px 2px #1e1129
+}
+#menu #menuPanel #characterSelectLayout .crewCard[aria-pressed="true"]{
+ background:linear-gradient(160deg,#9167aa,#553875);
+ border:3px solid #ffe5ad;
+ box-shadow:0 0 0 2px #2e1a41,0 0 0 4px #f9dfa899,0 0 20px #f3c58a66
+}
+#menu #menuPanel #characterSelectLayout #crewLore{
+ display:block;min-height:32px;opacity:1;overflow-wrap:anywhere
+}
+#menu #menuPanel #characterSelectLayout .characterGridSection{
+ display:flex;flex-direction:column;justify-content:flex-start;
+}
+#menu #menuPanel #characterSelectLayout .characterShowcase{
+ align-self:stretch
+}
+#menu #menuPanel #modeChooser{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ max-width:750px;width:100%;gap:9px;margin:0 auto 8px
+}
+#menu #menuPanel #modeChooser .modeCard{
+ width:100%;min-width:0;min-height:58px;border-radius:15px;
+ flex-direction:row;justify-content:center;padding:9px;
+}
+#menu #menuPanel #modeChooser .modeCard b{font-size:13px}
+#menu #menuPanel #modeChooser .modeCard[aria-checked="true"]{
+ border:2px solid #ffe2a0;box-shadow:0 0 0 3px #ead39b50
+}
+#menu #menuPanel #previewGameActions #startBtn{
+ width:min(100%,410px);min-height:60px;font-size:21px;
+ background:linear-gradient(#ffe6b7,#f6b5dc);
+ color:#3a2343
+}
+#menu #menuPanel #menuMore{display:flex;align-items:center;justify-content:center}
+@media(max-width:700px){
+ #menu #menuPanel #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ #menu #menuPanel #characterSelectLayout .crewCard{min-height:118px;padding:7px 3px;gap:4px}
+ #menu #menuPanel #characterSelectLayout .crewCard .crewPortrait{min-height:66px}
+ #menu #menuPanel #characterSelectLayout .crewCard svg{width:min(100%,66px);height:69px}
+ #menu #menuPanel #characterSelectLayout .crewCard span{font-size:11px}
+}
+@media(max-width:520px){
+ #menu #menuPanel #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #menu #menuPanel #characterSelectLayout .crewCard{min-height:100px;padding:6px 3px}
+ #menu #menuPanel #characterSelectLayout .crewCard .crewPortrait{min-height:56px}
+ #menu #menuPanel #characterSelectLayout .crewCard svg{width:min(100%,62px);height:61px}
+ #menu #menuPanel #characterSelectLayout .crewCard span{font-size:12px}
+ #menu #menuPanel #modeChooser .modeCard{min-height:51px;padding:6px 3px;gap:3px}
+ #menu #menuPanel #modeChooser .modeCard b{font-size:11px}
+}
+#menu.phoneView #menuPanel #characterSelectLayout #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+
 </style>
 </head>
 <body>
