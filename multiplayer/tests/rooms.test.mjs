@@ -918,6 +918,12 @@ test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
   assert.ok(polished.includes('#menu #menuPanel .crewCard[aria-pressed="true"]'),'Selected character has clear border');
   assert.ok(polished.includes('#menu #modeChooser .modeCard small{'),'Mode descriptions remain visible');
   assert.ok(polished.includes('#menu #menuPanel #crewLore{display:none}'),'Biography stays hidden');
+  assert.ok(polished.includes('#menu #selectedGhostCopy{position:absolute;width:1px'),'Redundant name callout is visually hidden');
+  assert.ok(polished.includes('#menu #friendsDetails:not([open]){display:none}'),'Closed multiplayer drawer should not waste vertical space');
+  assert.ok(polished.includes('width:min(100%,740px)'),'Primary action should fill central panel better');
+  assert.ok(polished.includes('grid-template-columns:80px minmax(0,1fr)'),'Phone preview controls use compact side-by-side layout');
+  assert.ok(polished.includes('min-height:clamp(113px,10.2vw,140px)'),'Character cards lose unnecessary height');
+
   assert.ok(polished.includes('prefers-reduced-motion:reduce'));
   // Illustrated title, decorative moon bats, and iconography must survive
   // without changing the menu's DOM controls or network/gameplay handlers.
