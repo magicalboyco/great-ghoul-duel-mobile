@@ -832,6 +832,10 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
 
     <div id="characterSelectLayout">
+      <section class="menuStep characterGridSection" aria-labelledby="ghostStepLabel">
+        <div class="palette-label" id="ghostStepLabel">1. CHOOSE YOUR GHOST</div>
+        <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
+      </section>
       <section class="menuStep characterShowcase" aria-labelledby="customizeStepLabel">
         <div class="palette-label" id="customizeStepLabel">2. CUSTOMIZE YOUR GHOST</div>
         <div id="selectedGhostStage">
@@ -852,10 +856,6 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
           <div id="teamPreview" aria-live="polite"><b id="selectedName">Ghostly Green</b></div>
           <label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast colors</span></label>
         </section>
-      </section>
-      <section class="menuStep characterGridSection" aria-labelledby="ghostStepLabel">
-        <div class="palette-label" id="ghostStepLabel">1. CHOOSE YOUR GHOST</div>
-        <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
       </section>
     </div>
 
