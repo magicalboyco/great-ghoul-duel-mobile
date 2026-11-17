@@ -805,143 +805,550 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 @media(prefers-reduced-motion:reduce){#selectedGhostPortrait svg{animation:none!important}}
 
 
-/* Alpha 35 art direction: the game stays playable while the lobby adopts the
-   approved plum/lilac, moonlit frame and paired character-showcase layout. */
-#menu{padding:16px;isolation:isolate;align-items:flex-start;overflow:hidden;
- background:
- radial-gradient(circle at 88% 15%,#fae1f3 0 40px,#c7a5dc 41px 47px,transparent 49px),
- radial-gradient(ellipse at 50% -16%,#695081 0%,#39244f 58%,#1b142d 100%);
+/* Alpha 35 visual polish — reuse the game's existing illustrated SVG background.
+   These rules style the menu only; canvas rendering and gameplay are unchanged. */
+#menu {
+  --menu-cream:#fff3cf;
+  --menu-lilac:#e5bcfa;
+  --menu-gold:#ffe49a;
+  --menu-ink:#22142e;
+  padding:clamp(5px,1.3vw,18px);
+  align-items:flex-start;
+  background:
+    linear-gradient(180deg,rgba(23,10,40,.12) 0%,rgba(18,9,32,.16) 67%,rgba(17,9,33,.29) 100%),
+    url("assets/boo-crew-night.svg") center center / cover no-repeat;
 }
-#menu::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
- background:
- radial-gradient(ellipse at 8% 102%,#241434 0 21%,transparent 21.2%),
- radial-gradient(ellipse at 80% 110%,#251638 0 26%,transparent 26.2%),
- radial-gradient(ellipse at 105% 92%,#2b1a40 0 31%,transparent 31.2%),
- radial-gradient(ellipse at 13% 11%,#64497688 0 9%,transparent 9.2%),
- radial-gradient(ellipse at 78% 8%,#76568a88 0 7%,transparent 7.2%);
- opacity:.85
+#menu::before{display:none}
+#menu>.panel{
+  width:min(100%,1180px);
+  max-width:1180px;
+  flex:0 1 1180px;
+  margin:0 auto;
+  min-width:0;
+  padding:clamp(6px,1vw,16px) clamp(7px,1.4vw,20px) 26px;
+  border:none;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+  overflow-x:hidden;
+  overflow-y:auto;
+  max-height:calc(100dvh - 2 * clamp(5px,1.3vw,18px));
+  overscroll-behavior:contain;
 }
-#menu>.panel{border:0;background:transparent;box-shadow:none;max-width:min(1190px,100%);
- padding:10px 14px 28px;max-height:calc(100dvh - 20px);overflow-y:auto;overscroll-behavior:contain}
-#menu .eyebrow{background:none;color:#f3dba3;font-family:'Fredoka',sans-serif;
- font-size:11px;letter-spacing:.21em;font-weight:800;margin-bottom:3px}
-#menu .title{display:flex;flex-direction:column;align-items:center;justify-content:center;
- font-family:'Caprasimo',Georgia,serif;font-size:clamp(34px,5vw,67px);line-height:.86;
- margin:3px auto 8px;letter-spacing:0;color:#ffedbe;text-shadow:0 3px 0 #8e638d,0 6px 0 #3f285d,0 10px 16px #170b29;
- filter:drop-shadow(0 0 10px #c693ed66)}
-#menu .title span:last-child{color:#dfc1ff;text-shadow:0 3px 0 #8d609a,0 6px 0 #3f285d,0 10px 16px #170b29}
-#menu #menuText{font-size:12px;margin:6px auto 12px;color:#f0dcef;opacity:.94}
-#menu #characterSelectLayout{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(285px,1fr);
- gap:0;margin:8px auto 17px;padding:40px 14px 16px;border:3px solid #b984d4;
- border-radius:30px;position:relative;align-items:center;
- background:linear-gradient(130deg,#412b56f2,#352348f2 68%,#2a1c3ff2);
- box-shadow:inset 0 0 0 3px #65487d,inset 0 0 0 6px #cba0df33,0 12px 30px #10071ecc}
-#menu #characterSelectLayout:before{content:"✦  1. CHOOSE YOUR GHOST  ✦";
- position:absolute;left:50%;top:-21px;transform:translateX(-50%);
- width:max-content;max-width:95%;padding:10px 31px;border-radius:999px;
- background:linear-gradient(#654876,#3c294f);border:2px solid #b98ccf;
- box-shadow:0 4px 12px #1e0e32;color:#fff0c1;font-family:'Fredoka',sans-serif;
- font-weight:900;font-size:15px;letter-spacing:.12em;text-align:center}
-#menu #characterSelectLayout>.menuStep{margin:0;padding:10px 14px;
- border:0;border-radius:0;background:none;min-width:0}
-#menu #characterSelectLayout .characterGridSection{order:0;width:100%}
-#menu #characterSelectLayout .characterShowcase{order:1;width:100%;
- border-left:1px solid #cda2ec77;padding-left:24px}
-#menu #ghostStepLabel,#menu #customizeStepLabel{position:absolute;width:1px;height:1px;overflow:hidden;
- clip:rect(0 0 0 0);white-space:nowrap}
-#menu #menuPanel #booCrewGrid{max-width:none;gap:10px;width:100%}
-#menu #menuPanel .crewCard{min-height:132px;
- border:2px solid #bb88c8;border-radius:18px;gap:3px;
- background:linear-gradient(165deg,#755081,#5a3d6f 58%,#483259);
- box-shadow:inset 0 0 14px #d9b6e922,0 6px 13px #140b2799;
- color:#fff8ed;transition:border-color .18s,box-shadow .18s,transform .18s}
-#menu #menuPanel .crewCard:hover{transform:translateY(-2px);border-color:#e6b9ea;
- box-shadow:inset 0 0 15px #f7dbef33,0 8px 15px #120826bb}
-#menu #menuPanel .crewCard[aria-pressed="true"]{border:3px solid #ffe9a0;
- background:linear-gradient(155deg,#8f608b,#694669 70%,#50365e);
- box-shadow:0 0 0 2px #54375f,0 0 0 4px #ffe3a49e,0 0 19px #ffe3a487}
-#menu #menuPanel .crewCard[aria-pressed="true"]::after{background:#ffefbd;color:#392544}
-#menu #menuPanel .crewCard .crewPortrait{min-height:79px;background:none;filter:
- drop-shadow(0 3px 1px #2c203099) drop-shadow(0 5px 6px #120c2b99)}
-#menu #menuPanel .crewCard svg{width:min(100%,84px);height:86px}
-#menu #menuPanel .crewCard span{font-family:'Fredoka',sans-serif;
- font-size:clamp(12px,1.2vw,15px);font-weight:900;color:#fffdf6;
- text-shadow:0 2px 2px #1c102f,0 4px 5px #130b26}
-#menu #selectedGhostStage{display:flex;align-items:center;justify-content:flex-start;
- flex-direction:column;text-align:center;gap:3px;min-height:0;margin:0 auto 10px}
-#menu #selectedGhostPortrait{height:133px;flex:0 0 133px;width:138px;
- background:radial-gradient(circle,#7963a266,#47315a00 70%)}
-#menu #selectedGhostPortrait svg{width:115px;height:128px}
-#menu #selectedGhostCopy{text-align:center;min-width:0}
-#menu #crewSelection{font-family:'Fredoka',sans-serif;font-size:13px;color:#ffe6b9}
-#menu #chosenCharacter{font-family:'Caprasimo',Georgia,serif;font-size:34px;line-height:1.1;
- color:#fff0bb;text-shadow:0 3px #643e76,0 5px 9px #180a29}
-#menu #menuPanel #crewLore{display:none!important}
-#menu #playerIdentity{max-width:none;margin:8px auto 10px;padding:0;border:0;background:none;text-align:left}
-#menu #playerIdentity label{color:#fff1ca;font-size:14px;font-weight:900;font-family:'Fredoka',sans-serif}
-#menu #playerDisplayName{border:2px solid #caa0e7;border-radius:13px;
- background:#241935;color:#fffaf4;font-size:16px;min-height:47px;
- box-shadow:inset 0 2px 8px #120a2266}
+#menu .eyebrow{
+  margin:1px auto 5px;
+  padding:0;
+  font:800 clamp(10px,.9vw,13px)/1.3 'Fredoka',sans-serif;
+  letter-spacing:.2em;
+  color:var(--menu-cream);
+  text-shadow:0 2px 5px #180a32;
+  background:transparent;
+}
+#menu .title{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:0;
+  width:fit-content;
+  margin:0 auto 9px;
+  font:normal clamp(43px,5.8vw,76px)/.91 'Caprasimo',Georgia,serif;
+  color:#ffecbc;
+  letter-spacing:-.025em;
+  filter:drop-shadow(0 3px 9px #270d50aa);
+  text-shadow:0 3px 0 #a579a5,0 6px 0 #533367,0 9px 0 #2a173e,0 0 16px #ea9cff66;
+}
+#menu .title span:last-child{
+  color:#e9c9ff;
+  text-shadow:0 3px 0 #a579bb,0 6px 0 #533367,0 9px 0 #2a173e,0 0 16px #ea9cff66;
+}
+#menu #menuText{
+  margin:7px auto 23px;
+  color:#ffe8fa;
+  font:600 clamp(12px,1.1vw,14px)/1.2 'Fredoka',sans-serif;
+  text-shadow:0 2px 7px #18072c;
+}
+/* The two ghost-related steps form ONE ornamented panel. */
+#menu #characterSelectLayout{
+  display:grid;
+  grid-template-columns:minmax(0,1.9fr) minmax(260px,.95fr);
+  gap:clamp(12px,1.5vw,26px);
+  align-items:stretch;
+  width:100%;
+  max-width:none;
+  margin:20px auto 28px;
+  padding:clamp(35px,3.3vw,46px) clamp(10px,2vw,28px) clamp(12px,2vw,25px);
+  position:relative;
+  background:linear-gradient(140deg,rgba(59,31,76,.96),rgba(41,24,61,.97) 69%,rgba(29,18,47,.97));
+  border:3px solid #dda8ef;
+  border-radius:30px;
+  box-shadow:inset 0 0 0 3px #75508b,inset 0 0 0 6px #e0b1ff35,
+             0 0 0 2px #482557,0 15px 31px #11071eac,0 0 19px #be7edb40;
+}
+#menu #characterSelectLayout::before{
+  content:"✦   CHOOSE YOUR GHOST & CUSTOMIZE   ✦";
+  position:absolute;
+  top:-21px;
+  left:50%;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:calc(100% - 14px);
+  padding:10px 29px;
+  border:2px solid #d9a4f3;
+  border-radius:999px;
+  background:linear-gradient(#714884,#3b224f);
+  color:var(--menu-cream);
+  font:900 clamp(12px,1.35vw,17px)/1.15 'Fredoka',sans-serif;
+  letter-spacing:.09em;
+  box-shadow:0 4px 0 #241335,0 9px 14px #1b0e2b8c;
+  text-align:center;
+}
+#menu #characterSelectLayout>.menuStep{
+  min-width:0;
+  width:100%;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:none;
+}
+#menu #characterSelectLayout .characterGridSection{order:0}
+#menu #characterSelectLayout .characterShowcase{
+  order:1;
+  align-self:stretch;
+  border-left:2px solid #c593dc8c;
+  padding-left:clamp(12px,2vw,26px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#menu #ghostStepLabel,#menu #customizeStepLabel{
+  position:absolute;
+  width:1px;height:1px;padding:0;margin:-1px;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;
+}
+#menu #menuPanel #booCrewGrid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:clamp(7px,.9vw,12px);
+  max-width:none;
+  width:100%;
+  padding:0;
+  margin:0;
+}
+#menu #menuPanel .crewCard{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  min-height:clamp(132px,12vw,165px);
+  min-width:0;
+  padding:12px 5px 9px;
+  gap:6px;
+  overflow:hidden;
+  border:2px solid #d4a2e2;
+  border-radius:18px;
+  background:linear-gradient(153deg,#815394,#653f7e 60%,#4c3269);
+  box-shadow:inset 0 2px 0 #ffffff35,inset 0 0 14px #dda9ec24,
+             0 5px 0 #2f1a42,0 10px 14px #140925b8;
+  color:#fff8e7;
+  cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+#menu #menuPanel .crewCard::before{
+  content:"";
+  position:absolute;inset:4px;
+  border:1px solid #ffffff35;
+  border-radius:13px;
+  pointer-events:none;
+}
+#menu #menuPanel .crewCard:hover{
+  transform:translateY(-2px);
+  border-color:#f4d1fd;
+  box-shadow:inset 0 2px 0 #fff6,inset 0 0 15px #e8bbf74a,
+             0 7px 0 #2f1a42,0 13px 17px #12081fa8;
+}
+#menu #menuPanel .crewCard .crewPortrait{
+  width:100%;
+  flex:1;
+  min-height:92px;
+  display:grid;
+  place-items:center;
+  background:transparent;
+  filter:drop-shadow(0 3px 1px #281633bb) drop-shadow(0 6px 6px #0d061db0);
+}
+#menu #menuPanel .crewCard svg{
+  width:min(100%,112px);
+  height:103px;
+  max-width:100%;
+  overflow:visible;
+}
+#menu #menuPanel .crewCard span{
+  display:block;
+  width:fit-content;
+  max-width:100%;
+  min-height:0;
+  margin:0 auto;
+  padding:4px 9px;
+  border:1px solid #fff3d3;
+  border-radius:18px;
+  background:linear-gradient(#fff5d3,#f2cfa5);
+  box-shadow:0 3px 0 #5b375b,0 4px 6px #10071c70;
+  color:#32213e;
+  font:900 clamp(11px,1.13vw,15px)/1.08 'Fredoka',sans-serif;
+  text-shadow:none;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+#menu #menuPanel .crewCard[aria-pressed="true"]{
+  border:3px solid var(--menu-gold);
+  background:linear-gradient(153deg,#916197,#6d4880 60%,#563b72);
+  box-shadow:0 0 0 2px #51335c,0 0 0 5px #ffe6aa91,
+             0 0 22px #ffdb9785,inset 0 0 14px #ffdaae39;
+}
+#menu #menuPanel .crewCard[aria-pressed="true"]::after{
+  content:"✓";
+  position:absolute;right:5px;top:5px;
+  width:26px;height:26px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:var(--menu-gold);
+  color:#382443;
+  box-shadow:0 2px 6px #1e0c2e70;
+  font-size:16px;font-weight:900;
+}
+#menu #menuPanel .crewCard:focus-visible{
+  outline:3px solid #fff2ac;
+  outline-offset:4px;
+}
+/* A simple selected-ghost showcase; no visible biography. */
+#menu #selectedGhostStage{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  margin:0 auto 13px;
+  min-height:0;
+  text-align:center;
+}
+#menu #selectedGhostPortrait{
+  display:grid;place-items:center;
+  width:156px;
+  height:152px;
+  flex:0 0 152px;
+  border-radius:26px;
+  background:radial-gradient(circle,#8769af80 0%,#47326933 52%,transparent 70%);
+}
+#menu #selectedGhostPortrait svg{
+  width:140px;
+  height:148px;
+  max-width:100%;
+  filter:drop-shadow(0 5px 7px #1509259a);
+}
+#menu #selectedGhostCopy{text-align:center}
+#menu #crewSelection{
+  margin:0;
+  color:#ffe7c8;
+  font:700 13px/1.2 'Fredoka',sans-serif;
+}
+#menu #chosenCharacter{
+  display:block;
+  font:normal clamp(27px,2.7vw,39px)/1.05 'Caprasimo',Georgia,serif;
+  color:#fff1bb;
+  text-shadow:0 3px 0 #6e467e,0 5px 8px #180b2a;
+}
+#menu #menuPanel #crewLore{display:none}
+#menu #playerIdentity{
+  width:100%;
+  max-width:none;
+  padding:0;
+  margin:8px auto 10px;
+  border:0;
+  background:none;
+  text-align:left;
+}
+#menu #playerIdentity label{
+  font:900 14px/1.3 'Fredoka',sans-serif;
+  color:#fff0d0;
+}
+#menu #playerDisplayName{
+  display:block;
+  width:100%;
+  min-height:48px;
+  margin:6px 0 3px;
+  padding:10px 12px;
+  border:2px solid #dbadf1;
+  border-radius:12px;
+  background:#291a3e;
+  color:#fff7eb;
+  font-size:16px;
+  box-shadow:inset 0 3px 8px #130b24a1;
+}
 #menu #playerNameHint{display:none}
 #menu #characterSelectLayout .characterShowcase>.menuStep{
- border:0;background:none;padding:0;margin:8px 0 0}
-#menu #colorStepLabel{text-align:left;font-family:'Fredoka',sans-serif;font-size:14px;
- color:#fff1c8;text-transform:none;margin:8px 0}
-#menu #characterSelectLayout .swatches{max-width:none;gap:7px;margin:9px 0 4px}
-#menu #characterSelectLayout .swatch{max-width:42px;min-height:34px;border:2px solid #fffdffbb}
-#menu #teamPreview{text-align:left;font-size:11px;color:#f6e9fd}
-#menu #contrastChoice{font-size:11px;padding:5px 7px;display:flex;width:fit-content;
- margin:7px 0 0;opacity:.82;background:#3d2b50;border-color:#9f81b5}
-#menu #onlinePanel{padding:38px 16px 14px;margin:16px auto 12px;
- border:2px solid #9f79b4;border-radius:26px;position:relative;
- background:linear-gradient(135deg,#3b274eeb,#2b1c40ef);
- box-shadow:inset 0 0 0 2px #88629e66,0 10px 24px #130a2388}
-#menu #modeStepLabel{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
- width:max-content;max-width:92%;font-family:'Fredoka',sans-serif;
- background:linear-gradient(#654876,#3c294f);border:2px solid #b98ccf;
- border-radius:999px;padding:10px 25px;margin:0;color:#fff0c1;
- font-size:15px;letter-spacing:.12em;white-space:normal}
-#menu #modeChooser .modeCard{border:2px solid #ae81be;
- border-radius:17px;min-height:69px;background:linear-gradient(#78518c,#54386d);
- font-family:'Fredoka',sans-serif;color:#fffaef}
-#menu #modeChooser .modeCard[aria-checked="true"]{background:linear-gradient(#9671a5,#66467d);
- border-color:#ffe7a9;box-shadow:0 0 0 2px #ffe7a94a}
-#menu #onlinePanel #previewGameActions #startBtn{background:linear-gradient(#ffefc8,#f4b7df);
- border:2px solid #fff4cf;box-shadow:0 5px 0 #82578d,0 9px 15px #190c2a}
-#menu #quickRoomActions button{border-radius:12px;background:#4f3469;border:1px solid #b58cce}
-@media(max-width:880px){
- #menu #characterSelectLayout{grid-template-columns:minmax(0,1.5fr) minmax(220px,.9fr);padding:35px 8px 12px}
- #menu #characterSelectLayout>.menuStep{padding:9px}
- #menu #characterSelectLayout .characterShowcase{padding-left:12px}
- #menu #menuPanel .crewCard{min-height:115px}
- #menu #menuPanel .crewCard svg{height:69px}
- #menu #menuPanel .crewCard .crewPortrait{min-height:65px}
- #menu #selectedGhostPortrait{height:95px;flex-basis:95px}
- #menu #selectedGhostPortrait svg{height:95px}
+  width:100%;
+  padding:0;
+  border:0;
+  background:none;
+  margin:8px 0 0;
 }
-@media(max-width:640px){
- #menu{padding:6px}
- #menu>.panel{max-height:calc(100dvh - 6px);padding:8px 6px 24px}
- #menu .title{font-size:clamp(29px,8vw,46px)}
- #menu #characterSelectLayout{grid-template-columns:1fr;margin-top:28px;padding:28px 9px 13px;border-radius:23px}
- #menu #characterSelectLayout:before{font-size:12px;padding:9px 13px;top:-17px}
- #menu #characterSelectLayout .characterShowcase{border-left:0;border-top:1px solid #cda2ec77;
- padding:14px 4px 0;margin-top:10px}
- #menu #selectedGhostStage{flex-direction:row;text-align:left;justify-content:center;gap:10px}
- #menu #selectedGhostCopy{text-align:left}
- #menu #selectedGhostPortrait{width:92px;flex-basis:92px;height:95px}
- #menu #selectedGhostPortrait svg{width:84px;height:91px}
- #menu #chosenCharacter{font-size:25px}
- #menu #playerIdentity{margin:3px auto 7px}
- #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- #menu #menuPanel .crewCard{min-height:100px;padding:5px 3px}
- #menu #menuPanel .crewCard svg{width:min(100%,64px);height:66px}
- #menu #menuPanel .crewCard .crewPortrait{min-height:62px}
- #menu #menuPanel .crewCard span{font-size:12px}
- #menu #onlinePanel{padding:36px 10px 13px}
- #menu #modeStepLabel{font-size:12px;padding:9px 13px}
+#menu #colorStepLabel{
+  text-align:left;
+  margin:3px 0 8px;
+  color:#fff1cb;
+  font:900 14px/1.2 'Fredoka',sans-serif;
+  text-transform:none;
 }
-@media(prefers-reduced-motion:reduce){#menu #menuPanel .crewCard{transition:none}}
+#menu #characterSelectLayout .swatches{
+  display:grid;
+  width:100%;
+  max-width:none;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:5px;
+  margin:7px auto;
+}
+#menu #characterSelectLayout .swatch{
+  justify-self:center;
+  width:100%;
+  height:auto;
+  max-width:43px;
+  min-height:32px;
+  aspect-ratio:1;
+  border:2px solid #fff8f3;
+  box-shadow:0 3px 0 #291638,0 4px 8px #12091ea8;
+}
+#menu #characterSelectLayout .swatch[aria-pressed="true"]{
+  outline:3px solid var(--menu-gold);
+  outline-offset:3px;
+}
+#menu #teamPreview{
+  text-align:left;
+  margin:5px 0;
+  color:#f7e3ff;
+  font-size:11px;
+  min-height:0;
+}
+#menu #contrastChoice{
+  display:flex;
+  margin:5px 0 0;
+  padding:5px 8px;
+  font-size:11px;
+  width:fit-content;
+  max-width:100%;
+  background:#45315b;
+  border-color:#9e7cbe;
+}
+/* Play modes are three illustrated choice cards, not tiny segmented buttons. */
+#menu #onlinePanel{
+  position:relative;
+  width:100%;
+  max-width:1100px;
+  margin:20px auto 12px;
+  padding:39px clamp(11px,2.4vw,30px) 17px;
+  border:3px solid #d9a7ed;
+  border-radius:28px;
+  background:linear-gradient(140deg,rgba(51,29,74,.97),rgba(33,22,54,.97));
+  box-shadow:inset 0 0 0 3px #78548e,inset 0 0 0 6px #dfa2f32d,
+             0 12px 24px #120a23af;
+}
+#menu #modeStepLabel{
+  position:absolute;
+  top:-21px;
+  left:50%;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:calc(100% - 16px);
+  margin:0;
+  padding:10px 27px;
+  border:2px solid #d9a4f3;
+  border-radius:999px;
+  background:linear-gradient(#714884,#3b224f);
+  box-shadow:0 5px 0 #281436,0 8px 13px #150b2b6e;
+  color:#fff2c8;
+  text-align:center;
+  font:900 clamp(12px,1.35vw,17px)/1.15 'Fredoka',sans-serif;
+  letter-spacing:.08em;
+}
+#menu #modeChooser{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  width:100%;
+  max-width:none;
+  gap:clamp(7px,1.3vw,17px);
+  margin:0 auto 9px;
+}
+#menu #modeChooser .modeCard{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  min-height:88px;
+  padding:12px;
+  border:2px solid #bd8ed5;
+  border-radius:18px;
+  background:linear-gradient(#77508c,#4c326a);
+  box-shadow:inset 0 2px 0 #ffffff27,0 4px 10px #170b288a;
+  color:#fff9ee;
+  text-align:left;
+  font-family:'Fredoka',sans-serif;
+}
+#menu #modeChooser .modeCard .modeIcon{
+  flex:0 0 42px;
+  width:42px;
+  font-size:32px;
+  line-height:1;
+  text-align:center;
+  filter:drop-shadow(0 2px 3px #231137);
+}
+#menu #modeChooser .modeCard>span:last-child{
+  min-width:0;
+  flex:1;
+}
+#menu #modeChooser .modeCard b{
+  display:block;
+  margin-bottom:3px;
+  font:900 clamp(12px,1.3vw,17px)/1.1 'Fredoka',sans-serif;
+}
+#menu #modeChooser .modeCard small{
+  display:block;
+  font:600 clamp(10px,.95vw,12px)/1.24 'Fredoka',sans-serif;
+  color:#f0dbfb;
+}
+#menu #modeChooser .modeCard[aria-checked="true"]{
+  border:3px solid var(--menu-gold);
+  background:linear-gradient(#9065a2,#67457f);
+  box-shadow:0 0 0 2px #ffdc8e4f,0 0 16px #f3c17781;
+}
+#menu #modeChooser .modeCard[aria-checked="true"]::after{display:none}
+#menu .modeDescription{
+  min-height:16px;
+  margin:5px auto 7px;
+  font-size:12px;
+  color:#e6d3ee;
+  text-align:center;
+}
+#menu #previewGameActions{display:flex;justify-content:center;margin:10px auto}
+#menu #onlinePanel #previewGameActions #startBtn{
+  width:min(100%,450px);
+  min-height:65px;
+  padding:12px 18px;
+  border:2px solid #fff1bf;
+  border-radius:19px;
+  background:linear-gradient(#ffeebf,#ffcaab 43%,#f5b4de);
+  box-shadow:0 5px 0 #8f5c91,0 9px 21px #170927a3;
+  color:#3c2447;
+  font:900 clamp(20px,2.5vw,26px)/1.15 'Fredoka',sans-serif;
+  letter-spacing:.04em;
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+#menu #onlinePanel #previewGameActions #startBtn:active{
+  transform:translateY(3px);
+  box-shadow:0 2px 0 #8f5c91,0 4px 12px #170927a3;
+}
+#menu #quickRoomActions{
+  display:flex;
+  justify-content:center;
+  gap:11px;
+  flex-wrap:wrap;
+  margin:6px auto 11px;
+}
+#menu #quickRoomActions[hidden]{display:none!important}
+#menu #quickRoomActions button{
+  min-height:45px;
+  padding:9px 22px;
+  border:2px solid #cc9ae8;
+  border-radius:999px;
+  background:linear-gradient(#77518b,#482d67);
+  box-shadow:0 3px 7px #170b27a3;
+  color:#fff5ec;
+  font:900 14px/1.2 'Fredoka',sans-serif;
+}
+#menu #quickRoomActions button[hidden]{display:none!important}
+#menu #friendsDetails{
+  max-width:600px;
+  margin:7px auto;
+  background:#30214099;
+  border:1px solid #9f7bb9;
+  box-shadow:none;
+}
+#menu #friendsDetails:not([open]){
+  max-width:300px;
+  opacity:.8;
+}
+#menu #menuMore{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:11px auto 0;
+}
+#menu #menuMore>*{flex:0 1 auto}
+#menu #menuMore .menuChip,
+#menu #menuMore>.menuDrawer{
+  border:1px solid #bd92d9;
+  border-radius:20px;
+  background:linear-gradient(#54376b,#38234e);
+  color:#fff2e4;
+  font:800 12px/1.2 'Fredoka',sans-serif;
+  box-shadow:0 3px 7px #12092088;
+}
+#menu #onlineCreate[hidden],
+#menu #onlineJoin[hidden]{display:none!important}
+@media(max-width:900px){
+  #menu #characterSelectLayout{grid-template-columns:minmax(0,1.6fr) minmax(230px,.9fr);gap:12px;padding:36px 12px 15px}
+  #menu #characterSelectLayout .characterShowcase{padding-left:13px}
+  #menu #menuPanel .crewCard{min-height:123px;padding:6px 4px}
+  #menu #menuPanel .crewCard .crewPortrait{min-height:67px}
+  #menu #menuPanel .crewCard svg{height:70px}
+  #menu #menuPanel .crewCard span{font-size:11px;padding:4px 5px}
+  #menu #selectedGhostPortrait{height:106px;flex-basis:106px}
+  #menu #selectedGhostPortrait svg{height:103px}
+  #menu #modeChooser .modeCard{min-height:80px;padding:8px;gap:5px}
+  #menu #modeChooser .modeCard .modeIcon{flex-basis:30px;width:30px;font-size:24px}
+}
+@media(max-width:660px){
+  #menu{padding:5px}
+  #menu>.panel{max-width:100%;width:100%;padding:8px 6px 25px;max-height:calc(100dvh - 10px)}
+  #menu .title{font-size:clamp(29px,8.5vw,47px);line-height:.95}
+  #menu #menuText{margin:5px auto 19px;font-size:12px}
+  #menu #characterSelectLayout{grid-template-columns:1fr;gap:9px;margin:23px auto 25px;padding:31px 8px 14px;border-width:2px;border-radius:24px}
+  #menu #characterSelectLayout::before{top:-17px;padding:8px 14px;border-width:2px;font-size:12px}
+  #menu #characterSelectLayout .characterShowcase{border-left:0;border-top:1px solid #be90d68c;padding:12px 5px 0}
+  #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #menu #menuPanel .crewCard{min-height:106px;padding:4px 5px}
+  #menu #menuPanel .crewCard .crewPortrait{min-height:64px}
+  #menu #menuPanel .crewCard svg{height:67px;width:min(100%,72px)}
+  #menu #menuPanel .crewCard span{font-size:12px}
+  #menu #selectedGhostStage{flex-direction:row;justify-content:center;gap:8px;min-height:0;text-align:left;margin:0 auto 9px}
+  #menu #selectedGhostPortrait{width:92px;height:92px;flex:0 0 92px}
+  #menu #selectedGhostPortrait svg{width:86px;height:91px}
+  #menu #selectedGhostCopy{text-align:left}
+  #menu #chosenCharacter{font-size:clamp(22px,6vw,29px)}
+  #menu #onlinePanel{padding:35px 10px 14px;margin:18px auto 12px;border-width:2px}
+  #menu #modeStepLabel{top:-18px;padding:8px 15px;font-size:12px}
+  #menu #modeChooser{gap:5px}
+  #menu #modeChooser .modeCard{min-height:75px;flex-direction:column;gap:5px;align-items:center;text-align:center;padding:7px 3px}
+  #menu #modeChooser .modeCard .modeIcon{flex:0 0 auto;width:auto;font-size:24px}
+  #menu #modeChooser .modeCard b{font-size:12px}
+  #menu #modeChooser .modeCard small{font-size:10px;line-height:1.2}
+  #menu #onlinePanel #previewGameActions #startBtn{min-height:59px;font-size:21px}
+  #menu #quickRoomActions button{font-size:12px;padding:9px 12px}
+}
+@media(max-width:360px){
+  #menu #characterSelectLayout .swatch{min-height:30px}
+  #menu #modeChooser .modeCard small{font-size:9px}
+  #menu #quickRoomActions button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  #menu #menuPanel .crewCard,
+  #menu #onlinePanel #previewGameActions #startBtn{transition:none}
+  #menu #selectedGhostPortrait svg{animation:none!important}
+}
 
 </style>
 </head>
@@ -1002,13 +1409,13 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
       <div class="palette-label" id="modeStepLabel">2. CHOOSE YOUR HAUNT &amp; PLAY</div>
       <div id="modeChooser" role="radiogroup" aria-label="Game mode">
         <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
-          <span class="modeIcon">✨</span><span><b>Four-Way</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
+          <span class="modeIcon">✨</span><span><b>Four-Way Haunt</b><small>Four teams compete across a larger cemetery.</small></span>
         </button>
         <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
-          <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Up to 8 humans on opposing teams · bots fill gaps</small></span>
+          <span class="modeIcon">⚔️</span><span><b>Classic Duel</b><small>Two teams race to collect and deposit spirit flames.</small></span>
         </button>
         <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
-          <span class="modeIcon">🤝</span><span><b>Co-op</b><small>1–4 friends together vs. 4 rival bots</small></span>
+          <span class="modeIcon">🤝</span><span><b>Boo Crew Co-op</b><small>Friends work together against four computer ghosts.</small></span>
         </button>
       </div>
       <div id="modeNotice" class="modeDescription" aria-live="polite">Four teams compete in a larger cemetery.</div>
