@@ -921,10 +921,11 @@ test('Alpha 35: three-step menu, team-color cards, accurate modes and preserved 
   assert.match(html,/crewLore\.textContent=GHOST_CHARACTER_LORE\[selectedCharacter\]/);
   assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
   assert.match(html,/id="crewLore" class="srOnly"/);
-  assert.match(html,/#menu #characterSelectLayout\\{display:grid;grid-template-columns:/);
-  assert.match(html,/#menu #characterSelectLayout:before\\{content:"✦  1\\. CHOOSE YOUR GHOST/);
-  assert.match(html,/#menu #menuPanel \\.crewCard\\{min-height:132px;[\\s\\S]*?background:linear-gradient\\(165deg,#755081/);
-  assert.match(html,/#menu \\.title span:last-child\\{color:#dfc1ff/);
+  assert.ok(html.includes('#menu #characterSelectLayout{display:grid;grid-template-columns:'));
+  assert.ok(html.includes('#menu #characterSelectLayout:before{content:"✦  1. CHOOSE YOUR GHOST'));
+  assert.ok(html.includes('#menu #menuPanel .crewCard{min-height:132px;'));
+  assert.ok(html.includes('background:linear-gradient(165deg,#755081'));
+  assert.ok(html.includes('#menu .title span:last-child{color:#dfc1ff'));
   assert.match(html,/prefers-reduced-motion:reduce/);
   for(const description of [
     'Four teams compete in a larger cemetery.',
