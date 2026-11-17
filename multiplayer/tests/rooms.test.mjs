@@ -893,24 +893,80 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
 });
 
 
-test('Alpha 35 menu: color comes first, one big Play button, extras live in drawers',()=>{
+test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   const at=id=>html.indexOf('id="'+id+'"');
-  assert.ok(at('palettePicker')>0&&at('palettePicker')<at('booCrewGrid'),'Color picker precedes the character picker');
-  assert.ok(at('booCrewGrid')<at('startBtn'),'Play follows the two quick choices');
-  assert.ok(at('startBtn')<at('playerDisplayName'),'Nickname is not in the way of Play');
-  // Nickname, difficulty and server settings are tucked inside Settings.
-  const settings=html.slice(at('settingsDetails'),at('gameGuide'));
-  for(const id of ['playerDisplayName','difficultyWrap','onlineServer'])
-    assert.ok(settings.includes('id="'+id+'"'),id+' lives in Settings');
-  // Friends flow: room controls sit in a drawer, invites use the share sheet.
-  assert.match(html,/<details id="friendsDetails"/);
+  for(const id of ['booCrewGrid','selectedGhostPortrait','chosenCharacter','crewLore',
+    'palettePicker','playerDisplayName','highContrastToggle','modeChooser','modeNotice',
+    'startBtn','quickCreateRoom','quickJoinRoom','friendsDetails','onlineCode',
+    'onlineStart','difficultyWrap','hallMenuBtn','menuCreditsBtn']){
+    assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' must be unique');
+  }
+  assert.ok(at('booCrewGrid')>0&&at('booCrewGrid')<at('selectedGhostPortrait'),
+    'Ghost selection precedes chosen-ghost preview');
+  assert.ok(at('selectedGhostPortrait')<at('playerDisplayName')&&at('playerDisplayName')<at('palettePicker'),
+    'Preview, nickname and color controls remain in one section');
+  assert.ok(at('palettePicker')<at('modeChooser')&&at('modeChooser')<at('startBtn'));
+  const polished=html.slice(html.indexOf('/* Alpha 35 visual polish'),html.indexOf('</style>'));
+  assert.ok(polished.length>10000,'Polish stylesheet is present');
+  assert.ok(polished.includes('url("assets/boo-crew-night.svg")'),'Reuse the original moonlit cemetery SVG');
+  assert.ok(polished.includes('#menu::before{display:none}'),'Disable the placeholder background');
+  assert.ok(polished.includes('grid-template-columns:repeat(4,minmax(0,1fr))'),'Desktop selection is 4 x 2');
+  assert.ok(polished.includes('grid-template-columns:repeat(2,minmax(0,1fr))'),'Phone selection is 2 x 4');
+  assert.ok(polished.includes('#menu #menuPanel .crewCard span{'),'Ghost names have a consistent cream nameplate');
+  assert.ok(polished.includes('background:linear-gradient(#fff5d3,#f2cfa5)'),'Cards use high-contrast nameplates');
+  assert.ok(polished.includes('#menu #menuPanel .crewCard[aria-pressed="true"]'),'Selected character has clear border');
+  assert.ok(polished.includes('#menu #modeChooser .modeCard small{'),'Mode descriptions remain visible');
+  assert.ok(polished.includes('#menu #menuPanel #crewLore{display:none}'),'Biography stays hidden');
+  assert.ok(polished.includes('#menu #selectedGhostCopy{position:absolute;width:1px'),'Redundant name callout is visually hidden');
+  assert.ok(polished.includes('#menu #friendsDetails:not([open]){display:none}'),'Closed multiplayer drawer should not waste vertical space');
+  assert.ok(polished.includes('width:min(100%,740px)'),'Primary action should fill central panel better');
+  assert.ok(polished.includes('grid-template-columns:80px minmax(0,1fr)'),'Phone preview controls use compact side-by-side layout');
+  assert.ok(polished.includes('min-height:clamp(113px,10.2vw,140px)'),'Character cards lose unnecessary height');
+
+  assert.ok(polished.includes('prefers-reduced-motion:reduce'));
+  // Illustrated title, decorative moon bats, and iconography must survive
+  // without changing the menu's DOM controls or network/gameplay handlers.
+  assert.equal((html.match(/id="moonBats"/g)||[]).length,1);
+  assert.ok(html.includes('class="brandLockup"'));
+  assert.ok(html.includes('class="brandMascot"'));
+  assert.ok(html.includes('class="batWingLeft"'));
+  assert.ok(html.includes('class="batWingRight"'));
+  assert.ok(polished.includes('@keyframes hauntFlapLeft'));
+  assert.ok(polished.includes('@keyframes hauntFlapRight'));
+  assert.ok(polished.includes('animation:none!important'),'Reduced-motion mode stops decorative animations');
+  assert.equal((html.match(/class="arcadeIcon"/g)||[]).length,7,
+    'Three custom mode icons and four footer icons');
+  for(const id of ['settingsDetails','gameGuide','hallMenuBtn','menuCreditsBtn'])
+    assert.ok(at(id)>0,id+' retains original action target');
+  assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
+  assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
+  // Choosing a different costume resets only the implicit ghost-name default.
+  // An intentionally entered nickname remains untouched until edited/cleared.
+  assert.match(html,/let selectedOnlineMode='classic'/);
+  assert.match(html,/let previewSoloMode='classic'/);
+  assert.match(html,/data-mode="classic" role="radio" aria-checked="true"/);
+  assert.match(html,/data-mode="fourway" role="radio" aria-checked="false"/);
+  assert.match(html,/function syncGhostNickname\(\)/);
+  assert.match(html,/if\(!customGhostNickname\)playerDisplayNameEl\.value=defaultGhostName\(\)/);
+  assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\];\s*syncGhostNickname\(\);/);
+  assert.match(html,/localStorage\.getItem\('boo-crew-player-name-custom'\)/);
+  assert.match(html,/localStorage\.removeItem\('boo-crew-player-name-custom'\)/);
+
+  assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
+  for(const name of ['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'])
+    assert.ok(html.includes(name),name);
+  for(const description of ['Four teams compete across a larger cemetery.',
+    'Two teams race to collect and deposit spirit flames.',
+    'Friends work together against four computer ghosts.'])
+    assert.ok(html.includes(description),description);
+  for(const event of ['quickCreateRoom','quickJoinRoom'])
+    assert.ok(html.includes(event+".addEventListener('click'"),event+' must be connected');
   assert.match(html,/navigator\.share\(\{title:'Spooktacular Showdown'/);
   assert.match(html,/\?room=/);
-  // Ghosts are see-through, but high contrast keeps them solid.
+  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+  assert.ok(scripts.length>0);
+  for(const [,code] of scripts)assert.doesNotThrow(()=>new Function(code));
   assert.match(html,/const GHOST_BODY_ALPHA=\.74/);
   assert.match(html,/ctx\.globalAlpha=highContrast\?1:GHOST_BODY_ALPHA/);
-  // Nickname stays optional and falls back to the ghost's own name in rooms.
-  assert.match(html,/\|\|GHOST_CHARACTER_NAMES\[selectedCharacter\]\.slice\(0,13\)/);
-  assert.equal((html.match(/id="startBtn"/g)||[]).length,1);
 });
