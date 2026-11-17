@@ -941,6 +941,18 @@ test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
     assert.ok(at(id)>0,id+' retains original action target');
   assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
   assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
+  // Choosing a different costume resets only the implicit ghost-name default.
+  // An intentionally entered nickname remains untouched until edited/cleared.
+  assert.match(html,/let selectedOnlineMode='classic'/);
+  assert.match(html,/let previewSoloMode='classic'/);
+  assert.match(html,/data-mode="classic" role="radio" aria-checked="true"/);
+  assert.match(html,/data-mode="fourway" role="radio" aria-checked="false"/);
+  assert.match(html,/function syncGhostNickname\(\)/);
+  assert.match(html,/if\(!customGhostNickname\)playerDisplayNameEl\.value=defaultGhostName\(\)/);
+  assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\];\s*syncGhostNickname\(\);/);
+  assert.match(html,/localStorage\.getItem\('boo-crew-player-name-custom'\)/);
+  assert.match(html,/localStorage\.removeItem\('boo-crew-player-name-custom'\)/);
+
   assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
   for(const name of ['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'])
     assert.ok(html.includes(name),name);
