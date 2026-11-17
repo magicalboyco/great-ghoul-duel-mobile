@@ -671,9 +671,9 @@ body.highContrast .swatch[aria-pressed="true"]::after{
   justify-content:center;align-items:center;min-width:0;min-height:138px;
   gap:5px;padding:9px 5px;border:2px solid var(--card-border,#d8c4ee);
   border-radius:14px;overflow:hidden;
-  background:linear-gradient(160deg,var(--selected-team-color,#a78fc0),var(--selected-team-color-dark,#665080));
+  background:linear-gradient(165deg,#735481 0%,#583e70 52%,#43305d 100%);
   box-shadow:inset 0 0 0 2px #ffffff18,0 5px 12px #0e082e77;
-  color:var(--crew-label-color,#fff8eb);font-family:'Fredoka',sans-serif;
+  color:#fff9ee;font-family:'Fredoka',sans-serif;
   cursor:pointer;touch-action:manipulation}
 #menu #menuPanel .crewCard::before{content:"";position:absolute;inset:4px;
   border:1px solid #ffffff35;border-radius:10px;pointer-events:none}
@@ -682,7 +682,7 @@ body.highContrast .swatch[aria-pressed="true"]::after{
 #menu #menuPanel .crewCard svg{width:min(100%,86px);height:88px;overflow:visible}
 #menu #menuPanel .crewCard span{font-size:clamp(12px,1.4vw,15px);min-height:18px;
   line-height:1.15;text-align:center;overflow-wrap:anywhere;
-  color:var(--crew-label-color,#fff8eb);text-shadow:0 1px 4px #1e112955}
+  color:#fff9ee;text-shadow:0 2px 2px #261337,0 3px 6px #140d2bcc}
 #menu #menuPanel .crewCard[aria-pressed="true"]{border:3px solid #ffe5ad;
   box-shadow:0 0 0 2px #2e1a41,0 0 0 4px #f9dfa899,0 0 20px #f3c58a66}
 #menu #menuPanel .crewCard[aria-pressed="true"]::after{content:"✓";position:absolute;
@@ -804,6 +804,145 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 @media(prefers-reduced-motion:reduce){#selectedGhostPortrait svg{animation:none!important}}
 
+
+/* Alpha 35 art direction: the game stays playable while the lobby adopts the
+   approved plum/lilac, moonlit frame and paired character-showcase layout. */
+#menu{padding:16px;isolation:isolate;align-items:flex-start;overflow:hidden;
+ background:
+ radial-gradient(circle at 88% 15%,#fae1f3 0 40px,#c7a5dc 41px 47px,transparent 49px),
+ radial-gradient(ellipse at 50% -16%,#695081 0%,#39244f 58%,#1b142d 100%);
+}
+#menu::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:
+ radial-gradient(ellipse at 8% 102%,#241434 0 21%,transparent 21.2%),
+ radial-gradient(ellipse at 80% 110%,#251638 0 26%,transparent 26.2%),
+ radial-gradient(ellipse at 105% 92%,#2b1a40 0 31%,transparent 31.2%),
+ radial-gradient(ellipse at 13% 11%,#64497688 0 9%,transparent 9.2%),
+ radial-gradient(ellipse at 78% 8%,#76568a88 0 7%,transparent 7.2%);
+ opacity:.85
+}
+#menu>.panel{border:0;background:transparent;box-shadow:none;max-width:min(1190px,100%);
+ padding:10px 14px 28px;max-height:calc(100dvh - 20px);overflow-y:auto;overscroll-behavior:contain}
+#menu .eyebrow{background:none;color:#f3dba3;font-family:'Fredoka',sans-serif;
+ font-size:11px;letter-spacing:.21em;font-weight:800;margin-bottom:3px}
+#menu .title{display:flex;flex-direction:column;align-items:center;justify-content:center;
+ font-family:'Caprasimo',Georgia,serif;font-size:clamp(34px,5vw,67px);line-height:.86;
+ margin:3px auto 8px;letter-spacing:0;color:#ffedbe;text-shadow:0 3px 0 #8e638d,0 6px 0 #3f285d,0 10px 16px #170b29;
+ filter:drop-shadow(0 0 10px #c693ed66)}
+#menu .title span:last-child{color:#dfc1ff;text-shadow:0 3px 0 #8d609a,0 6px 0 #3f285d,0 10px 16px #170b29}
+#menu #menuText{font-size:12px;margin:6px auto 12px;color:#f0dcef;opacity:.94}
+#menu #characterSelectLayout{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(285px,1fr);
+ gap:0;margin:8px auto 17px;padding:40px 14px 16px;border:3px solid #b984d4;
+ border-radius:30px;position:relative;align-items:center;
+ background:linear-gradient(130deg,#412b56f2,#352348f2 68%,#2a1c3ff2);
+ box-shadow:inset 0 0 0 3px #65487d,inset 0 0 0 6px #cba0df33,0 12px 30px #10071ecc}
+#menu #characterSelectLayout:before{content:"✦  1. CHOOSE YOUR GHOST  ✦";
+ position:absolute;left:50%;top:-21px;transform:translateX(-50%);
+ width:max-content;max-width:95%;padding:10px 31px;border-radius:999px;
+ background:linear-gradient(#654876,#3c294f);border:2px solid #b98ccf;
+ box-shadow:0 4px 12px #1e0e32;color:#fff0c1;font-family:'Fredoka',sans-serif;
+ font-weight:900;font-size:15px;letter-spacing:.12em;text-align:center}
+#menu #characterSelectLayout>.menuStep{margin:0;padding:10px 14px;
+ border:0;border-radius:0;background:none;min-width:0}
+#menu #characterSelectLayout .characterGridSection{order:0;width:100%}
+#menu #characterSelectLayout .characterShowcase{order:1;width:100%;
+ border-left:1px solid #cda2ec77;padding-left:24px}
+#menu #ghostStepLabel,#menu #customizeStepLabel{position:absolute;width:1px;height:1px;overflow:hidden;
+ clip:rect(0 0 0 0);white-space:nowrap}
+#menu #menuPanel #booCrewGrid{max-width:none;gap:10px;width:100%}
+#menu #menuPanel .crewCard{min-height:132px;
+ border:2px solid #bb88c8;border-radius:18px;gap:3px;
+ background:linear-gradient(165deg,#755081,#5a3d6f 58%,#483259);
+ box-shadow:inset 0 0 14px #d9b6e922,0 6px 13px #140b2799;
+ color:#fff8ed;transition:border-color .18s,box-shadow .18s,transform .18s}
+#menu #menuPanel .crewCard:hover{transform:translateY(-2px);border-color:#e6b9ea;
+ box-shadow:inset 0 0 15px #f7dbef33,0 8px 15px #120826bb}
+#menu #menuPanel .crewCard[aria-pressed="true"]{border:3px solid #ffe9a0;
+ background:linear-gradient(155deg,#8f608b,#694669 70%,#50365e);
+ box-shadow:0 0 0 2px #54375f,0 0 0 4px #ffe3a49e,0 0 19px #ffe3a487}
+#menu #menuPanel .crewCard[aria-pressed="true"]::after{background:#ffefbd;color:#392544}
+#menu #menuPanel .crewCard .crewPortrait{min-height:79px;background:none;filter:
+ drop-shadow(0 3px 1px #2c203099) drop-shadow(0 5px 6px #120c2b99)}
+#menu #menuPanel .crewCard svg{width:min(100%,84px);height:86px}
+#menu #menuPanel .crewCard span{font-family:'Fredoka',sans-serif;
+ font-size:clamp(12px,1.2vw,15px);font-weight:900;color:#fffdf6;
+ text-shadow:0 2px 2px #1c102f,0 4px 5px #130b26}
+#menu #selectedGhostStage{display:flex;align-items:center;justify-content:flex-start;
+ flex-direction:column;text-align:center;gap:3px;min-height:0;margin:0 auto 10px}
+#menu #selectedGhostPortrait{height:133px;flex:0 0 133px;width:138px;
+ background:radial-gradient(circle,#7963a266,#47315a00 70%)}
+#menu #selectedGhostPortrait svg{width:115px;height:128px}
+#menu #selectedGhostCopy{text-align:center;min-width:0}
+#menu #crewSelection{font-family:'Fredoka',sans-serif;font-size:13px;color:#ffe6b9}
+#menu #chosenCharacter{font-family:'Caprasimo',Georgia,serif;font-size:34px;line-height:1.1;
+ color:#fff0bb;text-shadow:0 3px #643e76,0 5px 9px #180a29}
+#menu #menuPanel #crewLore{display:none!important}
+#menu #playerIdentity{max-width:none;margin:8px auto 10px;padding:0;border:0;background:none;text-align:left}
+#menu #playerIdentity label{color:#fff1ca;font-size:14px;font-weight:900;font-family:'Fredoka',sans-serif}
+#menu #playerDisplayName{border:2px solid #caa0e7;border-radius:13px;
+ background:#241935;color:#fffaf4;font-size:16px;min-height:47px;
+ box-shadow:inset 0 2px 8px #120a2266}
+#menu #playerNameHint{display:none}
+#menu #characterSelectLayout .characterShowcase>.menuStep{
+ border:0;background:none;padding:0;margin:8px 0 0}
+#menu #colorStepLabel{text-align:left;font-family:'Fredoka',sans-serif;font-size:14px;
+ color:#fff1c8;text-transform:none;margin:8px 0}
+#menu #characterSelectLayout .swatches{max-width:none;gap:7px;margin:9px 0 4px}
+#menu #characterSelectLayout .swatch{max-width:42px;min-height:34px;border:2px solid #fffdffbb}
+#menu #teamPreview{text-align:left;font-size:11px;color:#f6e9fd}
+#menu #contrastChoice{font-size:11px;padding:5px 7px;display:flex;width:fit-content;
+ margin:7px 0 0;opacity:.82;background:#3d2b50;border-color:#9f81b5}
+#menu #onlinePanel{padding:38px 16px 14px;margin:16px auto 12px;
+ border:2px solid #9f79b4;border-radius:26px;position:relative;
+ background:linear-gradient(135deg,#3b274eeb,#2b1c40ef);
+ box-shadow:inset 0 0 0 2px #88629e66,0 10px 24px #130a2388}
+#menu #modeStepLabel{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+ width:max-content;max-width:92%;font-family:'Fredoka',sans-serif;
+ background:linear-gradient(#654876,#3c294f);border:2px solid #b98ccf;
+ border-radius:999px;padding:10px 25px;margin:0;color:#fff0c1;
+ font-size:15px;letter-spacing:.12em;white-space:normal}
+#menu #modeChooser .modeCard{border:2px solid #ae81be;
+ border-radius:17px;min-height:69px;background:linear-gradient(#78518c,#54386d);
+ font-family:'Fredoka',sans-serif;color:#fffaef}
+#menu #modeChooser .modeCard[aria-checked="true"]{background:linear-gradient(#9671a5,#66467d);
+ border-color:#ffe7a9;box-shadow:0 0 0 2px #ffe7a94a}
+#menu #onlinePanel #previewGameActions #startBtn{background:linear-gradient(#ffefc8,#f4b7df);
+ border:2px solid #fff4cf;box-shadow:0 5px 0 #82578d,0 9px 15px #190c2a}
+#menu #quickRoomActions button{border-radius:12px;background:#4f3469;border:1px solid #b58cce}
+@media(max-width:880px){
+ #menu #characterSelectLayout{grid-template-columns:minmax(0,1.5fr) minmax(220px,.9fr);padding:35px 8px 12px}
+ #menu #characterSelectLayout>.menuStep{padding:9px}
+ #menu #characterSelectLayout .characterShowcase{padding-left:12px}
+ #menu #menuPanel .crewCard{min-height:115px}
+ #menu #menuPanel .crewCard svg{height:69px}
+ #menu #menuPanel .crewCard .crewPortrait{min-height:65px}
+ #menu #selectedGhostPortrait{height:95px;flex-basis:95px}
+ #menu #selectedGhostPortrait svg{height:95px}
+}
+@media(max-width:640px){
+ #menu{padding:6px}
+ #menu>.panel{max-height:calc(100dvh - 6px);padding:8px 6px 24px}
+ #menu .title{font-size:clamp(29px,8vw,46px)}
+ #menu #characterSelectLayout{grid-template-columns:1fr;margin-top:28px;padding:28px 9px 13px;border-radius:23px}
+ #menu #characterSelectLayout:before{font-size:12px;padding:9px 13px;top:-17px}
+ #menu #characterSelectLayout .characterShowcase{border-left:0;border-top:1px solid #cda2ec77;
+ padding:14px 4px 0;margin-top:10px}
+ #menu #selectedGhostStage{flex-direction:row;text-align:left;justify-content:center;gap:10px}
+ #menu #selectedGhostCopy{text-align:left}
+ #menu #selectedGhostPortrait{width:92px;flex-basis:92px;height:95px}
+ #menu #selectedGhostPortrait svg{width:84px;height:91px}
+ #menu #chosenCharacter{font-size:25px}
+ #menu #playerIdentity{margin:3px auto 7px}
+ #menu #menuPanel #booCrewGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #menu #menuPanel .crewCard{min-height:100px;padding:5px 3px}
+ #menu #menuPanel .crewCard svg{width:min(100%,64px);height:66px}
+ #menu #menuPanel .crewCard .crewPortrait{min-height:62px}
+ #menu #menuPanel .crewCard span{font-size:12px}
+ #menu #onlinePanel{padding:36px 10px 13px}
+ #menu #modeStepLabel{font-size:12px;padding:9px 13px}
+}
+@media(prefers-reduced-motion:reduce){#menu #menuPanel .crewCard{transition:none}}
+
 </style>
 </head>
 <body>
@@ -826,32 +965,32 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 </div>
 <div id="menu">
   <div class="panel" id="menuPanel">
-    <div class="eyebrow">JOY HAUS PRESENTS · ALPHA 35</div>
-    <div class="title">SPOOKTACULAR<br>SHOWDOWN</div>
+    <div class="eyebrow">✦ JOY HAUS PRESENTS · ALPHA 35 ✦</div>
+    <div class="title" aria-label="Spooktacular Showdown"><span>SPOOKTACULAR</span><span>SHOWDOWN</span></div>
     <p class="sub" id="menuText">Collect spirit flames. Steal them back. Boo!</p>
     <div id="zoomNotice" role="status" hidden>📱 The phone is displaying a zoomed or desktop-sized page. In Safari’s aA menu, choose <b>Page Zoom → 100%</b> and <b>Request Mobile Website</b> if available.</div>
 
-    <div id="characterSelectLayout">
+    <div id="characterSelectLayout" aria-label="Choose and customize your ghost">
       <section class="menuStep characterGridSection" aria-labelledby="ghostStepLabel">
         <div class="palette-label" id="ghostStepLabel">1. CHOOSE YOUR GHOST</div>
         <div id="booCrewGrid" role="group" aria-label="Choose your character"></div>
       </section>
       <section class="menuStep characterShowcase" aria-labelledby="customizeStepLabel">
-        <div class="palette-label" id="customizeStepLabel">2. CUSTOMIZE YOUR GHOST</div>
+        <div class="palette-label" id="customizeStepLabel">YOUR GHOST</div>
         <div id="selectedGhostStage">
           <div id="selectedGhostPortrait" aria-hidden="true"></div>
           <div id="selectedGhostCopy">
             <div id="crewSelection">Playing as <b id="chosenCharacter">Bowtie</b></div>
-            <div id="crewLore" aria-live="polite"></div>
+            <div id="crewLore" class="srOnly" aria-live="polite"></div>
           </div>
         </div>
         <div id="playerIdentity">
-          <label for="playerDisplayName">Your ghost name <span>(optional)</span></label>
+          <label for="playerDisplayName">Nickname <span>(optional)</span></label>
           <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
           <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
         </div>
         <section class="menuStep" aria-labelledby="colorStepLabel">
-          <div class="palette-label" id="colorStepLabel">GHOST COLOR</div>
+          <div class="palette-label" id="colorStepLabel">Ghost color</div>
           <div class="swatches" id="palettePicker" role="group" aria-label="Choose your ghost color"></div>
           <div id="teamPreview" aria-live="polite"><b id="selectedName">Ghostly Green</b></div>
           <label id="contrastChoice"><input id="highContrastToggle" type="checkbox"> <span>🌈 High contrast colors</span></label>
@@ -860,7 +999,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
     </div>
 
     <div id="onlinePanel">
-      <div class="palette-label" id="modeStepLabel">3. CHOOSE YOUR HAUNT &amp; PLAY</div>
+      <div class="palette-label" id="modeStepLabel">2. CHOOSE YOUR HAUNT &amp; PLAY</div>
       <div id="modeChooser" role="radiogroup" aria-label="Game mode">
         <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
           <span class="modeIcon">✨</span><span><b>Four-Way</b><small>Four teams · larger cemetery · play solo or with friends</small></span>
