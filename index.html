@@ -1299,6 +1299,91 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
 }
 #menu #onlineCreate[hidden],
 #menu #onlineJoin[hidden]{display:none!important}
+
+/* Approved illustrated title and animated bats. Both are decorative;
+   their accessible page title and functional controls remain HTML. */
+#menu #moonBats{
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+  z-index:0;overflow:hidden;fill:#231332;
+  filter:drop-shadow(0 2px 1px #c797d566)
+}
+#menu>.panel{position:relative;z-index:1}
+#moonBats .batWingLeft,#moonBats .batWingRight{transform-box:fill-box}
+#moonBats .batWingLeft{transform-origin:100% 45%;animation:hauntFlapLeft 1.3s ease-in-out infinite}
+#moonBats .batWingRight{transform-origin:0% 45%;animation:hauntFlapRight 1.3s ease-in-out infinite}
+#moonBats .batTwo .batWingLeft,#moonBats .batTwo .batWingRight{animation-duration:1.04s;animation-delay:-.44s}
+#moonBats .batThree .batWingLeft,#moonBats .batThree .batWingRight{animation-duration:1.5s;animation-delay:-.81s}
+@keyframes hauntFlapLeft{0%,100%{transform:rotate(-19deg) scaleY(.65)}50%{transform:rotate(14deg) scaleY(1.16)}}
+@keyframes hauntFlapRight{0%,100%{transform:rotate(19deg) scaleY(.65)}50%{transform:rotate(-14deg) scaleY(1.16)}}
+#menu .brandLockup{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;width:min(100%,1010px);min-height:128px;gap:4px;
+  margin:0 auto 2px;overflow:visible;
+}
+#menu .brandMascotFrame{
+  width:clamp(70px,10vw,132px);
+  flex:0 0 clamp(70px,10vw,132px);
+  transform:rotate(-11deg);
+  filter:drop-shadow(0 5px 0 #43235d) drop-shadow(0 4px 12px #e6a6ff70);
+}
+#menu .brandMascot{display:block;width:100%;height:auto;overflow:visible}
+#menu .brandTwinkles{
+  align-self:flex-start;padding-top:12px;
+  font-size:clamp(20px,3.8vw,44px);line-height:1;color:#ffe29f;
+  text-shadow:0 0 13px #f7c271;
+}
+#menu .brandLockup .title{
+  flex:0 1 auto;max-width:calc(100% - 135px);
+  margin:0;font-size:clamp(38px,5.6vw,76px);
+  filter:drop-shadow(0 3px 6px #250c42b8);
+}
+#menu #menuText{
+  width:fit-content;max-width:min(80%,480px);
+  padding:5px 28px;margin:1px auto 27px;
+  border-radius:5px 5px 14px 14px;
+  background:linear-gradient(90deg,#d997ef,#eed1fc 45%,#d997ef);
+  box-shadow:0 4px 0 #4f2a66,0 6px 12px #1d0d2da1;
+  color:#351d4d;text-shadow:none;font-weight:900;
+  font-size:clamp(12px,1.25vw,16px);
+  letter-spacing:.01em;
+}
+#menu #modeChooser .modeCard .modeIcon{
+  flex:0 0 clamp(37px,4.6vw,62px);width:clamp(37px,4.6vw,62px);
+  height:clamp(37px,4.6vw,62px);display:grid;place-items:center;
+  font-size:unset;filter:drop-shadow(0 3px 5px #160825a6)
+}
+#menu .arcadeIcon{display:block;width:100%;height:100%;overflow:visible}
+#menu #modeChooser .modeCard{gap:9px;min-height:93px}
+#menu #menuMore{gap:10px}
+#menu #menuMore .menuDrawer>summary,
+#menu #menuMore .menuChip{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 17px;min-height:48px;
+  font-size:13px;font-weight:900;color:#fff5e6;
+  text-shadow:0 2px 3px #1d102b;
+}
+#menu #menuMore .arcadeIcon{width:23px;height:23px;flex:0 0 23px;
+  filter:drop-shadow(0 2px 2px #22102a88)}
+#menu #menuMore .menuDrawer>summary::before{display:none}
+#menu #menuMore #gameGuide>summary,#menu #menuMore #settingsDetails>summary{
+  list-style:none;cursor:pointer;
+}
+#menu #menuMore #gameGuide>summary::-webkit-details-marker,
+#menu #menuMore #settingsDetails>summary::-webkit-details-marker{display:none}
+@media(max-width:660px){
+  #menu .brandLockup{min-height:70px}
+  #menu .brandMascotFrame{width:55px;flex-basis:55px}
+  #menu .brandLockup .title{font-size:clamp(29px,7.1vw,44px);max-width:calc(100% - 80px)}
+  #menu .brandTwinkles{font-size:18px;padding-top:5px}
+  #menu #menuText{font-size:11px;padding:5px 13px;margin-bottom:23px}
+  #menu #modeChooser .modeCard .modeIcon{height:35px;width:35px;flex-basis:35px}
+  #menu #menuMore .menuDrawer>summary,#menu #menuMore .menuChip{min-height:44px;padding:8px 10px;font-size:11px;gap:5px}
+  #menu #menuMore .arcadeIcon{width:18px;height:18px;flex-basis:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  #moonBats .batWingLeft,#moonBats .batWingRight{animation:none!important}
+}
+
 @media(max-width:900px){
   #menu #characterSelectLayout{grid-template-columns:minmax(0,1.6fr) minmax(230px,.9fr);gap:12px;padding:36px 12px 15px}
   #menu #characterSelectLayout .characterShowcase{padding-left:13px}
