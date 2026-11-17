@@ -908,18 +908,23 @@ test('Alpha 35: three-step menu, team-color cards, accurate modes and preserved 
     'Customization contains ghost preview, nickname and swatches');
   assert.ok(at('palettePicker')<at('modeChooser')&&at('modeChooser')<at('startBtn'),
     'Game mode precedes the Play action');
-  for(const heading of ['1. CHOOSE YOUR GHOST','2. CUSTOMIZE YOUR GHOST','3. CHOOSE YOUR HAUNT &amp; PLAY'])
+  for(const heading of ['1. CHOOSE YOUR GHOST','YOUR GHOST','2. CHOOSE YOUR HAUNT &amp; PLAY'])
     assert.ok(html.includes(heading),heading);
   const menuCss=html.slice(html.indexOf('/* Alpha 35: consolidated Joy Haus three-step menu.'),html.indexOf('</style>'));
   assert.match(menuCss,/#menu #menuPanel #booCrewGrid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(menuCss,/@media\(max-width:520px\)\{[\s\S]*?#menu #menuPanel #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.doesNotMatch(menuCss,/\.crewCard:nth-child\(\d+\)\{background/,'No character-specific card backgrounds');
-  assert.match(menuCss,/background:linear-gradient\(160deg,var\(--selected-team-color/);
+  assert.match(html,/#menu #menuPanel \.crewCard\{min-height:132px;/);
   assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
   assert.match(html,/booCrewGrid\.style\.setProperty\('--crew-label-color',labelColor\)/);
   assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
   assert.match(html,/crewLore\.textContent=GHOST_CHARACTER_LORE\[selectedCharacter\]/);
   assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
+  assert.match(html,/id="crewLore" class="srOnly"/);
+  assert.match(html,/#menu #characterSelectLayout\\{display:grid;grid-template-columns:/);
+  assert.match(html,/#menu #characterSelectLayout:before\\{content:"✦  1\\. CHOOSE YOUR GHOST/);
+  assert.match(html,/#menu #menuPanel \\.crewCard\\{min-height:132px;[\\s\\S]*?background:linear-gradient\\(165deg,#755081/);
+  assert.match(html,/#menu \\.title span:last-child\\{color:#dfc1ff/);
   assert.match(html,/prefers-reduced-motion:reduce/);
   for(const description of [
     'Four teams compete in a larger cemetery.',
