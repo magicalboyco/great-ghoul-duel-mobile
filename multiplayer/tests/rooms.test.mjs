@@ -919,6 +919,20 @@ test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
   assert.ok(polished.includes('#menu #modeChooser .modeCard small{'),'Mode descriptions remain visible');
   assert.ok(polished.includes('#menu #menuPanel #crewLore{display:none}'),'Biography stays hidden');
   assert.ok(polished.includes('prefers-reduced-motion:reduce'));
+  // Illustrated title, decorative moon bats, and iconography must survive
+  // without changing the menu's DOM controls or network/gameplay handlers.
+  assert.equal((html.match(/id="moonBats"/g)||[]).length,1);
+  assert.ok(html.includes('class="brandLockup"'));
+  assert.ok(html.includes('class="brandMascot"'));
+  assert.ok(html.includes('class="batWingLeft"'));
+  assert.ok(html.includes('class="batWingRight"'));
+  assert.ok(polished.includes('@keyframes hauntFlapLeft'));
+  assert.ok(polished.includes('@keyframes hauntFlapRight'));
+  assert.ok(polished.includes('animation:none!important'),'Reduced-motion mode stops decorative animations');
+  assert.equal((html.match(/class="arcadeIcon"/g)||[]).length,7,
+    'Three custom mode icons and four footer icons');
+  for(const id of ['settingsDetails','gameGuide','hallMenuBtn','menuCreditsBtn'])
+    assert.ok(at(id)>0,id+' retains original action target');
   assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
   assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
   assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
