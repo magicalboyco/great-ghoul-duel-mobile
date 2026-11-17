@@ -1528,7 +1528,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
         </div>
         <div id="playerIdentity">
           <label for="playerDisplayName">Nickname <span>(optional)</span></label>
-          <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Skip it to use your ghost's name" aria-describedby="playerNameHint">
+          <input id="playerDisplayName" name="playerDisplayName" type="text" autocomplete="nickname" maxlength="13" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Your ghost's name or a custom nickname" aria-describedby="playerNameHint">
           <div id="playerNameHint">Shown above your ghost and on the high-score board.</div>
         </div>
         <section class="menuStep" aria-labelledby="colorStepLabel">
@@ -1543,17 +1543,17 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
     <div id="onlinePanel">
       <div class="palette-label" id="modeStepLabel">2. CHOOSE YOUR HAUNT &amp; PLAY</div>
       <div id="modeChooser" role="radiogroup" aria-label="Game mode">
-        <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="true" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
+        <button type="button" class="modeCard" data-mode="fourway" role="radio" aria-checked="false" aria-label="Four-Way Haunt, four teams of two ghosts, solo bots or online friends">
           <span class="modeIcon"><svg class="arcadeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M5 53H59" stroke="#ffe9c1" stroke-width="4" stroke-linecap="round"/><path d="M9 50V30Q9 20 22 20Q35 20 35 30V50Z" fill="#c9a8f5" stroke="#39224f" stroke-width="3"/><path d="M29 50V23Q29 9 44 9Q59 9 59 23V50Z" fill="#a47bd9" stroke="#39224f" stroke-width="3"/><path d="M44 17V33M37 25H51" stroke="#f7e6ff" stroke-width="4" stroke-linecap="round"/><path d="M21 27V41M15 34H27" stroke="#594270" stroke-width="3" stroke-linecap="round"/><path d="M5 15L8 21 15 24 8 27 5 33 2 27 -4 24 2 21Z" fill="#ffdf87" transform="translate(7 -4)"/></svg></span><span><b>Four-Way Haunt</b><small>Four teams compete across a larger cemetery.</small></span>
         </button>
-        <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="false" aria-label="Classic Duel, two opposing teams and up to eight players">
+        <button type="button" class="modeCard" data-mode="classic" role="radio" aria-checked="true" aria-label="Classic Duel, two opposing teams and up to eight players">
           <span class="modeIcon"><svg class="arcadeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M18 51L46 13M46 51L18 13" stroke="#403258" stroke-width="10" stroke-linecap="round"/><path d="M18 51L46 13" stroke="#82d8ff" stroke-width="5" stroke-linecap="round"/><path d="M46 51L18 13" stroke="#ff94df" stroke-width="5" stroke-linecap="round"/><path d="M13 46L23 56M41 56L51 46" stroke="#ffecc1" stroke-width="6" stroke-linecap="round"/><path d="M43 9L46 2 50 10M14 9L18 2 22 10" fill="#fff1c9" stroke="#eedfb1" stroke-width="2"/></svg></span><span><b>Classic Duel</b><small>Two teams race to collect and deposit spirit flames.</small></span>
         </button>
         <button type="button" class="modeCard" data-mode="coop" role="radio" aria-checked="false" aria-label="Boo Crew Co-op, 1 to 4 friends against computer ghosts">
           <span class="modeIcon"><svg class="arcadeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M4 47V30Q4 14 17 14T30 30V49L22 43 17 49 11 44Z" fill="#be9ce8" stroke="#432956" stroke-width="2.5"/><path d="M23 54V25Q23 6 40 6T57 25V54L48 47 40 55 31 47Z" fill="#b5f1d5" stroke="#432956" stroke-width="2.5"/><circle cx="34" cy="28" r="3" fill="#342243"/><circle cx="46" cy="28" r="3" fill="#342243"/><path d="M35 39Q40 44 45 39" stroke="#342243" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="11" cy="31" r="2" fill="#342243"/><circle cx="21" cy="31" r="2" fill="#342243"/></svg></span><span><b>Boo Crew Co-op</b><small>Friends work together against four computer ghosts.</small></span>
         </button>
       </div>
-      <div id="modeNotice" class="modeDescription" aria-live="polite">Four teams compete in a larger cemetery.</div>
+      <div id="modeNotice" class="modeDescription" aria-live="polite">Two teams race to collect and deposit spirit flames.</div>
       <div id="previewGameActions" aria-label="Start your selected game">
         <button id="startBtn" type="button">👻 PLAY SOLO</button>
       </div>
@@ -2041,8 +2041,8 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   }
   const modeChooser=document.getElementById('modeChooser');
   const modeNotice=document.getElementById('modeNotice');
-  let selectedOnlineMode='fourway';
-  let previewSoloMode='fourway';
+  let selectedOnlineMode='classic';
+  let previewSoloMode='classic';
   const MODE_NAMES={classic:'Classic Duel',coop:'Boo Crew Co-op',fourway:'Four-Way Haunt'};
   function displayOnlineMode(mode){
     if(!MODE_NAMES[mode])return;
@@ -2197,17 +2197,37 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
     return name.length<=13&&/^[\p{L}\p{M}\p{N} ._'-]*$/u.test(name)&&
       (!name||/[\p{L}\p{N}]/u.test(name))?name:'';
   }
+  // The input shows the selected ghost's name until the player explicitly
+  // enters a different nickname. Old saved ghost names are NOT custom names.
+  // Keep genuinely custom nicknames when switching costumes or returning
+  // from a match; avoid inheriting unrelated public high-score names.
+  let customGhostNickname=false;
+  const defaultGhostName=()=>GHOST_CHARACTER_NAMES[selectedCharacter].slice(0,13);
   try{
-    const saved=localStorage.getItem('boo-crew-player-name')||
-      localStorage.getItem('boo-crew-score-name')||'';
-    playerDisplayNameEl.value=sanitizePlayerName(saved);
-  }catch{}
+    const saved=sanitizePlayerName(localStorage.getItem('boo-crew-player-name')||'');
+    const explicitlyCustom=localStorage.getItem('boo-crew-player-name-custom')==='true';
+    customGhostNickname=!!saved&&
+      (explicitlyCustom||!GHOST_CHARACTER_NAMES.some(name=>name===saved));
+    playerDisplayNameEl.value=customGhostNickname?saved:defaultGhostName();
+  }catch{playerDisplayNameEl.value=defaultGhostName()}
+  function syncGhostNickname(){
+    if(!customGhostNickname)playerDisplayNameEl.value=defaultGhostName();
+  }
   playerDisplayNameEl.addEventListener('input',()=>{
     const next=playerDisplayNameEl.value
       .replace(/[^\p{L}\p{M}\p{N} ._'-]/gu,'').slice(0,13);
     if(next!==playerDisplayNameEl.value)playerDisplayNameEl.value=next;
-    try{localStorage.setItem('boo-crew-player-name',
-      sanitizePlayerName(playerDisplayNameEl.value))}catch{}
+    const clean=sanitizePlayerName(next);
+    customGhostNickname=!!clean&&clean!==defaultGhostName();
+    try{
+      if(customGhostNickname){
+        localStorage.setItem('boo-crew-player-name',clean);
+        localStorage.setItem('boo-crew-player-name-custom','true');
+      }else{
+        localStorage.removeItem('boo-crew-player-name');
+        localStorage.removeItem('boo-crew-player-name-custom');
+      }
+    }catch{}
     if(online&&online.seat!==null&&!online.started&&
       online.ws.readyState===WebSocket.OPEN){
       sendOnline({type:'profile',...lobbyPlayerProfile()});
@@ -4244,6 +4264,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
     booCrewGrid.style.setProperty('--card-border',highContrast?'#fff8eb':'#d8c4ee');
     booCrewGrid.style.setProperty('--crew-label-color',labelColor);
     chosenCharacter.textContent=GHOST_CHARACTER_NAMES[selectedCharacter];
+    syncGhostNickname();
     selectedGhostPortrait.innerHTML=ghostPortrait(
       {id:selectedCharacter,styleId:selectedCharacter,team:0},swatch.hex);
     [...booCrewGrid.children].forEach((button,id)=>{
