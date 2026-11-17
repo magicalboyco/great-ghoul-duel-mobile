@@ -925,6 +925,16 @@ test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
   assert.ok(polished.includes('min-height:clamp(113px,10.2vw,140px)'),'Character cards lose unnecessary height');
 
   assert.ok(polished.includes('prefers-reduced-motion:reduce'));
+  // A phone cannot display three mode icons wider than the cards themselves.
+  const mobileFix=html.slice(html.indexOf('/* Mobile UI: constrain SVG icon sizes'),html.indexOf('</style>'));
+  assert.ok(mobileFix.includes('grid-template-columns:minmax(0,1fr)'),
+    'Phone menu should show mode choices as readable single-column cards');
+  assert.ok(mobileFix.includes('#menu #modeChooser .modeCard .modeIcon .arcadeIcon {'),
+    'Custom SVG artwork must be explicitly constrained inside its icon box');
+  assert.ok(mobileFix.includes('width:42px;')&&mobileFix.includes('height:42px;'),
+    'Mode artwork must be clamped to 42px rather than its SVG intrinsic size');
+  assert.ok(mobileFix.includes('overflow-y:auto;'),
+    'The menu should be scrollable on narrow viewports');
   // Illustrated title, decorative moon bats, and iconography must survive
   // without changing the menu's DOM controls or network/gameplay handlers.
   assert.equal((html.match(/id="moonBats"/g)||[]).length,1);
