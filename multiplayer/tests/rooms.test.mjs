@@ -893,24 +893,40 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
 });
 
 
-test('Alpha 35 menu: color comes first, one big Play button, extras live in drawers',()=>{
+test('Start menu redesign: responsive Boo Crew grid, selected portrait and direct actions',()=>{
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   const at=id=>html.indexOf('id="'+id+'"');
-  assert.ok(at('palettePicker')>0&&at('palettePicker')<at('booCrewGrid'),'Color picker precedes the character picker');
-  assert.ok(at('booCrewGrid')<at('startBtn'),'Play follows the two quick choices');
-  assert.ok(at('startBtn')<at('playerDisplayName'),'Nickname is not in the way of Play');
-  // Nickname, difficulty and server settings are tucked inside Settings.
-  const settings=html.slice(at('settingsDetails'),at('gameGuide'));
-  for(const id of ['playerDisplayName','difficultyWrap','onlineServer'])
-    assert.ok(settings.includes('id="'+id+'"'),id+' lives in Settings');
-  // Friends flow: room controls sit in a drawer, invites use the share sheet.
-  assert.match(html,/<details id="friendsDetails"/);
+  // The player sees their chosen ghost, optional nickname and colors together.
+  assert.ok(at('selectedGhostStage')>0 && at('selectedGhostStage')<at('booCrewGrid'));
+  assert.ok(at('playerDisplayName')>at('selectedGhostStage'));
+  assert.ok(at('palettePicker')>at('playerDisplayName'));
+  assert.ok(at('booCrewGrid')<at('modeChooser'));
+  assert.ok(at('modeChooser')<at('startBtn'));
+  assert.ok(at('quickCreateRoom')>at('startBtn'));
+  assert.ok(at('quickJoinRoom')>at('quickCreateRoom'));
+  assert.match(html,/#characterSelectLayout #booCrewGrid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(html,/@media\(max-width:520px\)\{[\s\S]*?#characterSelectLayout #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
+  assert.match(html,/selectedGhostPortrait svg\{[\s\S]*?animation:showcase-float/);
+  assert.match(html,/prefers-reduced-motion:reduce/);
+  assert.match(html,/#menu #modeChooser .modeCard\[aria-checked="true"\]/);
+  assert.match(html,/quickCreateRoom\.addEventListener\('click'/);
+  assert.match(html,/quickJoinRoom\.addEventListener\('click'/);
+  assert.match(html,/mode==='coop'\?'🤝 CREATE CO-OP ROOM':'👻 PLAY SOLO'/);
+  assert.match(html,/id="onlineCreate" hidden/);
+  assert.match(html,/id="onlineJoin" hidden/);
+  assert.match(html,/setJoinCodeVisible\(true\)/);
   assert.match(html,/navigator\.share\(\{title:'Spooktacular Showdown'/);
   assert.match(html,/\?room=/);
-  // Ghosts are see-through, but high contrast keeps them solid.
+  // The complete game stays in place and remains parsable.
+  for(const id of ['booCrewGrid','palettePicker','modeChooser','startBtn','playerDisplayName',
+    'highContrastToggle','difficultyWrap','friendsDetails','onlineCode','onlineStart',
+    'hallMenuBtn','menuCreditsBtn']) {
+    assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' should exist only once');
+  }
+  const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+  assert.ok(scripts.length>0);
+  for(const [,code] of scripts)assert.doesNotThrow(()=>new Function(code));
   assert.match(html,/const GHOST_BODY_ALPHA=\.74/);
   assert.match(html,/ctx\.globalAlpha=highContrast\?1:GHOST_BODY_ALPHA/);
-  // Nickname stays optional and falls back to the ghost's own name in rooms.
-  assert.match(html,/\|\|GHOST_CHARACTER_NAMES\[selectedCharacter\]\.slice\(0,13\)/);
-  assert.equal((html.match(/id="startBtn"/g)||[]).length,1);
 });
