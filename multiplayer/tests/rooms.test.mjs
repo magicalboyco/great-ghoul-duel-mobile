@@ -893,37 +893,44 @@ test('Alpha 34 Worker advertises rematch voting capability',async()=>{
 });
 
 
-test('Start menu redesign: responsive Boo Crew grid, selected portrait and direct actions',()=>{
+test('Alpha 35: three-step menu, team-color cards, accurate modes and preserved game',()=>{
   const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');
   const at=id=>html.indexOf('id="'+id+'"');
-  // The player sees their chosen ghost, optional nickname and colors together.
-  assert.ok(at('selectedGhostStage')>0 && at('selectedGhostStage')<at('booCrewGrid'));
-  assert.ok(at('playerDisplayName')>at('selectedGhostStage'));
-  assert.ok(at('palettePicker')>at('playerDisplayName'));
-  assert.ok(at('booCrewGrid')<at('modeChooser'));
-  assert.ok(at('modeChooser')<at('startBtn'));
-  assert.ok(at('quickCreateRoom')>at('startBtn'));
-  assert.ok(at('quickJoinRoom')>at('quickCreateRoom'));
-  assert.match(html,/#characterSelectLayout #booCrewGrid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(html,/@media\(max-width:520px\)\{[\s\S]*?#characterSelectLayout #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  for(const id of ['booCrewGrid','selectedGhostPortrait','chosenCharacter','crewLore',
+    'palettePicker','playerDisplayName','highContrastToggle','modeChooser','modeNotice',
+    'startBtn','quickCreateRoom','quickJoinRoom','friendsDetails','onlineCode',
+    'onlineStart','difficultyWrap','hallMenuBtn','menuCreditsBtn']){
+    assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' must be unique');
+  }
+  assert.ok(at('booCrewGrid')>0&&at('booCrewGrid')<at('selectedGhostPortrait'),
+    'Ghost selection precedes selected-ghost preview');
+  assert.ok(at('selectedGhostPortrait')<at('playerDisplayName')&&at('playerDisplayName')<at('palettePicker'),
+    'Customization contains ghost preview, nickname and swatches');
+  assert.ok(at('palettePicker')<at('modeChooser')&&at('modeChooser')<at('startBtn'),
+    'Game mode precedes the Play action');
+  for(const heading of ['1. CHOOSE YOUR GHOST','2. CUSTOMIZE YOUR GHOST','3. CHOOSE YOUR HAUNT &amp; PLAY'])
+    assert.ok(html.includes(heading),heading);
+  const menuCss=html.slice(html.indexOf('/* Alpha 35: consolidated Joy Haus three-step menu.'),html.indexOf('</style>'));
+  assert.match(menuCss,/#menu #menuPanel #booCrewGrid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(menuCss,/@media\(max-width:520px\)\{[\s\S]*?#menu #menuPanel #booCrewGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.doesNotMatch(menuCss,/\.crewCard:nth-child\(\d+\)\{background/,'No character-specific card backgrounds');
+  assert.match(menuCss,/background:linear-gradient\(160deg,var\(--selected-team-color/);
+  assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
+  assert.match(html,/booCrewGrid\.style\.setProperty\('--crew-label-color',labelColor\)/);
+  assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
+  assert.match(html,/crewLore\.textContent=GHOST_CHARACTER_LORE\[selectedCharacter\]/);
   assert.match(html,/selectedGhostPortrait\.innerHTML=ghostPortrait/);
-  assert.match(html,/selectedGhostPortrait svg\{[\s\S]*?animation:showcase-float/);
   assert.match(html,/prefers-reduced-motion:reduce/);
-  assert.match(html,/#menu #modeChooser .modeCard\[aria-checked="true"\]/);
+  for(const description of [
+    'Four teams compete in a larger cemetery.',
+    'Two teams race to collect and deposit spirit flames.',
+    'Friends work together against rival computer ghosts.'])
+    assert.ok(html.includes(description),description);
   assert.match(html,/quickCreateRoom\.addEventListener\('click'/);
   assert.match(html,/quickJoinRoom\.addEventListener\('click'/);
   assert.match(html,/mode==='coop'\?'🤝 CREATE CO-OP ROOM':'👻 PLAY SOLO'/);
-  assert.match(html,/id="onlineCreate" hidden/);
-  assert.match(html,/id="onlineJoin" hidden/);
-  assert.match(html,/setJoinCodeVisible\(true\)/);
   assert.match(html,/navigator\.share\(\{title:'Spooktacular Showdown'/);
   assert.match(html,/\?room=/);
-  // The complete game stays in place and remains parsable.
-  for(const id of ['booCrewGrid','palettePicker','modeChooser','startBtn','playerDisplayName',
-    'highContrastToggle','difficultyWrap','friendsDetails','onlineCode','onlineStart',
-    'hallMenuBtn','menuCreditsBtn']) {
-    assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+' should exist only once');
-  }
   const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
   assert.ok(scripts.length>0);
   for(const [,code] of scripts)assert.doesNotThrow(()=>new Function(code));
