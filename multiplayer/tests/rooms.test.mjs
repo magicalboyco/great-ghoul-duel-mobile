@@ -951,6 +951,18 @@ test('Alpha 35 polished menu uses existing scenery and preserves the game',()=>{
     assert.ok(at(id)>0,id+' retains original action target');
   assert.match(html,/booCrewGrid\.style\.setProperty\('--selected-team-color',swatch\.hex\)/);
   assert.match(html,/chosenCharacter\.textContent=GHOST_CHARACTER_NAMES\[selectedCharacter\]/);
+  // A previous release had a syntactically valid but fatal temporal-dead-zone
+  // error: the nickname field read names before their const initialization.
+  const namesDeclaration=html.indexOf('const GHOST_CHARACTER_NAMES=');
+  const nicknameInitialization=html.indexOf('const defaultGhostName=()=>GHOST_CHARACTER_NAMES[selectedCharacter]');
+  const nicknameDisplay=html.indexOf('playerDisplayNameEl.value=customGhostNickname?saved:defaultGhostName()');
+  const cardCreation=html.indexOf('GHOST_CHARACTER_NAMES.forEach((name,id)=>');
+  assert.ok(namesDeclaration>0&&namesDeclaration<nicknameInitialization,
+    'Ghost names must be initialized before nickname fallback can read them');
+  assert.ok(nicknameInitialization<nicknameDisplay&&nicknameDisplay<cardCreation,
+    'Name fallback runs before menu cards are built');
+  assert.equal((html.match(/const GHOST_CHARACTER_NAMES=/g)||[]).length,1);
+
   // Choosing a different costume resets only the implicit ghost-name default.
   // An intentionally entered nickname remains untouched until edited/cleared.
   assert.match(html,/let selectedOnlineMode='classic'/);

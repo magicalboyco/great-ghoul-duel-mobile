@@ -2008,6 +2008,7 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
     return index<0?(entry||PASTELS[3]):visualPalette()[index];
   };
   const visualHex=hex=>visualEntry({hex}).hex;
+  const GHOST_CHARACTER_NAMES=['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'];
   let selectedIndex=3,selectedCharacter=0,teamColors=[PASTELS[3],PASTELS[5]];
   const color=team=>visualEntry(teamColors[team]||PASTELS[3]).hex;
   const teamForSeat=(seat,mode)=>mode==='fourway'?Math.floor(seat/2):seat<4?0:1;
@@ -4084,7 +4085,6 @@ body.invited #onlineJoin{background:linear-gradient(#d9ffe6,#78dfa7);
   const GHOST_NAMES=['You','Moss','Pip','Wisp','Shade','Moth','Rune','Boo'];
   // A distinct signature accessory for each of the eight ghosts.
   const GHOST_STYLES=['bow','leaf','hat','star','glasses','wings','crown','scarf'];
-  const GHOST_CHARACTER_NAMES=['Bowtie','Gusty','Abra-ca-dabra','Starshine','Shady','Batty Boo','Majesty','Flurry'];
   // Original ensemble comedy hooks: each ghost mixes contrasting qualities,
   // a distinctive goal, and a flaw that generates their own ghost stories.
   const GHOST_CHARACTER_LORE=[
